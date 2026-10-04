@@ -45,16 +45,30 @@
 
 <main class="tl-section"><div class="tl-shell"><p class="tl-eyebrow">Your library</p><h1 class="mt-3 text-5xl font-extrabold">Saved places.</h1><p class="mt-4 text-white/50">The places you don't want to lose.</p><div id="grid" class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div><p id="empty" class="hidden mt-12 text-center text-white/45">Nothing saved yet. <a class="text-sky-300" href="explore.html">Explore places →</a></p></div></main>
 <script type="module">
-import {supabase} from "./src/js/supabase.js";import {card,queryPlaces} from "./src/js/app.js";
-const grid=document.querySelector("#grid"),empty=document.querySelector("#empty");let data=[];
-if(supabase){const {data:{user}}=await supabase.auth.getUser();if(user){const r=await supabase.from("saves").select("place_id,places(*)").eq("user_id",user.id);data=(r.data||[]).map(x=>x.places).filter(Boolean)}}
-if(!data.length){empty.classList.remove("hidden")}else grid.innerHTML=data.map(card).join("");
+import {supabase} from "./src/js/supabase.js";import {card} from "./src/js/app.js";
+const grid=document.querySelector("#grid"),empty=document.querySelector("#empty");
+const note=m=>{let p=document.querySelector("#note");if(!p){grid.insertAdjacentHTML("beforebegin",'<p id="note" role="status" class="mt-6 text-sm text-white/50"></p>');p=document.querySelector("#note")}p.innerHTML=m};
+const user=supabase?(await supabase.auth.getUser()).data.user:null;
+if(!user){note('<a class="tl-btn tl-btn-primary" href="login.html?next=saved.html">Sign in with Google to see your saved places</a>')}
+else{
+ const r=await supabase.from("saves").select("place_id,created_at,places(*)").eq("user_id",user.id).order("created_at",{ascending:false});
+ if(r.error){note("Couldn't load your saved places. Please refresh and try again.")}
+ else{
+  const rows=(r.data||[]).filter(x=>x.places),hidden=(r.data||[]).length-rows.length;
+  grid.innerHTML=rows.map(x=>`<div data-pid="${x.place_id}">${card(x.places)}<button data-unsave="${x.place_id}" class="tl-btn tl-btn-ghost mt-2 w-full !min-h-10">Remove from saved</button></div>`).join("");
+  if(!rows.length)empty.classList.remove("hidden");
+  if(hidden>0)note(`${hidden} saved place${hidden>1?"s are":" is"} not showing because ${hidden>1?"they are":"it is"} hidden or waiting for review.`);
+  grid.addEventListener("click",async e=>{const id=e.target.dataset.unsave;if(!id)return;e.target.disabled=true;
+   const d=await supabase.from("saves").delete().eq("user_id",user.id).eq("place_id",id);
+   if(d.error){e.target.disabled=false;note("Couldn't remove it. Please try again.");return}
+   grid.querySelector(`[data-pid="${id}"]`)?.remove();if(!grid.children.length)empty.classList.remove("hidden")})}
+}
 </script>
 
 <footer class="tl-footer">
   <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
     <div><div class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-xl font-extrabold">Terra<span class="text-sky-300">Lens</span></span></div><p class="mt-4 max-w-md text-sm leading-7 text-white/45">A visual place-discovery platform connecting the photo that inspires you with the context that helps you experience it.</p></div>
-    <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="planner.html">Trips</a></div></div>
+    <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="planner.html">Trips</a><a href="saved.html">Saved places</a></div></div>
     <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div></div>
   </div>
   <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© 2026 TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>

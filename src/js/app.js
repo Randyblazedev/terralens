@@ -91,6 +91,8 @@ export async function initNav() {
       else location.href = `login.html?next=${encodeURIComponent("upload.html")}`;
     });
   });
+  document.querySelectorAll("header nav").forEach(n => n.insertAdjacentHTML("beforeend", '<a class="hover:text-white" href="saved.html">Saved</a>'));
+  document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.insertAdjacentHTML("beforeend", '<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="saved.html">Saved places</a>'));
   if (user) {
     document.querySelectorAll("header nav").forEach(n => n.insertAdjacentHTML("beforeend", '<a class="hover:text-white" href="logout.html">Sign out</a>'));
     document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.insertAdjacentHTML("beforeend", '<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="logout.html">Sign out</a>'));

@@ -1,3 +1,7 @@
+# TerraLens 6.8.1: saved places are now reachable
+
+Nothing on the site linked to the Saved page, so people could save places but never find them. Added a "Saved" link to the menu (desktop and hamburger), the footer, and the profile's Saved count. The Saved page now asks signed-out visitors to sign in, shows newest first, has a "Remove from saved" button, and explains when a saved place is hidden or under review.
+
 # TerraLens 6.8: one-hour edit window, cleaner Explore filters
 
 - **Edit window = 1 hour.** Uploaders can edit their place (details and photos) for one hour after uploading it. After that the Edit button disappears, the edit page explains why, and the database refuses the change. Admins are not limited, and owners can still delete their own place. Profile cards show "Edit · N min left". To change the length, edit `edit_window()` in `schema.sql` (and `EDIT_WINDOW_MS` in `src/js/app.js`).
