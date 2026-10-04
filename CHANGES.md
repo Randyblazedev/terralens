@@ -1,3 +1,14 @@
+# TerraLens 6.7: edits, logout, gold badge, public browsing
+
+- **Public browsing is back (default):** anyone can view pages. Uploading, editing, liking, saving, reporting and the AI assistant need Google sign-in. (The optional sign-in wall now only turns on if you set `REQUIRE_LOGIN=true`.) The Upload page shows a "Sign in to upload" box for visitors.
+- **Sign out:** new `logout.html`, plus "Sign out" in the menu and on your profile page.
+- **Hamburger menu:** a "Home" item is now first in the list on every page.
+- **Edit your uploads (`edit.html`):** from your profile (each place has an Edit button and a status) or from the place page. Change details, add photos (max 10), remove your own photos. No time limit. Rules enforced in the database: unverified owners who change a LIVE place (details or a new photo) send it back to review; verified contributors edit live; places a moderator hid cannot be edited by the owner. Tested with simulated users.
+- **Gold verified badge:** the Lucide `badge-check` icon, filled gold with a white check, shown on profiles, place pages and the admin contributor list.
+- **AI assistant:** failures now give a clear message, and Admin -> Check setup has a new "DeepSeek has credit" line. A working key with no credit is the most common reason the assistant fails.
+
+**Run the new `supabase/schema.sql` once** (it includes the edit rules; safe to re-run).
+
 # TerraLens 6.6.3: tolerant environment variables
 
 Keys pasted on a phone often include a hidden space, newline, quotes or a trailing slash. The server (and the build) now clean every value before using it. Admin -> Check setup also explains whether the server can see your Supabase variables at all.

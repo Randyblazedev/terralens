@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex">
+<meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Upload a Place — TerraLens</title>
+<title>Edit place — TerraLens</title>
 <meta name="description" content="Image-first place discovery and travel inspiration on TerraLens.">
 <meta property="og:title" content="Upload a Place — TerraLens">
 <meta property="og:description" content="Image-first place discovery and travel inspiration on TerraLens.">
@@ -45,14 +46,14 @@
 
 <main class="tl-section">
  <div class="tl-shell max-w-5xl">
-  <div class="max-w-2xl"><p class="tl-eyebrow">Create a place</p><h1 class="mt-3 text-4xl font-extrabold sm:text-6xl">Give a place a lens.</h1><p class="mt-5 leading-7 text-white/55">Upload the image that makes someone stop scrolling, then give the place enough context to make discovery useful.</p></div>
-  <form id="upload-form" class="mt-12 grid gap-8 lg:grid-cols-[.85fr_1.15fr]">
+  <div class="max-w-2xl"><p class="tl-eyebrow">Your upload</p><h1 class="mt-3 text-4xl font-extrabold sm:text-5xl">Edit place</h1><p id="note" class="mt-4 leading-7 text-white/55">Loading...</p></div>
+  <form id="edit-form" class="mt-10 hidden gap-8 lg:grid-cols-[.85fr_1.15fr]">
    <div>
-    <div id="drop" class="flex min-h-[420px] cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-white/15 bg-white/[.02] p-8 text-center">
-      <input id="files" type="file" accept="image/*" multiple class="hidden">
-      <div class="text-5xl">📸</div><h2 class="mt-5 text-xl font-bold">Drop your photos here</h2><p class="mt-2 text-sm text-white/45">JPG, PNG or WebP. Add several photos to tell the story.</p><button type="button" id="choose" class="tl-btn tl-btn-ghost mt-6">Choose photos</button>
-      <div id="previews" class="mt-7 grid w-full grid-cols-3 gap-2"></div>
-    </div>
+    <h2 class="text-lg font-bold">Photos</h2>
+    <div id="photos" class="mt-4 grid grid-cols-3 gap-2"></div>
+    <input id="files" type="file" accept="image/*" multiple class="hidden">
+    <button type="button" id="choose" class="tl-btn tl-btn-ghost mt-4">Add photos</button>
+    <p id="photo-msg" role="status" aria-live="polite" class="mt-3 text-sm text-white/50"></p>
    </div>
    <div class="tl-card p-6 sm:p-8">
     <label class="block text-sm font-bold">Place name<input id="name" required class="tl-input mt-2" placeholder="e.g. Mount Cameroon"></label>
@@ -69,49 +70,72 @@
       <label class="text-sm font-bold">Entry fee<input id="fee" class="tl-input mt-2" placeholder="Free / amount / varies"></label>
       <label class="text-sm font-bold">Access<input id="access" class="tl-input mt-2" placeholder="How do people reach it?"></label>
     </div>
-    <button class="tl-btn tl-btn-primary mt-7 w-full">Publish place</button>
-    <p id="message" class="mt-4 text-sm text-white/50"></p>
+    <button class="tl-btn tl-btn-primary mt-7 w-full">Save changes</button>
+    <p id="message" role="status" aria-live="polite" class="mt-4 text-sm text-white/50"></p>
+    <a id="view" class="mt-3 hidden text-sm underline text-white/55" href="#">View place</a>
    </div>
   </form>
  </div>
 </main>
 <script type="module">
-import {supabase,getUser,ensureProfile} from "./src/js/supabase.js";
-import {slugify} from "./src/js/app.js";
-const files=document.querySelector("#files"),drop=document.querySelector("#drop"),previews=document.querySelector("#previews");
-(async()=>{const u=supabase?await getUser():null;if(u)return;const f=document.querySelector("#upload-form");
- f.insertAdjacentHTML("beforebegin",'<div class="mt-8 rounded-2xl border border-white/10 bg-white/[.03] p-5"><p class="font-bold">Sign in to upload a place</p><p class="mt-1 text-sm text-white/55">You can browse everything without an account. Uploading needs a Google sign-in.</p><a class="tl-btn tl-btn-primary mt-4" href="login.html?next=upload.html">Sign in with Google</a></div>');
- f.querySelectorAll("input,textarea,select,button").forEach(el=>el.disabled=true)})();
-document.querySelector("#choose").onclick=()=>files.click();drop.onclick=e=>{if(e.target===drop)files.click()};drop.setAttribute("role","button");drop.setAttribute("aria-label","Choose photos to upload");drop.tabIndex=0;drop.onkeydown=e=>{if(e.target===drop&&(e.key==="Enter"||e.key===" ")){e.preventDefault();files.click()}};
-const TYPES={"image/jpeg":"jpg","image/png":"png","image/webp":"webp"},MAX_BYTES=25*1024*1024;
+import {supabase,getUser} from "./src/js/supabase.js";
+import {escapeHtml} from "./src/js/app.js";
+const $=s=>document.querySelector(s),slug=new URLSearchParams(location.search).get("slug")||"";
+const TYPES={"image/jpeg":1,"image/png":1,"image/webp":1},MAX_BYTES=25*1024*1024,FIELDS={name:"name",description:"description",country:"country",region:"region",city:"city",category:"category",season:"best_season",time:"best_time",fee:"entry_fee",access:"access_info"};
 async function shrink(file,max=2000){let bmp;try{bmp=await createImageBitmap(file,{imageOrientation:"from-image"})}catch{bmp=await createImageBitmap(file)}
  const s=Math.min(1,max/Math.max(bmp.width,bmp.height)),c=document.createElement("canvas");c.width=Math.round(bmp.width*s);c.height=Math.round(bmp.height*s);
  const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(bmp,0,0,c.width,c.height);bmp.close?.();
  const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",0.85));if(!blob)throw new Error("encode failed");return blob}
-files.onchange=()=>{previews.innerHTML=[...files.files].slice(0,6).map(f=>`<img src="${URL.createObjectURL(f)}" class="aspect-square w-full rounded-xl object-cover">`).join("")};
-["dragenter","dragover"].forEach(x=>drop.addEventListener(x,e=>{e.preventDefault();drop.classList.add("drop-active")}));
-["dragleave","drop"].forEach(x=>drop.addEventListener(x,e=>{e.preventDefault();drop.classList.remove("drop-active")}));
-drop.addEventListener("drop",e=>{files.files=e.dataTransfer.files;files.dispatchEvent(new Event("change"))});
-document.querySelector("#upload-form").onsubmit=async e=>{
- e.preventDefault();const msg=document.querySelector("#message");msg.textContent="Checking your account...";
- const user=await getUser();if(!user){location.href="login.html?next=upload.html";return}
- if(!user.email_confirmed_at){msg.textContent="Your account email is not verified. Please sign in with Google to upload.";return}
- if(!supabase){msg.textContent="Supabase is not configured. Add your environment variables first.";return}
- if(!files.files.length){msg.textContent="Add at least one photo.";return}
- const picked=[...files.files].slice(0,10);const bad=picked.find(f=>!TYPES[f.type]||f.size>MAX_BYTES);if(bad){msg.textContent=`"${bad.name}" must be a JPG, PNG or WebP under 25 MB (it is resized automatically).`;return}
- await ensureProfile(user);
- const name=document.querySelector("#name").value.trim();if(!name){msg.textContent="Give the place a name.";return}const lat=document.querySelector("#lat").value,lng=document.querySelector("#lng").value;if((lat&&!(Math.abs(Number(lat))<=90))||(lng&&!(Math.abs(Number(lng))<=180))){msg.textContent="Latitude must be -90 to 90 and longitude -180 to 180.";return}const slug=(slugify(name)||"place")+"-"+crypto.randomUUID().slice(0,8);
- const place={slug,name,description:document.querySelector("#description").value.trim(),country:document.querySelector("#country").value.trim(),region:document.querySelector("#region").value.trim(),city:document.querySelector("#city").value.trim(),category:document.querySelector("#category").value,latitude:document.querySelector("#lat").value?Number(document.querySelector("#lat").value):null,longitude:document.querySelector("#lng").value?Number(document.querySelector("#lng").value):null,best_season:document.querySelector("#season").value.trim(),best_time:document.querySelector("#time").value.trim(),entry_fee:document.querySelector("#fee").value.trim(),access_info:document.querySelector("#access").value.trim(),created_by:user.id,status:"published"};
- msg.textContent="Creating place...";
- const {data,error}=await supabase.from("places").insert(place).select().single();if(error){msg.textContent=error.message;return}
- let firstUrl="";
- for(const original of picked){let file;try{file=await shrink(original)}catch{continue}const ext="jpg";const path=`${user.id}/${data.id}/${crypto.randomUUID()}.${ext}`;const up=await supabase.storage.from("place-images").upload(path,file,{upsert:false,contentType:"image/jpeg"});if(up.error)continue;const {data:pub}=supabase.storage.from("place-images").getPublicUrl(path);if(!firstUrl)firstUrl=pub.publicUrl;await supabase.from("place_images").insert({place_id:data.id,storage_path:path,image_url:pub.publicUrl,alt_text:name,created_by:user.id})}
- if(!firstUrl){await supabase.from("places").delete().eq("id",data.id);msg.textContent="Photo upload failed, so the place was not created. Please try again.";return}
- await supabase.from("places").update({cover_url:firstUrl}).eq("id",data.id);
- if(data.status==="pending"){msg.textContent="Thanks! Your place was submitted and will appear after review.";setTimeout(()=>location.href="profile.html",2500);return}
- location.href=`place/${encodeURIComponent(data.slug)}`;
-};
+let place=null,user=null,verified=false,images=[];
+const stateNote=()=>{$("#note").textContent=verified?"You are a verified contributor, so your changes go live immediately.":place.status==="published"?"Your place is live. Saving changes sends it back for a quick review before it shows again.":"Your place is awaiting review. You can keep editing it."};
+async function loadImages(){const r=await supabase.from("place_images").select("id,image_url,created_by").eq("place_id",place.id).order("created_at");images=r.data||[];
+ $("#photos").innerHTML=images.map(i=>`<div class="relative"><img src="${escapeHtml(i.image_url)}" alt="" class="aspect-[4/3] w-full rounded-xl object-cover">${i.created_by===user.id?`<button type="button" data-rm="${escapeHtml(i.id)}" class="absolute right-1 top-1 rounded-lg bg-black/70 px-2 py-1 text-xs text-red-300">Remove</button>`:""}</div>`).join("")||'<p class="col-span-3 text-sm text-white/45">No photos yet.</p>'}
+async function refreshPlace(){const r=await supabase.from("places").select("*").eq("id",place.id).maybeSingle();if(r.data){place=r.data;stateNote()}}
+async function init(){
+ user=supabase?await getUser():null;
+ if(!user){location.replace("login.html?next="+encodeURIComponent("edit.html?slug="+slug));return}
+ const r=await supabase.from("places").select("*").eq("slug",slug).maybeSingle();place=r.data;
+ if(!place||place.created_by!==user.id){$("#note").textContent="This place was not found, or it is not yours to edit.";return}
+ if(place.status==="hidden"){$("#note").textContent="A moderator hid this place, so it cannot be edited. Please contact the site team.";return}
+ verified=!!(await supabase.from("profiles").select("verified").eq("id",user.id).maybeSingle()).data?.verified;
+ Object.entries(FIELDS).forEach(([id,col])=>{$("#"+id).value=place[col]??""});
+ $("#lat").value=place.latitude??"";$("#lng").value=place.longitude??"";
+ stateNote();await loadImages();$("#edit-form").classList.remove("hidden");$("#edit-form").classList.add("grid");
+ $("#view").href="place/"+encodeURIComponent(place.slug)}
+$("#choose").onclick=()=>$("#files").click();
+$("#photos").addEventListener("click",async e=>{const id=e.target.dataset.rm;if(!id||!confirm("Remove this photo?"))return;
+ const img=images.find(i=>i.id===id);const {error}=await supabase.from("place_images").delete().eq("id",id);
+ if(error){$("#photo-msg").textContent=error.message;return}
+ if(img&&place.cover_url===img.image_url){const rest=images.filter(i=>i.id!==id);await supabase.from("places").update({cover_url:rest[0]?.image_url??null}).eq("id",place.id)}
+ $("#photo-msg").textContent="Photo removed.";await loadImages();await refreshPlace()});
+$("#files").onchange=async()=>{const picked=[...$("#files").files],msg=$("#photo-msg");
+ if(images.length+picked.length>10){msg.textContent="A place can have at most 10 photos.";return}
+ const bad=picked.find(f=>!TYPES[f.type]||f.size>MAX_BYTES);if(bad){msg.textContent=`"${bad.name}" must be a JPG, PNG or WebP under 25 MB.`;return}
+ msg.textContent="Uploading...";let added=0;
+ for(const original of picked){let file;try{file=await shrink(original)}catch{continue}
+  const path=`${user.id}/${place.id}/${crypto.randomUUID()}.jpg`;
+  const up=await supabase.storage.from("place-images").upload(path,file,{upsert:false,contentType:"image/jpeg"});if(up.error)continue;
+  const {data:pub}=supabase.storage.from("place-images").getPublicUrl(path);
+  const ins=await supabase.from("place_images").insert({place_id:place.id,storage_path:path,image_url:pub.publicUrl,alt_text:place.name,created_by:user.id});
+  if(ins.error){msg.textContent=ins.error.message;break}
+  if(!place.cover_url){await supabase.from("places").update({cover_url:pub.publicUrl}).eq("id",place.id);place.cover_url=pub.publicUrl}
+  added++}
+ $("#files").value="";msg.textContent=added?`Added ${added} photo${added>1?"s":""}.`:"No photos were added.";await loadImages();await refreshPlace()};
+$("#edit-form").onsubmit=async e=>{e.preventDefault();const msg=$("#message"),before=place.status;
+ const lat=$("#lat").value,lng=$("#lng").value;
+ if(!$("#name").value.trim()){msg.textContent="Give the place a name.";return}
+ if((lat&&!(Math.abs(Number(lat))<=90))||(lng&&!(Math.abs(Number(lng))<=180))){msg.textContent="Latitude must be -90 to 90 and longitude -180 to 180.";return}
+ const payload={};Object.entries(FIELDS).forEach(([id,col])=>{payload[col]=$("#"+id).value.trim()});
+ payload.latitude=lat?Number(lat):null;payload.longitude=lng?Number(lng):null;
+ msg.textContent="Saving...";
+ const {data,error}=await supabase.from("places").update(payload).eq("id",place.id).select().single();
+ if(error){msg.textContent=error.message;return}
+ place=data;stateNote();
+ msg.textContent=before==="published"&&data.status==="pending"?"Saved. Your changes are awaiting a quick review.":"Saved.";
+ $("#view").classList.remove("hidden")};
+init();
 </script>
+
 
 <footer class="tl-footer">
   <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">

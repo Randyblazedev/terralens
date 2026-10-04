@@ -37,7 +37,10 @@ export default async function handler(req, res) {
       })
     });
     const data = await r.json().catch(() => ({}));
-    if (!r.ok) return res.status(502).json({ error: "The AI service is unavailable right now." });
+    if (!r.ok) {
+      console.error("DeepSeek error", r.status, JSON.stringify(data).slice(0, 200));
+      return res.status(503).json({ error: r.status === 402 ? "The AI assistant is paused right now. Please try again later." : "The AI assistant is unavailable right now. Please try again." });
+    }
     return res.status(200).json({ reply: data?.choices?.[0]?.message?.content || "I couldn't generate a response." });
   } catch {
     return res.status(502).json({ error: "Unable to reach the AI service." });

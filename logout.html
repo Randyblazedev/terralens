@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Terms — TerraLens</title>
+<title>Signed out — TerraLens</title>
 <meta name="description" content="Image-first place discovery and travel inspiration on TerraLens.">
 <meta property="og:title" content="Terms — TerraLens">
 <meta property="og:description" content="Image-first place discovery and travel inspiration on TerraLens.">
@@ -42,7 +43,14 @@
   </div>
 </header>
 
-<main class="tl-section"><div class="tl-shell max-w-3xl"><p class="tl-eyebrow">Legal</p><h1 class="mt-3 text-5xl font-extrabold">Terms</h1><div class="mt-8 space-y-6 text-sm leading-7 text-white/55"><p>This page is a product draft and must be replaced with final legal terms before public launch.</p><h2 class="text-xl font-bold text-white">Community content</h2><p>You must have permission to upload images and information. Do not submit misleading, unlawful or unsafe content.</p><h2 class="text-xl font-bold text-white">Place information</h2><p>TerraLens is a discovery platform. Visitors should verify access, safety, prices, opening hours and other time-sensitive details with authoritative local sources.</p></div></div></main>
+<main class="tl-section"><div class="tl-shell max-w-xl text-center"><h1 id="t" class="text-4xl font-extrabold">Signing you out...</h1><p id="s" class="mt-4 text-white/55"></p><div class="mt-8 flex flex-wrap justify-center gap-3"><a href="index.html" class="tl-btn tl-btn-primary">Back to home</a><a href="login.html" class="tl-btn tl-btn-ghost">Sign in again</a></div></div></main>
+<script type="module">
+import {supabase} from "./src/js/supabase.js";
+if(supabase)await supabase.auth.signOut();
+document.querySelector("#t").textContent="You are signed out";
+document.querySelector("#s").textContent="You can keep browsing places without an account. Sign in again to upload, like or save.";
+setTimeout(()=>location.replace("index.html"),2500);
+</script>
 
 <footer class="tl-footer">
   <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">

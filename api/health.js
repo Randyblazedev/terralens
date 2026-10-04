@@ -44,6 +44,11 @@ export default async function handler(req, res) {
   } else {
     add("Sign-in providers", false, "Could not read the sign-in settings.");
   }
+  const bal = env.DEEPSEEK_API_KEY ? await probe("https://api.deepseek.com/user/balance", { headers: { Authorization: `Bearer ${env.DEEPSEEK_API_KEY}` } }) : null;
+  if (bal?.ok) {
+    const b = await bal.json().catch(() => ({}));
+    add("DeepSeek has credit", b.is_available === true, b.is_available ? "Credit available." : "No credit. Top up your DeepSeek account. This is why the AI assistant fails.");
+  }
   add("Unsplash key works", uns?.ok === true, !uns ? "Skipped or unreachable." : uns.ok ? "Works." : `Rejected (status ${uns.status}). Check the Access Key.`);
   add("DeepSeek key works", ds?.ok === true, !ds ? "Skipped or unreachable." : ds.ok ? "Works." : `Rejected (status ${ds.status}). Check the key and your balance.`);
 

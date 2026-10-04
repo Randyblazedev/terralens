@@ -33,6 +33,7 @@
   </div>
   <div data-mobile-nav class="tl-shell hidden pb-4 lg:hidden">
     <div class="grid gap-1 rounded-2xl border border-white/10 bg-black/30 p-2">
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="index.html">Home</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="explore.html">Explore</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="collections.html">Collections</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="planner.html">Trips</a>
@@ -69,7 +70,7 @@
 </div></main>
 <script type="module">
 import {supabase} from "./src/js/supabase.js";
-import {escapeHtml} from "./src/js/app.js";
+import {escapeHtml,verifiedBadge} from "./src/js/app.js";
 const $=s=>document.querySelector(s),gate=$("#gate"),flash=m=>{$("#flash").textContent=m};
 const httpsUrl=u=>{try{const x=new URL(u);return x.protocol==="https:"?x.href:""}catch{return ""}};
 const clean=v=>String(v||"").replace(/[,()%*_\\"'`:]/g," ").trim().slice(0,80);
@@ -169,7 +170,7 @@ $("#reports").addEventListener("click",async e=>{const btn=e.target.closest("[da
 async function loadContributors(){
  const {data,error}=await supabase.rpc("admin_contributors");if(error){flash(error.message);return}
  $("#contributors").innerHTML=(data||[]).map(u=>{const ok=Number(u.approved_photos)>=100&&Number(u.approved_places)>=10&&Number(u.actioned_reports_90d)===0;
-  return `<div class="tl-card flex flex-wrap items-center justify-between gap-4 p-4" data-uid="${escapeHtml(u.id)}"><div><p class="font-bold">${escapeHtml(u.display_name||u.username||"Unnamed user")} ${u.verified?"✓":""}</p><p class="text-xs text-white/45">${Number(u.approved_photos)} approved photos · ${Number(u.approved_places)}/${Number(u.places)} places approved · ${Number(u.actioned_reports_90d)} upheld reports (90d)${ok&&!u.verified?' · <b class="text-sky-300">Eligible</b>':""}</p></div><button data-act="verify" data-v="${u.verified?"0":"1"}" class="tl-btn ${u.verified?"tl-btn-ghost":"tl-btn-primary"} !min-h-10">${u.verified?"Remove verification":"Verify"}</button></div>`}).join("")||'<p class="text-white/50">No contributors yet.</p>'}
+  return `<div class="tl-card flex flex-wrap items-center justify-between gap-4 p-4" data-uid="${escapeHtml(u.id)}"><div><p class="font-bold">${escapeHtml(u.display_name||u.username||"Unnamed user")} ${u.verified?verifiedBadge(18):""}</p><p class="text-xs text-white/45">${Number(u.approved_photos)} approved photos · ${Number(u.approved_places)}/${Number(u.places)} places approved · ${Number(u.actioned_reports_90d)} upheld reports (90d)${ok&&!u.verified?' · <b class="text-sky-300">Eligible</b>':""}</p></div><button data-act="verify" data-v="${u.verified?"0":"1"}" class="tl-btn ${u.verified?"tl-btn-ghost":"tl-btn-primary"} !min-h-10">${u.verified?"Remove verification":"Verify"}</button></div>`}).join("")||'<p class="text-white/50">No contributors yet.</p>'}
 $("#contributors").addEventListener("click",async e=>{const btn=e.target.closest('[data-act="verify"]'),row=e.target.closest("[data-uid]");if(!btn||!row)return;const on=btn.dataset.v==="1";
  if(!confirm(on?"Verify this contributor? Their new places will publish without review.":"Remove verification?"))return;
  const {error}=await supabase.from("profiles").update({verified:on,verified_at:on?new Date().toISOString():null}).eq("id",row.dataset.uid);

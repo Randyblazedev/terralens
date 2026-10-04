@@ -33,6 +33,7 @@
   </div>
   <div data-mobile-nav class="tl-shell hidden pb-4 lg:hidden">
     <div class="grid gap-1 rounded-2xl border border-white/10 bg-black/30 p-2">
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="index.html">Home</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="explore.html">Explore</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="collections.html">Collections</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="planner.html">Trips</a>
@@ -46,7 +47,7 @@
  <div id="place"></div>
 </main>
 <script type="module">
-import {supabase} from "./src/js/supabase.js";import {fallbackPlaces,escapeHtml,placeUrl} from "./src/js/app.js";
+import {supabase} from "./src/js/supabase.js";import {fallbackPlaces,escapeHtml,placeUrl,verifiedBadge} from "./src/js/app.js";
 const slug=new URLSearchParams(location.search).get("slug")||decodeURIComponent(location.pathname.match(/^\/place\/([^/]+)/)?.[1]||"");
 let place=null,images=[];
 let loadError=false;
@@ -101,8 +102,9 @@ saveBtn.onclick=async()=>{if(!isReal){status("Connect Supabase to save places.")
  saveBtn.disabled=false;
  if(r.error){status("Couldn't update your saved places. Please try again.");return}
  saved=!saved;paint();status(saved?"Saved to your places.":"Removed from your saved places.")};
+if(isReal){const {data:{user:me}}=await supabase.auth.getUser();if(me&&me.id===place.created_by)document.querySelector("#share").parentElement.insertAdjacentHTML("beforeend",`<a class="tl-btn tl-btn-ghost" href="edit.html?slug=${encodeURIComponent(place.slug)}">Edit</a>`)}
 if(place.status==="pending")document.querySelector("#contributor").textContent="This place is awaiting review and is only visible to you.";
-else if(isReal&&place.created_by){const o=await supabase.from("profiles").select("display_name,verified").eq("id",place.created_by).maybeSingle();if(o.data?.verified)document.querySelector("#contributor").textContent="✓ Verified photographer"+(o.data.display_name?" · "+o.data.display_name:"")}
+else if(isReal&&place.created_by){const o=await supabase.from("profiles").select("display_name,verified").eq("id",place.created_by).maybeSingle();if(o.data?.verified)document.querySelector("#contributor").innerHTML=verifiedBadge(18)+" Verified photographer"+(o.data.display_name?" · "+escapeHtml(o.data.display_name):"")}
 document.querySelector("#rsend").onclick=async()=>{if(!isReal){status("Reporting needs Supabase.");return}
  const {data:{user}}=await supabase.auth.getUser();if(!user){location.href="login.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);return}
  const btn=document.querySelector("#rsend");btn.disabled=true;
