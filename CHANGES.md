@@ -1,3 +1,7 @@
+# TerraLens 6.6.2: upgrading a half-set-up database
+
+If you already ran an older `schema.sql` and/or `003_admin.sql`, just run the NEW `supabase/schema.sql` once. It upgrades everything and repairs the admins table check. Tested: original schema -> old 003 file (with an edited email check) -> new schema.sql finishes with no errors and a second admin can be added.
+
 # TerraLens 6.6.1: database setup made simple and tested
 
 - **Run ONE file:** `supabase/schema.sql` already contains everything (migrations 002-005 are only for databases set up from an older version). It is now safe to run more than once.

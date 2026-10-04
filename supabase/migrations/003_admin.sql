@@ -11,6 +11,9 @@
 -- Admins are identified by a CONFIRMED account email listed in public.admins.
 -- RLS is on with no policies, so the list cannot be read or edited through the API.
 create table if not exists public.admins (email text primary key check (email = lower(email)));
+-- Repair: older copies of this file stored a wrong check; make it "emails must be lowercase".
+alter table public.admins drop constraint if exists admins_email_check;
+alter table public.admins add constraint admins_email_check check (email = lower(email));
 alter table public.admins enable row level security;
 
 create or replace function public.is_admin() returns boolean
