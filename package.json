@@ -1,13 +1,13 @@
 {
   "name": "terralens",
-  "version": "6.5.0",
+  "version": "6.5.1",
   "private": true,
   "type": "module",
   "scripts": {
     "build:css": "tailwindcss -i src/styles/tailwind.input.css -o src/styles/tailwind.css --minify",
-    "dev": "node scripts/generate-config.mjs && npm run build:css && vercel dev",
-    "build": "node scripts/generate-config.mjs && npm run build:css",
-    "vercel-build": "node scripts/generate-config.mjs && node scripts/absolute-og.mjs && npm run build:css"
+    "dev": "npm run build && vercel dev",
+    "build": "node scripts/generate-config.mjs && node scripts/absolute-og.mjs && npm run build:css && node scripts/build-public.mjs",
+    "vercel-build": "node scripts/generate-config.mjs && node scripts/absolute-og.mjs && npm run build:css && node scripts/build-public.mjs"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
