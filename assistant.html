@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TerraLens AI — TerraLens</title>
+<meta name="description" content="Image-first place discovery and travel inspiration on TerraLens.">
+<meta property="og:title" content="TerraLens AI — TerraLens">
+<meta property="og:description" content="Image-first place discovery and travel inspiration on TerraLens.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="stylesheet" href="src/styles/tailwind.css">
+<link rel="stylesheet" href="src/styles/app.css">
+</head>
+<body>
+<header class="tl-nav sticky top-0 z-50">
+  <div class="tl-shell flex h-16 items-center justify-between gap-5">
+    <a href="index.html" class="flex items-center gap-3 shrink-0"><img src="assets/terralens-mark.png" class="tl-logo" alt="TerraLens"><span class="font-display text-lg font-extrabold tracking-tight">Terra<span class="text-sky-300">Lens</span></span></a>
+    <nav class="hidden items-center gap-6 text-sm text-white/65 lg:flex">
+      <a class="hover:text-white" href="explore.html">Explore</a>
+      <a class="hover:text-white" href="collections.html">Collections</a>
+      <a class="hover:text-white" href="planner.html">Trips</a>
+      <a class="hover:text-white" href="about.html">About</a>
+    </nav>
+    <div class="flex items-center gap-2">
+      <a href="upload.html" data-upload-link class="hidden rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white/80 hover:bg-white/5 sm:inline-flex">Upload</a>
+      <a data-auth-href href="login.html" class="tl-btn tl-btn-primary !min-h-10 !px-4"><span data-auth-label>Sign in</span></a>
+      <button data-menu class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 lg:hidden" aria-label="Menu">☰</button>
+    </div>
+  </div>
+  <div data-mobile-nav class="tl-shell hidden pb-4 lg:hidden">
+    <div class="grid gap-1 rounded-2xl border border-white/10 bg-black/30 p-2">
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="explore.html">Explore</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="collections.html">Collections</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="planner.html">Trips</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="about.html">About</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="upload.html">Upload a place</a>
+    </div>
+  </div>
+</header>
+
+<main class="tl-section"><div class="tl-shell max-w-4xl"><p class="tl-eyebrow">TerraLens intelligence</p><h1 class="mt-3 text-5xl font-extrabold sm:text-7xl">Ask about a place.</h1><p class="mt-5 text-white/50">Use AI to turn travel inspiration into useful next steps. Time-sensitive facts should always be verified with official sources.</p><div id="chat" class="tl-card mt-10 min-h-[500px] p-5 sm:p-8"><div class="rounded-2xl bg-white/[.03] p-5 text-sm leading-7 text-white/55">Try: “I have two days and want nature, photography and quiet places. How should I organize my trip?”</div></div><form id="form" class="tl-glass mt-4 flex gap-2 rounded-2xl p-2"><input id="input" class="tl-input !border-0 !bg-transparent" placeholder="Ask TerraLens..."><button class="tl-btn tl-btn-primary">Send</button></form></div></main>
+<script type="module">
+import {supabase} from "./src/js/supabase.js";
+const chat=document.querySelector("#chat"),form=document.querySelector("#form"),input=document.querySelector("#input");
+form.onsubmit=async e=>{e.preventDefault();const text=input.value.trim();if(!text)return;const session=supabase?(await supabase.auth.getSession()).data.session:null;if(!session){location.href="login.html?next=assistant.html";return}chat.innerHTML+=`<div class="mt-5 ml-auto max-w-[85%] rounded-2xl bg-white p-4 text-sm text-black">${text.replace(/[<>&]/g,"")}</div>`;input.value="";chat.innerHTML+=`<div id="thinking" class="mt-5 max-w-[85%] rounded-2xl bg-white/[.04] p-4 text-sm text-white/55">Thinking...</div>`;try{const r=await fetch("/api/ai/chat",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({message:text})});const d=await r.json();document.querySelector("#thinking").outerHTML=`<div class="mt-5 max-w-[85%] whitespace-pre-wrap rounded-2xl bg-white/[.04] p-4 text-sm leading-7 text-white/60">${String(d.reply||d.error||"No response").replace(/[<>&]/g,"")}</div>`}catch{document.querySelector("#thinking").textContent="AI service is not configured yet."}};
+</script>
+
+<footer class="tl-footer">
+  <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
+    <div><div class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-xl font-extrabold">Terra<span class="text-sky-300">Lens</span></span></div><p class="mt-4 max-w-md text-sm leading-7 text-white/45">A visual place-discovery platform connecting the photo that inspires you with the context that helps you experience it.</p></div>
+    <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="planner.html">Trips</a></div></div>
+    <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div></div>
+  </div>
+  <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© 2026 TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>
+</footer>
+<script type="module">import {initNav} from "./src/js/app.js"; initNav();</script>
+
+</body></html>

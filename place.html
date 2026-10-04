@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<base href="/">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Place — TerraLens</title>
+<meta name="description" content="Image-first place discovery and travel inspiration on TerraLens.">
+<meta property="og:title" content="Place — TerraLens">
+<meta property="og:description" content="Image-first place discovery and travel inspiration on TerraLens.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="stylesheet" href="src/styles/tailwind.css">
+<link rel="stylesheet" href="src/styles/app.css">
+</head>
+<body>
+<header class="tl-nav sticky top-0 z-50">
+  <div class="tl-shell flex h-16 items-center justify-between gap-5">
+    <a href="index.html" class="flex items-center gap-3 shrink-0"><img src="assets/terralens-mark.png" class="tl-logo" alt="TerraLens"><span class="font-display text-lg font-extrabold tracking-tight">Terra<span class="text-sky-300">Lens</span></span></a>
+    <nav class="hidden items-center gap-6 text-sm text-white/65 lg:flex">
+      <a class="hover:text-white" href="explore.html">Explore</a>
+      <a class="hover:text-white" href="collections.html">Collections</a>
+      <a class="hover:text-white" href="planner.html">Trips</a>
+      <a class="hover:text-white" href="about.html">About</a>
+    </nav>
+    <div class="flex items-center gap-2">
+      <a href="upload.html" data-upload-link class="hidden rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white/80 hover:bg-white/5 sm:inline-flex">Upload</a>
+      <a data-auth-href href="login.html" class="tl-btn tl-btn-primary !min-h-10 !px-4"><span data-auth-label>Sign in</span></a>
+      <button data-menu class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 lg:hidden" aria-label="Menu">☰</button>
+    </div>
+  </div>
+  <div data-mobile-nav class="tl-shell hidden pb-4 lg:hidden">
+    <div class="grid gap-1 rounded-2xl border border-white/10 bg-black/30 p-2">
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="explore.html">Explore</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="collections.html">Collections</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="planner.html">Trips</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="about.html">About</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="upload.html">Upload a place</a>
+    </div>
+  </div>
+</header>
+
+<main class="tl-section">
+ <div id="place"></div>
+</main>
+<script type="module">
+import {supabase} from "./src/js/supabase.js";import {fallbackPlaces,escapeHtml,placeUrl} from "./src/js/app.js";
+const slug=new URLSearchParams(location.search).get("slug")||decodeURIComponent(location.pathname.match(/^\/place\/([^/]+)/)?.[1]||"");
+let place=null,images=[];
+let loadError=false;
+if(supabase){const r=await supabase.from("places").select("*").eq("slug",slug).maybeSingle();place=r.data;loadError=!!r.error;if(place){const ir=await supabase.from("place_images").select("*").eq("place_id",place.id).order("created_at");images=ir.data||[]}}
+if(!place&&!supabase)place=fallbackPlaces.find(x=>x.slug===slug)||null;
+if(!place){document.title="Place not found — TerraLens";const m=document.createElement("meta");m.name="robots";m.content="noindex";document.head.append(m);document.querySelector("#place").innerHTML=`<div class="tl-shell py-24 text-center"><h1 class="text-4xl font-extrabold">${loadError?"We couldn't load this place":"Place not found"}</h1><p class="mt-4 text-white/55">${loadError?"Please check your connection and try again.":"It may have been removed or the link is wrong."}</p><a href="explore.html" class="tl-btn tl-btn-primary mt-8">Explore places</a></div>`}else{
+const imgs=images.length?images.map(x=>x.image_url):[place.cover_url];
+const httpsUrl=u=>{try{const x=new URL(u);return x.protocol==="https:"?x.href:""}catch{return ""}};
+const credits=images.filter(x=>x.credit_name&&httpsUrl(x.credit_url));
+const affiliate=httpsUrl(place.affiliate_url);
+const photos=(images.length?images.map(i=>({id:i.id,url:i.image_url,likes:i.like_count})):[{url:place.cover_url}]).filter(x=>x.url);
+const likeBtn=p=>`<button data-like="${escapeHtml(p.id)}" aria-pressed="false" aria-label="Like this photo" class="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-2 text-sm font-bold backdrop-blur"><span data-heart aria-hidden="true">♡</span><span data-count>${Number(p.likes)||0}</span></button>`;
+document.title=`${place.name} — TerraLens`;
+document.querySelector("#place").innerHTML=`
+<div class="tl-shell">
+ <div class="grid gap-2 overflow-hidden rounded-[28px] sm:grid-cols-2 lg:grid-cols-3">
+  ${photos.map((x,i)=>`<figure class="relative ${i===0?'sm:col-span-2 lg:row-span-2':''}"><img src="${escapeHtml(x.url)}" class="w-full object-cover ${i===0?'h-[320px] sm:h-[420px] lg:h-full':'aspect-[4/3]'}" alt="${escapeHtml(place.name)}" ${i?'loading="lazy"':''}>${x.id&&place.status==="published"?likeBtn(x):""}</figure>`).join("")}
+ </div>
+ ${credits.length?`<p class="mt-3 text-xs text-white/40">Photos: ${credits.map(c=>`<a class="underline" target="_blank" rel="noopener" href="${escapeHtml(httpsUrl(c.credit_url))}">${escapeHtml(c.credit_name)}</a>`).join(", ")} on <a class="underline" target="_blank" rel="noopener" href="https://unsplash.com/?utm_source=terralens&utm_medium=referral">Unsplash</a></p>`:""}
+ <div class="mt-10 grid gap-10 lg:grid-cols-[1fr_360px]">
+  <div>
+   <div class="flex flex-wrap items-center gap-3 text-xs font-bold uppercase tracking-[.16em] text-sky-300"><span>${escapeHtml(place.category||"Place")}</span><span>•</span><span>${escapeHtml(place.country||"")}</span></div>
+   <h1 class="mt-4 text-5xl font-extrabold tracking-tight sm:text-7xl">${escapeHtml(place.name)}</h1>
+   <p class="mt-6 max-w-3xl text-lg leading-8 text-white/60">${escapeHtml(place.description||"")}</p>
+   <div class="mt-8 flex flex-wrap gap-3"><button id="save" aria-pressed="false" class="tl-btn tl-btn-ghost">♡ Save</button><button id="trip" class="tl-btn tl-btn-primary">＋ Add to trip</button><button id="share" class="tl-btn tl-btn-ghost">Share</button>${affiliate?`<a href="${escapeHtml(affiliate)}" target="_blank" rel="sponsored nofollow noopener" class="tl-btn tl-btn-primary">Plan your trip ↗</a>`:""}</div>${place.sponsored||affiliate?`<p class="mt-3 text-xs text-white/40">${place.sponsored?`Sponsored${place.sponsor_name?` by ${escapeHtml(place.sponsor_name)}`:""}. `:""}${affiliate?"Some links are affiliate links; we may earn a commission at no cost to you.":""}</p>`:""}<p id="status" role="status" aria-live="polite" class="mt-3 min-h-5 text-sm text-white/55"></p><p id="contributor" class="mt-1 text-sm text-white/55"></p><details id="report" class="mt-4 max-w-md"><summary class="cursor-pointer text-sm text-white/55 hover:text-white">Report this place</summary><div class="mt-3 grid gap-3"><select id="rreason" class="tl-input" aria-label="Reason"><option value="copyright">Copyright / photo not shared with permission</option><option value="inappropriate">Inappropriate content</option><option value="spam">Spam or fake place</option><option value="wrong_info">Wrong information</option><option value="other">Other</option></select><textarea id="rdetails" class="tl-input !min-h-24" maxlength="500" placeholder="Details (optional)" aria-label="Details"></textarea><button id="rsend" class="tl-btn tl-btn-primary">Send report</button></div></details>
+   <div class="mt-12 grid gap-4 sm:grid-cols-2"><div class="tl-card p-5"><p class="tl-eyebrow">When</p><h3 class="mt-3 font-bold">Best season</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(place.best_season||"Community information coming soon.")}</p><h3 class="mt-5 font-bold">Best time</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(place.best_time||"Ask the community or check local conditions.")}</p></div><div class="tl-card p-5"><p class="tl-eyebrow">Getting there</p><h3 class="mt-3 font-bold">Access</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(place.access_info||"Access details coming soon.")}</p><h3 class="mt-5 font-bold">Entry</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(place.entry_fee||"Check the official/local source before visiting.")}</p></div></div>
+   ${place.latitude!=null&&place.longitude!=null?`<div class="mt-6 overflow-hidden rounded-3xl border border-white/10"><iframe title="Map" class="h-[360px] w-full border-0" src="https://www.openstreetmap.org/export/embed.html?bbox=${place.longitude-.02}%2C${place.latitude-.02}%2C${place.longitude+.02}%2C${place.latitude+.02}&layer=mapnik&marker=${place.latitude}%2C${place.longitude}"></iframe></div>`:""}
+  </div>
+  <aside class="lg:pt-16"><div class="tl-card p-6"><p class="tl-eyebrow">Place details</p><div class="mt-5 grid gap-5 text-sm"><div><span class="text-white/35">Location</span><p class="mt-1 font-semibold">${escapeHtml([place.city,place.region,place.country].filter(Boolean).join(", ")||"Not specified")}</p></div><div><span class="text-white/35">Category</span><p class="mt-1 font-semibold">${escapeHtml(place.category||"Place")}</p></div><div><span class="text-white/35">Duration</span><p class="mt-1 font-semibold">${escapeHtml(place.duration||"Not specified")}</p></div><div><span class="text-white/35">Difficulty</span><p class="mt-1 font-semibold">${escapeHtml(place.difficulty||"Not specified")}</p></div></div></div></aside>
+ </div>
+</div>`;
+const status=m=>{document.querySelector("#status").textContent=m};
+const head=(tag,attrs)=>{const el=document.createElement(tag);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));document.head.append(el);return el};
+const pageUrl=location.origin+"/place/"+encodeURIComponent(place.slug||slug);
+const blurb=(place.description||"").slice(0,155);
+const upsert=(sel,tag,attrs,key,val)=>{const el=document.querySelector(sel)||head(tag,attrs);el.setAttribute(key,val)};
+upsert('link[rel="canonical"]',"link",{rel:"canonical"},"href",pageUrl);
+upsert('meta[name="description"]',"meta",{name:"description"},"content",blurb);
+[["og:title",`${place.name} — TerraLens`],["og:description",blurb],["og:type","article"],["og:url",pageUrl],["og:image",imgs[0]||""]].forEach(([p,c])=>upsert(`meta[property="${p}"]`,"meta",{property:p},"content",c));
+if(!document.querySelector('script[type="application/ld+json"]')){const ld=head("script",{type:"application/ld+json"});
+ld.textContent=JSON.stringify({"@context":"https://schema.org","@type":"TouristAttraction",name:place.name,description:place.description,image:imgs.filter(Boolean),...(place.latitude!=null&&place.longitude!=null?{geo:{"@type":"GeoCoordinates",latitude:place.latitude,longitude:place.longitude}}:{}),address:{"@type":"PostalAddress",addressLocality:place.city||undefined,addressRegion:place.region||undefined,addressCountry:place.country||undefined}})}
+document.querySelector("#share").onclick=async()=>{try{await navigator.clipboard.writeText(location.href);status("Place link copied.")}catch{status(location.href)}};
+document.querySelector("#trip").onclick=()=>location.href="planner.html?place="+encodeURIComponent(place.slug);
+const saveBtn=document.querySelector("#save");let saved=false;
+const paint=()=>{saveBtn.textContent=saved?"♥ Saved":"♡ Save";saveBtn.setAttribute("aria-pressed",String(saved))};
+const isReal=supabase&&!String(place.id).startsWith("seed-");
+if(isReal){const {data:{user}}=await supabase.auth.getUser();if(user){const r=await supabase.from("saves").select("place_id").eq("user_id",user.id).eq("place_id",place.id).maybeSingle();saved=!!r.data;paint()}}
+saveBtn.onclick=async()=>{if(!isReal){status("Connect Supabase to save places.");return}
+ const {data:{user}}=await supabase.auth.getUser();if(!user){location.href="login.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);return}
+ saveBtn.disabled=true;
+ const r=saved?await supabase.from("saves").delete().eq("user_id",user.id).eq("place_id",place.id):await supabase.from("saves").upsert({user_id:user.id,place_id:place.id});
+ saveBtn.disabled=false;
+ if(r.error){status("Couldn't update your saved places. Please try again.");return}
+ saved=!saved;paint();status(saved?"Saved to your places.":"Removed from your saved places.")};
+if(place.status==="pending")document.querySelector("#contributor").textContent="This place is awaiting review and is only visible to you.";
+else if(isReal&&place.created_by){const o=await supabase.from("profiles").select("display_name,verified").eq("id",place.created_by).maybeSingle();if(o.data?.verified)document.querySelector("#contributor").textContent="✓ Verified photographer"+(o.data.display_name?" · "+o.data.display_name:"")}
+document.querySelector("#rsend").onclick=async()=>{if(!isReal){status("Reporting needs Supabase.");return}
+ const {data:{user}}=await supabase.auth.getUser();if(!user){location.href="login.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);return}
+ const btn=document.querySelector("#rsend");btn.disabled=true;
+ const {error}=await supabase.from("reports").insert({target_type:"place",target_id:place.id,reason:document.querySelector("#rreason").value,details:document.querySelector("#rdetails").value.trim().slice(0,500)||null});
+ btn.disabled=false;
+ if(error){status(error.code==="23505"?"You already reported this place.":/row-level security/i.test(error.message)?"Please confirm your email before reporting.":error.message);return}
+ document.querySelector("#report").open=false;status("Thanks. We will review your report.")};
+const likeBtns=[...document.querySelectorAll("[data-like]")];
+const paintLike=(b,on)=>{b.setAttribute("aria-pressed",String(on));b.querySelector("[data-heart]").textContent=on?"♥":"♡"};
+if(isReal&&likeBtns.length){const {data:{user}}=await supabase.auth.getUser();if(user){const r=await supabase.from("image_likes").select("image_id").in("image_id",likeBtns.map(b=>b.dataset.like));const mine=new Set((r.data||[]).map(x=>x.image_id));likeBtns.forEach(b=>paintLike(b,mine.has(b.dataset.like)))}}
+likeBtns.forEach(b=>b.onclick=async()=>{if(!isReal)return;
+ const {data:{user}}=await supabase.auth.getUser();if(!user){location.href="login.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);return}
+ const was=b.getAttribute("aria-pressed")==="true",c=b.querySelector("[data-count]");b.disabled=true;
+ const r=was?await supabase.from("image_likes").delete().eq("user_id",user.id).eq("image_id",b.dataset.like):await supabase.from("image_likes").insert({user_id:user.id,image_id:b.dataset.like});
+ b.disabled=false;
+ if(r.error){if(r.error.code==="23505")paintLike(b,true);else status("Couldn't update your like. Please try again.");return}
+ paintLike(b,!was);c.textContent=Math.max(0,Number(c.textContent)+(was?-1:1))});
+}
+</script>
+
+<footer class="tl-footer">
+  <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
+    <div><div class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-xl font-extrabold">Terra<span class="text-sky-300">Lens</span></span></div><p class="mt-4 max-w-md text-sm leading-7 text-white/45">A visual place-discovery platform connecting the photo that inspires you with the context that helps you experience it.</p></div>
+    <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="planner.html">Trips</a></div></div>
+    <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div></div>
+  </div>
+  <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© 2026 TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>
+</footer>
+<script type="module">import {initNav} from "./src/js/app.js"; initNav();</script>
+
+</body></html>

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in — TerraLens</title>
+<meta name="description" content="Image-first place discovery and travel inspiration on TerraLens.">
+<meta property="og:title" content="Sign in — TerraLens">
+<meta property="og:description" content="Image-first place discovery and travel inspiration on TerraLens.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="stylesheet" href="src/styles/tailwind.css">
+<link rel="stylesheet" href="src/styles/app.css">
+</head>
+<body>
+<header class="tl-nav sticky top-0 z-50">
+  <div class="tl-shell flex h-16 items-center justify-between gap-5">
+    <a href="index.html" class="flex items-center gap-3 shrink-0"><img src="assets/terralens-mark.png" class="tl-logo" alt="TerraLens"><span class="font-display text-lg font-extrabold tracking-tight">Terra<span class="text-sky-300">Lens</span></span></a>
+    <nav class="hidden items-center gap-6 text-sm text-white/65 lg:flex">
+      <a class="hover:text-white" href="explore.html">Explore</a>
+      <a class="hover:text-white" href="collections.html">Collections</a>
+      <a class="hover:text-white" href="planner.html">Trips</a>
+      <a class="hover:text-white" href="about.html">About</a>
+    </nav>
+    <div class="flex items-center gap-2">
+      <a href="upload.html" data-upload-link class="hidden rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white/80 hover:bg-white/5 sm:inline-flex">Upload</a>
+      <a data-auth-href href="login.html" class="tl-btn tl-btn-primary !min-h-10 !px-4"><span data-auth-label>Sign in</span></a>
+      <button data-menu class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 lg:hidden" aria-label="Menu">☰</button>
+    </div>
+  </div>
+  <div data-mobile-nav class="tl-shell hidden pb-4 lg:hidden">
+    <div class="grid gap-1 rounded-2xl border border-white/10 bg-black/30 p-2">
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="explore.html">Explore</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="collections.html">Collections</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="planner.html">Trips</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="about.html">About</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="upload.html">Upload a place</a>
+    </div>
+  </div>
+</header>
+
+<main class="min-h-[calc(100vh-64px)]"><div class="grid min-h-[calc(100vh-64px)] lg:grid-cols-2">
+<section class="relative hidden overflow-hidden lg:block"><img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1800&q=90" class="absolute inset-0 h-full w-full object-cover" alt=""><div class="absolute inset-0 bg-black/45"></div><div class="relative flex h-full flex-col justify-between p-12"><div class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo-lg" alt=""><span class="font-display text-2xl font-extrabold">Terra<span class="text-sky-300">Lens</span></span></div><div><span class="rounded-full border border-white/20 bg-black/20 px-3 py-2 text-xs font-bold uppercase tracking-[.2em]">Welcome to TerraLens</span><h1 class="mt-6 max-w-xl text-5xl font-extrabold">Keep the places that make you want to go.</h1><p class="mt-5 max-w-lg text-white/65">Save places, build collections, contribute photography and turn inspiration into trips.</p></div></div></section>
+<section class="flex items-center justify-center p-6 sm:p-10"><div class="w-full max-w-md"><img src="assets/terralens-mark.png" class="tl-logo-lg lg:hidden" alt=""><p class="tl-eyebrow mt-8 lg:mt-0">Your TerraLens</p><h2 class="mt-3 text-4xl font-extrabold">Sign in with Google.</h2><p class="mt-3 text-white/50">One tap, no password. We only use your name, email and photo to create your profile.</p><button id="google" class="tl-btn tl-btn-primary mt-8 w-full">Continue with Google</button><p id="msg" role="status" aria-live="polite" class="mt-4 min-h-5 text-sm text-white/55"></p><p class="mt-6 text-xs text-white/35">By continuing you agree to the <a class="underline" href="terms.html">Terms</a> and <a class="underline" href="privacy.html">Privacy Policy</a>.</p></div></section>
+</div></main>
+<script type="module">
+import {supabase,ensureProfile} from "./src/js/supabase.js";import {safeNext} from "./src/js/utils.js";
+const msg=document.querySelector("#msg"),KEY="tl_next",params=new URLSearchParams(location.search);
+const next=safeNext(params.get("next")||sessionStorage.getItem(KEY));
+if(params.get("error_description"))msg.textContent=params.get("error_description");
+if(supabase){const {data:{session}}=await supabase.auth.getSession();if(session){await ensureProfile(session.user);sessionStorage.removeItem(KEY);location.replace(next)}}
+document.querySelector("#google").onclick=async()=>{if(!supabase){msg.textContent="Configure Supabase first.";return}
+ sessionStorage.setItem(KEY,next);
+ const {error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+"/login.html"}});
+ if(error)msg.textContent=error.message};
+</script>
+
+<footer class="tl-footer">
+  <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
+    <div><div class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-xl font-extrabold">Terra<span class="text-sky-300">Lens</span></span></div><p class="mt-4 max-w-md text-sm leading-7 text-white/45">A visual place-discovery platform connecting the photo that inspires you with the context that helps you experience it.</p></div>
+    <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="planner.html">Trips</a></div></div>
+    <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div></div>
+  </div>
+  <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© 2026 TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>
+</footer>
+<script type="module">import {initNav} from "./src/js/app.js"; initNav();</script>
+
+</body></html>

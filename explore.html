@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Explore Places — TerraLens</title>
+<meta name="description" content="Image-first place discovery and travel inspiration on TerraLens.">
+<meta property="og:title" content="Explore Places — TerraLens">
+<meta property="og:description" content="Image-first place discovery and travel inspiration on TerraLens.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="stylesheet" href="src/styles/tailwind.css">
+<link rel="stylesheet" href="src/styles/app.css">
+</head>
+<body>
+<header class="tl-nav sticky top-0 z-50">
+  <div class="tl-shell flex h-16 items-center justify-between gap-5">
+    <a href="index.html" class="flex items-center gap-3 shrink-0"><img src="assets/terralens-mark.png" class="tl-logo" alt="TerraLens"><span class="font-display text-lg font-extrabold tracking-tight">Terra<span class="text-sky-300">Lens</span></span></a>
+    <nav class="hidden items-center gap-6 text-sm text-white/65 lg:flex">
+      <a class="hover:text-white" href="explore.html">Explore</a>
+      <a class="hover:text-white" href="collections.html">Collections</a>
+      <a class="hover:text-white" href="planner.html">Trips</a>
+      <a class="hover:text-white" href="about.html">About</a>
+    </nav>
+    <div class="flex items-center gap-2">
+      <a href="upload.html" data-upload-link class="hidden rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white/80 hover:bg-white/5 sm:inline-flex">Upload</a>
+      <a data-auth-href href="login.html" class="tl-btn tl-btn-primary !min-h-10 !px-4"><span data-auth-label>Sign in</span></a>
+      <button data-menu class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 lg:hidden" aria-label="Menu">☰</button>
+    </div>
+  </div>
+  <div data-mobile-nav class="tl-shell hidden pb-4 lg:hidden">
+    <div class="grid gap-1 rounded-2xl border border-white/10 bg-black/30 p-2">
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="explore.html">Explore</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="collections.html">Collections</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="planner.html">Trips</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="about.html">About</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="upload.html">Upload a place</a>
+    </div>
+  </div>
+</header>
+
+<main class="tl-section">
+ <div class="tl-shell">
+  <div class="max-w-3xl"><p class="tl-eyebrow">Explore</p><h1 class="mt-3 text-4xl font-extrabold sm:text-6xl">Places through a new lens.</h1><p class="mt-5 leading-7 text-white/55">Search the community, browse categories, or start with a place you already have in mind.</p></div>
+  <div class="mt-10 grid gap-3 md:grid-cols-[1fr_180px_180px_auto]">
+   <input id="q" class="tl-input" placeholder="Search places, countries, regions...">
+   <select id="category" class="tl-input"><option value="">All categories</option><option>Waterfall</option><option>Mountain</option><option>Beach</option><option>Lake</option><option>Forest</option><option>National Park</option><option>Culture</option><option>Viewpoint</option><option>Other</option></select>
+   <input id="country" class="tl-input" placeholder="Country">
+   <button id="search" class="tl-btn tl-btn-primary">Search</button>
+  </div>
+  <div id="status" class="mt-8 text-sm text-white/45"></div>
+  <div id="grid" class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+  <div class="mt-12 flex justify-center"><a href="upload.html" class="tl-btn tl-btn-ghost">Can't find it? Upload the place →</a></div>
+ </div>
+</main>
+<script type="module">
+import {queryPlaces,card} from "./src/js/app.js";
+const params=new URLSearchParams(location.search);
+const q=document.querySelector("#q"),cat=document.querySelector("#category"),country=document.querySelector("#country");
+q.value=params.get("q")||"";cat.value=params.get("category")||"";country.value=params.get("country")||"";
+async function run(){document.querySelector("#status").textContent="Finding places...";const data=await queryPlaces({q:q.value,category:cat.value,country:country.value});document.querySelector("#status").textContent=data.length?`${data.length} places found`:"No places found yet.";document.querySelector("#grid").innerHTML=data.map(card).join("")}
+document.querySelector("#search").onclick=run;run();
+</script>
+
+<footer class="tl-footer">
+  <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
+    <div><div class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-xl font-extrabold">Terra<span class="text-sky-300">Lens</span></span></div><p class="mt-4 max-w-md text-sm leading-7 text-white/45">A visual place-discovery platform connecting the photo that inspires you with the context that helps you experience it.</p></div>
+    <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="planner.html">Trips</a></div></div>
+    <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div></div>
+  </div>
+  <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© 2026 TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>
+</footer>
+<script type="module">import {initNav} from "./src/js/app.js"; initNav();</script>
+
+</body></html>

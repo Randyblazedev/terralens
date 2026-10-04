@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Upload a Place — TerraLens</title>
+<meta name="description" content="Image-first place discovery and travel inspiration on TerraLens.">
+<meta property="og:title" content="Upload a Place — TerraLens">
+<meta property="og:description" content="Image-first place discovery and travel inspiration on TerraLens.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="stylesheet" href="src/styles/tailwind.css">
+<link rel="stylesheet" href="src/styles/app.css">
+</head>
+<body>
+<header class="tl-nav sticky top-0 z-50">
+  <div class="tl-shell flex h-16 items-center justify-between gap-5">
+    <a href="index.html" class="flex items-center gap-3 shrink-0"><img src="assets/terralens-mark.png" class="tl-logo" alt="TerraLens"><span class="font-display text-lg font-extrabold tracking-tight">Terra<span class="text-sky-300">Lens</span></span></a>
+    <nav class="hidden items-center gap-6 text-sm text-white/65 lg:flex">
+      <a class="hover:text-white" href="explore.html">Explore</a>
+      <a class="hover:text-white" href="collections.html">Collections</a>
+      <a class="hover:text-white" href="planner.html">Trips</a>
+      <a class="hover:text-white" href="about.html">About</a>
+    </nav>
+    <div class="flex items-center gap-2">
+      <a href="upload.html" data-upload-link class="hidden rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white/80 hover:bg-white/5 sm:inline-flex">Upload</a>
+      <a data-auth-href href="login.html" class="tl-btn tl-btn-primary !min-h-10 !px-4"><span data-auth-label>Sign in</span></a>
+      <button data-menu class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 lg:hidden" aria-label="Menu">☰</button>
+    </div>
+  </div>
+  <div data-mobile-nav class="tl-shell hidden pb-4 lg:hidden">
+    <div class="grid gap-1 rounded-2xl border border-white/10 bg-black/30 p-2">
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="explore.html">Explore</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="collections.html">Collections</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="planner.html">Trips</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="about.html">About</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="upload.html">Upload a place</a>
+    </div>
+  </div>
+</header>
+
+<main class="tl-section">
+ <div class="tl-shell max-w-5xl">
+  <div class="max-w-2xl"><p class="tl-eyebrow">Create a place</p><h1 class="mt-3 text-4xl font-extrabold sm:text-6xl">Give a place a lens.</h1><p class="mt-5 leading-7 text-white/55">Upload the image that makes someone stop scrolling, then give the place enough context to make discovery useful.</p></div>
+  <form id="upload-form" class="mt-12 grid gap-8 lg:grid-cols-[.85fr_1.15fr]">
+   <div>
+    <div id="drop" class="flex min-h-[420px] cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-white/15 bg-white/[.02] p-8 text-center">
+      <input id="files" type="file" accept="image/*" multiple class="hidden">
+      <div class="text-5xl">📸</div><h2 class="mt-5 text-xl font-bold">Drop your photos here</h2><p class="mt-2 text-sm text-white/45">JPG, PNG or WebP. Add several photos to tell the story.</p><button type="button" id="choose" class="tl-btn tl-btn-ghost mt-6">Choose photos</button>
+      <div id="previews" class="mt-7 grid w-full grid-cols-3 gap-2"></div>
+    </div>
+   </div>
+   <div class="tl-card p-6 sm:p-8">
+    <label class="block text-sm font-bold">Place name<input id="name" required class="tl-input mt-2" placeholder="e.g. Mount Cameroon"></label>
+    <label class="mt-5 block text-sm font-bold">Description<textarea id="description" required class="tl-input tl-textarea mt-2" placeholder="What makes this place worth discovering?"></textarea></label>
+    <div class="mt-5 grid gap-4 sm:grid-cols-2">
+      <label class="text-sm font-bold">Country<input id="country" class="tl-input mt-2" placeholder="Cameroon"></label>
+      <label class="text-sm font-bold">Region / state<input id="region" class="tl-input mt-2" placeholder="South-West"></label>
+      <label class="text-sm font-bold">City / area<input id="city" class="tl-input mt-2" placeholder="Buea"></label>
+      <label class="text-sm font-bold">Category<select id="category" class="tl-input mt-2"><option>Waterfall</option><option>Mountain</option><option>Beach</option><option>Lake</option><option>Forest</option><option>National Park</option><option>Culture</option><option>Viewpoint</option><option>Other</option></select></label>
+      <label class="text-sm font-bold">Latitude<input id="lat" type="number" step="any" class="tl-input mt-2" placeholder="Optional"></label>
+      <label class="text-sm font-bold">Longitude<input id="lng" type="number" step="any" class="tl-input mt-2" placeholder="Optional"></label>
+      <label class="text-sm font-bold">Best season<input id="season" class="tl-input mt-2" placeholder="e.g. November–February"></label>
+      <label class="text-sm font-bold">Best time<input id="time" class="tl-input mt-2" placeholder="e.g. Early morning"></label>
+      <label class="text-sm font-bold">Entry fee<input id="fee" class="tl-input mt-2" placeholder="Free / amount / varies"></label>
+      <label class="text-sm font-bold">Access<input id="access" class="tl-input mt-2" placeholder="How do people reach it?"></label>
+    </div>
+    <button class="tl-btn tl-btn-primary mt-7 w-full">Publish place</button>
+    <p id="message" class="mt-4 text-sm text-white/50"></p>
+   </div>
+  </form>
+ </div>
+</main>
+<script type="module">
+import {supabase,getUser,ensureProfile} from "./src/js/supabase.js";
+import {slugify} from "./src/js/app.js";
+const files=document.querySelector("#files"),drop=document.querySelector("#drop"),previews=document.querySelector("#previews");
+document.querySelector("#choose").onclick=()=>files.click();drop.onclick=e=>{if(e.target===drop)files.click()};drop.setAttribute("role","button");drop.setAttribute("aria-label","Choose photos to upload");drop.tabIndex=0;drop.onkeydown=e=>{if(e.target===drop&&(e.key==="Enter"||e.key===" ")){e.preventDefault();files.click()}};
+const TYPES={"image/jpeg":"jpg","image/png":"png","image/webp":"webp"},MAX_BYTES=25*1024*1024;
+async function shrink(file,max=2000){let bmp;try{bmp=await createImageBitmap(file,{imageOrientation:"from-image"})}catch{bmp=await createImageBitmap(file)}
+ const s=Math.min(1,max/Math.max(bmp.width,bmp.height)),c=document.createElement("canvas");c.width=Math.round(bmp.width*s);c.height=Math.round(bmp.height*s);
+ const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(bmp,0,0,c.width,c.height);bmp.close?.();
+ const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",0.85));if(!blob)throw new Error("encode failed");return blob}
+files.onchange=()=>{previews.innerHTML=[...files.files].slice(0,6).map(f=>`<img src="${URL.createObjectURL(f)}" class="aspect-square w-full rounded-xl object-cover">`).join("")};
+["dragenter","dragover"].forEach(x=>drop.addEventListener(x,e=>{e.preventDefault();drop.classList.add("drop-active")}));
+["dragleave","drop"].forEach(x=>drop.addEventListener(x,e=>{e.preventDefault();drop.classList.remove("drop-active")}));
+drop.addEventListener("drop",e=>{files.files=e.dataTransfer.files;files.dispatchEvent(new Event("change"))});
+document.querySelector("#upload-form").onsubmit=async e=>{
+ e.preventDefault();const msg=document.querySelector("#message");msg.textContent="Checking your account...";
+ const user=await getUser();if(!user){location.href="login.html?next=upload.html";return}
+ if(!user.email_confirmed_at){msg.textContent="Your account email is not verified. Please sign in with Google to upload.";return}
+ if(!supabase){msg.textContent="Supabase is not configured. Add your environment variables first.";return}
+ if(!files.files.length){msg.textContent="Add at least one photo.";return}
+ const picked=[...files.files].slice(0,10);const bad=picked.find(f=>!TYPES[f.type]||f.size>MAX_BYTES);if(bad){msg.textContent=`"${bad.name}" must be a JPG, PNG or WebP under 25 MB (it is resized automatically).`;return}
+ await ensureProfile(user);
+ const name=document.querySelector("#name").value.trim();if(!name){msg.textContent="Give the place a name.";return}const lat=document.querySelector("#lat").value,lng=document.querySelector("#lng").value;if((lat&&!(Math.abs(Number(lat))<=90))||(lng&&!(Math.abs(Number(lng))<=180))){msg.textContent="Latitude must be -90 to 90 and longitude -180 to 180.";return}const slug=(slugify(name)||"place")+"-"+crypto.randomUUID().slice(0,8);
+ const place={slug,name,description:document.querySelector("#description").value.trim(),country:document.querySelector("#country").value.trim(),region:document.querySelector("#region").value.trim(),city:document.querySelector("#city").value.trim(),category:document.querySelector("#category").value,latitude:document.querySelector("#lat").value?Number(document.querySelector("#lat").value):null,longitude:document.querySelector("#lng").value?Number(document.querySelector("#lng").value):null,best_season:document.querySelector("#season").value.trim(),best_time:document.querySelector("#time").value.trim(),entry_fee:document.querySelector("#fee").value.trim(),access_info:document.querySelector("#access").value.trim(),created_by:user.id,status:"published"};
+ msg.textContent="Creating place...";
+ const {data,error}=await supabase.from("places").insert(place).select().single();if(error){msg.textContent=error.message;return}
+ let firstUrl="";
+ for(const original of picked){let file;try{file=await shrink(original)}catch{continue}const ext="jpg";const path=`${user.id}/${data.id}/${crypto.randomUUID()}.${ext}`;const up=await supabase.storage.from("place-images").upload(path,file,{upsert:false,contentType:"image/jpeg"});if(up.error)continue;const {data:pub}=supabase.storage.from("place-images").getPublicUrl(path);if(!firstUrl)firstUrl=pub.publicUrl;await supabase.from("place_images").insert({place_id:data.id,storage_path:path,image_url:pub.publicUrl,alt_text:name,created_by:user.id})}
+ if(!firstUrl){await supabase.from("places").delete().eq("id",data.id);msg.textContent="Photo upload failed, so the place was not created. Please try again.";return}
+ await supabase.from("places").update({cover_url:firstUrl}).eq("id",data.id);
+ if(data.status==="pending"){msg.textContent="Thanks! Your place was submitted and will appear after review.";setTimeout(()=>location.href="profile.html",2500);return}
+ location.href=`place/${encodeURIComponent(data.slug)}`;
+};
+</script>
+
+<footer class="tl-footer">
+  <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
+    <div><div class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-xl font-extrabold">Terra<span class="text-sky-300">Lens</span></span></div><p class="mt-4 max-w-md text-sm leading-7 text-white/45">A visual place-discovery platform connecting the photo that inspires you with the context that helps you experience it.</p></div>
+    <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="planner.html">Trips</a></div></div>
+    <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div></div>
+  </div>
+  <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© 2026 TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>
+</footer>
+<script type="module">import {initNav} from "./src/js/app.js"; initNav();</script>
+
+</body></html>

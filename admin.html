@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — TerraLens</title>
+
+<meta property="og:title" content="Saved Places — TerraLens">
+<meta property="og:description" content="Image-first place discovery and travel inspiration on TerraLens.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="stylesheet" href="src/styles/tailwind.css">
+<link rel="stylesheet" href="src/styles/app.css">
+</head>
+<body>
+<header class="tl-nav sticky top-0 z-50">
+  <div class="tl-shell flex h-16 items-center justify-between gap-5">
+    <a href="index.html" class="flex items-center gap-3 shrink-0"><img src="assets/terralens-mark.png" class="tl-logo" alt="TerraLens"><span class="font-display text-lg font-extrabold tracking-tight">Terra<span class="text-sky-300">Lens</span></span></a>
+    <nav class="hidden items-center gap-6 text-sm text-white/65 lg:flex">
+      <a class="hover:text-white" href="explore.html">Explore</a>
+      <a class="hover:text-white" href="collections.html">Collections</a>
+      <a class="hover:text-white" href="planner.html">Trips</a>
+      <a class="hover:text-white" href="about.html">About</a>
+    </nav>
+    <div class="flex items-center gap-2">
+      <a href="upload.html" data-upload-link class="hidden rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white/80 hover:bg-white/5 sm:inline-flex">Upload</a>
+      <a data-auth-href href="login.html" class="tl-btn tl-btn-primary !min-h-10 !px-4"><span data-auth-label>Sign in</span></a>
+      <button data-menu class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 lg:hidden" aria-label="Menu">☰</button>
+    </div>
+  </div>
+  <div data-mobile-nav class="tl-shell hidden pb-4 lg:hidden">
+    <div class="grid gap-1 rounded-2xl border border-white/10 bg-black/30 p-2">
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="explore.html">Explore</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="collections.html">Collections</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="planner.html">Trips</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="about.html">About</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="upload.html">Upload a place</a>
+    </div>
+  </div>
+</header>
+
+<main class="tl-section"><div class="tl-shell">
+<p class="tl-eyebrow">Admin</p><h1 class="mt-3 text-4xl font-extrabold sm:text-5xl">Control panel</h1>
+<p id="gate" role="status" class="mt-6 text-white/55">Checking access...</p>
+<div id="app" class="hidden">
+ <div id="stats" class="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-5"></div>
+ <div class="mt-10 flex flex-wrap gap-2" role="tablist">
+  <button id="tab-places" role="tab" class="tl-btn tl-btn-primary !min-h-10">Places</button>
+  <button id="tab-reports" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Reports</button>
+  <button id="tab-contributors" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Contributors</button>
+  <button id="tab-comments" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Comments</button>
+ </div>
+ <p id="flash" role="status" aria-live="polite" class="mt-4 min-h-5 text-sm text-sky-300"></p>
+ <section id="places-panel" class="mt-4">
+  <div class="grid gap-3 sm:grid-cols-[1fr_180px]">
+   <input id="q" class="tl-input" type="search" placeholder="Search name, country, category" aria-label="Search places">
+   <select id="status" class="tl-input" aria-label="Filter by status"><option value="">All statuses</option><option>pending</option><option>published</option><option>draft</option><option>hidden</option></select>
+  </div>
+  <div id="places" class="mt-6 grid gap-4"></div>
+ </section>
+ <section id="reports-panel" class="mt-4 hidden"><div id="reports" class="grid gap-3"></div></section>
+ <section id="contributors-panel" class="mt-4 hidden"><p class="mb-4 text-sm text-white/50">Eligible = 100+ approved photos, 10+ approved places, no upheld reports in 90 days. You decide who to verify.</p><div id="contributors" class="grid gap-3"></div></section>
+ <section id="comments-panel" class="mt-4 hidden"><div id="comments" class="grid gap-3"></div></section>
+</div>
+</div></main>
+<script type="module">
+import {supabase} from "./src/js/supabase.js";
+import {escapeHtml} from "./src/js/app.js";
+const $=s=>document.querySelector(s),gate=$("#gate"),flash=m=>{$("#flash").textContent=m};
+const httpsUrl=u=>{try{const x=new URL(u);return x.protocol==="https:"?x.href:""}catch{return ""}};
+const clean=v=>String(v||"").replace(/[,()%*_\\"'`:]/g," ").trim().slice(0,80);
+let session=null;
+async function guard(){
+ if(!supabase){gate.textContent="Configure Supabase first.";return false}
+ session=(await supabase.auth.getSession()).data.session;
+ if(!session){location.href="login.html?next=admin.html";return false}
+ const {data}=await supabase.rpc("is_admin");
+ if(data!==true){gate.textContent="You don't have access to this page.";return false}
+ gate.classList.add("hidden");$("#app").classList.remove("hidden");return true}
+async function stats(){
+ const count=async(t,f)=>{let q=supabase.from(t).select("*",{count:"exact",head:true});if(f)q=f(q);return (await q).count??0};
+ const st=v=>q=>q.eq("status",v);
+ const [pend,pub,hid,users,reports]=await Promise.all([count("places",st("pending")),count("places",st("published")),count("places",st("hidden")),count("profiles"),count("reports",st("open"))]);
+ $("#stats").innerHTML=[["Pending",pend],["Published",pub],["Hidden",hid],["Users",users],["Open reports",reports]].map(([k,v])=>`<div class="tl-card p-4"><p class="tl-eyebrow">${k}</p><p class="mt-2 text-3xl font-extrabold">${v}</p></div>`).join("");
+ return pend}
+async function loadPlaces(){
+ let q=supabase.from("places").select("id,slug,name,country,category,status,featured,sponsored,sponsor_name,affiliate_url,cover_url").order("created_at",{ascending:false}).limit(100);
+ const term=clean($("#q").value);if(term)q=q.or(`name.ilike.%${term}%,country.ilike.%${term}%,category.ilike.%${term}%`);
+ if($("#status").value)q=q.eq("status",$("#status").value);
+ const {data,error}=await q;if(error){flash(error.message);return}
+ $("#places").innerHTML=(data||[]).map(p=>`<article class="tl-card p-4" data-id="${escapeHtml(p.id)}">
+  <div class="flex flex-wrap items-center gap-4">
+   <img src="${escapeHtml(p.cover_url||"")}" alt="" class="h-16 w-24 rounded-xl bg-white/5 object-cover">
+   <div class="min-w-0 flex-1"><a class="font-bold hover:underline" href="place/${encodeURIComponent(p.slug)}">${escapeHtml(p.name)}</a><p class="text-xs text-white/45">${escapeHtml([p.category,p.country].filter(Boolean).join(" · "))}</p></div>
+   <select data-act="status" class="tl-input !min-h-10 !w-auto" aria-label="Status for ${escapeHtml(p.name)}">${["pending","published","draft","hidden"].map(s=>`<option ${s===p.status?"selected":""}>${s}</option>`).join("")}</select>
+   <label class="flex items-center gap-2 text-sm"><input type="checkbox" data-act="featured" ${p.featured?"checked":""}>Featured</label>
+   <label class="flex items-center gap-2 text-sm"><input type="checkbox" data-act="sponsored" ${p.sponsored?"checked":""}>Sponsored</label>
+   ${p.status==="pending"?'<button data-act="approve" class="tl-btn tl-btn-primary !min-h-10">Approve</button>':""}
+   <button data-act="more" class="tl-btn tl-btn-ghost !min-h-10">Details</button>
+   <button data-act="delete" class="tl-btn tl-btn-ghost !min-h-10 text-red-300">Delete</button>
+  </div>
+  <div data-more class="mt-4 hidden border-t border-white/10 pt-4">
+   <div data-photos class="mb-5 grid grid-cols-3 gap-2 sm:grid-cols-5"></div>
+   <div class="grid gap-3 sm:grid-cols-2">
+    <input data-f="sponsor_name" class="tl-input" placeholder="Sponsor name" value="${escapeHtml(p.sponsor_name||"")}" aria-label="Sponsor name">
+    <input data-f="affiliate_url" class="tl-input" placeholder="Affiliate link (https://...)" value="${escapeHtml(p.affiliate_url||"")}" aria-label="Affiliate link">
+   </div>
+   <button data-act="savemeta" class="tl-btn tl-btn-primary mt-3 !min-h-10">Save sponsor details</button>
+   <div class="mt-6"><p class="tl-eyebrow">Add Unsplash photo</p>
+    <div class="mt-3 flex gap-2"><input data-f="usq" class="tl-input" placeholder="Search photos" aria-label="Search Unsplash"><button data-act="usearch" class="tl-btn tl-btn-ghost !min-h-[50px]">Search</button></div>
+    <div data-results class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4"></div></div>
+  </div></article>`).join("")||'<p class="text-white/50">No places found.</p>'}
+async function loadComments(){
+ const {data,error}=await supabase.from("comments").select("id,body,created_at,places(name,slug)").order("created_at",{ascending:false}).limit(50);
+ if(error){flash(error.message);return}
+ $("#comments").innerHTML=(data||[]).map(c=>`<div class="tl-card flex items-start justify-between gap-4 p-4" data-cid="${escapeHtml(c.id)}"><div><p class="text-sm">${escapeHtml(c.body)}</p><p class="mt-1 text-xs text-white/40">${escapeHtml(c.places?.name||"Unknown place")} · ${escapeHtml(new Date(c.created_at).toLocaleString())}</p></div><button data-act="delcomment" class="tl-btn tl-btn-ghost !min-h-10 text-red-300">Delete</button></div>`).join("")||'<p class="text-white/50">No comments yet.</p>'}
+async function api(path,body){const r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify(body)});return r.json().catch(()=>({}))}
+$("#places").addEventListener("change",async e=>{
+ const card=e.target.closest("[data-id]"),act=e.target.dataset.act;if(!card||!["status","featured","sponsored"].includes(act))return;
+ const value=act==="status"?e.target.value:e.target.checked;
+ const {error}=await supabase.from("places").update({[act]:value}).eq("id",card.dataset.id);
+ flash(error?error.message:"Updated.");if(!error)stats()});
+$("#places").addEventListener("click",async e=>{
+ const btn=e.target.closest("[data-act]"),card=e.target.closest("[data-id]");if(!btn||!card)return;const id=card.dataset.id,act=btn.dataset.act;
+ if(act==="approve"){const {error}=await supabase.from("places").update({status:"published"}).eq("id",id);flash(error?error.message:"Approved and published.");if(!error){loadPlaces();stats()}}
+ if(act==="more"){const m=card.querySelector("[data-more]");m.classList.toggle("hidden");const box=card.querySelector("[data-photos]");
+  if(!m.classList.contains("hidden")&&!box.dataset.loaded){box.dataset.loaded="1";const {data}=await supabase.from("place_images").select("id,image_url").eq("place_id",id);
+   box.innerHTML=(data||[]).map(i=>`<div class="relative"><img src="${escapeHtml(i.image_url)}" alt="" class="aspect-[4/3] w-full rounded-xl object-cover"><button data-act="rmimg" data-iid="${escapeHtml(i.id)}" class="absolute right-1 top-1 rounded-lg bg-black/70 px-2 py-1 text-xs text-red-300">Remove</button></div>`).join("")||'<p class="col-span-full text-sm text-white/45">No photos.</p>'}}
+ if(act==="rmimg"){if(!confirm("Remove this photo?"))return;const {error}=await supabase.from("place_images").delete().eq("id",btn.dataset.iid);flash(error?error.message:"Photo removed.");if(!error)btn.parentElement.remove()}
+ if(act==="delete"){const name=card.querySelector("a").textContent;if(!confirm(`Delete "${name}" and its photos? This cannot be undone.`))return;const {error}=await supabase.from("places").delete().eq("id",id);flash(error?error.message:"Place deleted.");if(!error){card.remove();stats()}}
+ if(act==="savemeta"){const aff=card.querySelector('[data-f="affiliate_url"]').value.trim();if(aff&&!httpsUrl(aff)){flash("Affiliate link must start with https://");return}
+  const {error}=await supabase.from("places").update({sponsor_name:card.querySelector('[data-f="sponsor_name"]').value.trim()||null,affiliate_url:aff||null}).eq("id",id);flash(error?error.message:"Sponsor details saved.")}
+ if(act==="usearch"){const term=card.querySelector('[data-f="usq"]').value.trim();if(!term)return;const box=card.querySelector("[data-results]");box.textContent="Searching...";
+  const r=await fetch(`/api/unsplash/search?${new URLSearchParams({query:term,per_page:"8"})}`);const d=await r.json().catch(()=>({}));
+  if(!r.ok){box.textContent=d.error||"Search failed.";return}
+  box.innerHTML=d.results.map((p,i)=>`<button data-act="usepick" data-i="${i}" class="group overflow-hidden rounded-xl border border-white/10 text-left"><img src="${escapeHtml(p.urls.small)}" alt="${escapeHtml(p.description||"Unsplash photo")}" class="aspect-[4/3] w-full object-cover"><span class="block truncate p-2 text-xs text-white/55">${escapeHtml(p.user.name||"")}</span></button>`).join("")||"No photos found.";
+  box._picks=d.results}
+ if(act==="usepick"){const box=btn.closest("[data-results]"),p=box._picks[Number(btn.dataset.i)];if(!p)return;
+  const name=card.querySelector("a").textContent;btn.disabled=true;
+  const credit=p.user.profile?p.user.profile+"?utm_source=terralens&utm_medium=referral":null;
+  const {error}=await supabase.from("place_images").insert({place_id:id,image_url:p.urls.regular,alt_text:p.description||name,credit_name:p.user.name||"Unsplash photographer",credit_url:credit,created_by:session.user.id});
+  if(error){flash(error.message);btn.disabled=false;return}
+  const cover=card.querySelector("img").getAttribute("src");if(!cover)await supabase.from("places").update({cover_url:p.urls.regular}).eq("id",id);
+  if(p.links?.download_location)await api("/api/unsplash/download",{download_location:p.links.download_location});
+  flash(`Added photo by ${p.user.name||"Unsplash photographer"} to ${name}.`)}
+});
+$("#comments").addEventListener("click",async e=>{const btn=e.target.closest('[data-act="delcomment"]'),row=e.target.closest("[data-cid]");if(!btn||!row||!confirm("Delete this comment?"))return;
+ const {error}=await supabase.from("comments").delete().eq("id",row.dataset.cid);flash(error?error.message:"Comment deleted.");if(!error){row.remove();stats()}});
+async function loadReports(){
+ const {data,error}=await supabase.from("reports").select("*").eq("status","open").order("created_at",{ascending:false}).limit(50);
+ if(error){flash(error.message);return}
+ const ids=t=>[...new Set((data||[]).filter(r=>r.target_type===t).map(r=>r.target_id))];
+ const [pl,cm]=await Promise.all([ids("place").length?supabase.from("places").select("id,name,slug,status").in("id",ids("place")):{data:[]},ids("comment").length?supabase.from("comments").select("id,body").in("id",ids("comment")):{data:[]}]);
+ const P=Object.fromEntries((pl.data||[]).map(x=>[x.id,x])),C=Object.fromEntries((cm.data||[]).map(x=>[x.id,x]));
+ $("#reports").innerHTML=(data||[]).map(r=>{const p=P[r.target_id],c=C[r.target_id];
+  const label=r.target_type==="place"?(p?`<a class="underline" href="place/${encodeURIComponent(p.slug)}">${escapeHtml(p.name)}</a> (${escapeHtml(p.status)})`:"Place (deleted)"):(c?escapeHtml(c.body.slice(0,120)):"Comment (deleted)");
+  return `<div class="tl-card p-4" data-rid="${escapeHtml(r.id)}" data-type="${escapeHtml(r.target_type)}" data-target="${escapeHtml(r.target_id)}"><p class="text-sm"><b>${escapeHtml(r.reason)}</b> · ${escapeHtml(r.target_type)}: ${label}</p>${r.details?`<p class="mt-2 text-sm text-white/55">${escapeHtml(r.details)}</p>`:""}<div class="mt-3 flex flex-wrap gap-2"><button data-act="rdismiss" class="tl-btn tl-btn-ghost !min-h-10">Dismiss</button><button data-act="raction" class="tl-btn tl-btn-primary !min-h-10">${r.target_type==="place"?"Hide place":"Delete comment"}</button></div></div>`}).join("")||'<p class="text-white/50">No open reports.</p>'}
+$("#reports").addEventListener("click",async e=>{const btn=e.target.closest("[data-act]"),card=e.target.closest("[data-rid]");if(!btn||!card)return;
+ const act=btn.dataset.act,type=card.dataset.type,target=card.dataset.target;
+ if(act==="raction"){if(!confirm(type==="place"?"Hide this place?":"Delete this comment?"))return;
+  const res=type==="place"?await supabase.from("places").update({status:"hidden"}).eq("id",target):await supabase.from("comments").delete().eq("id",target);
+  if(res.error){flash(res.error.message);return}}
+ const r=await supabase.from("reports").update({status:act==="raction"?"actioned":"dismissed",handled_by:session.user.id,handled_at:new Date().toISOString()}).eq("id",card.dataset.rid);
+ flash(r.error?r.error.message:"Report handled.");if(!r.error){card.remove();stats()}});
+async function loadContributors(){
+ const {data,error}=await supabase.rpc("admin_contributors");if(error){flash(error.message);return}
+ $("#contributors").innerHTML=(data||[]).map(u=>{const ok=Number(u.approved_photos)>=100&&Number(u.approved_places)>=10&&Number(u.actioned_reports_90d)===0;
+  return `<div class="tl-card flex flex-wrap items-center justify-between gap-4 p-4" data-uid="${escapeHtml(u.id)}"><div><p class="font-bold">${escapeHtml(u.display_name||u.username||"Unnamed user")} ${u.verified?"✓":""}</p><p class="text-xs text-white/45">${Number(u.approved_photos)} approved photos · ${Number(u.approved_places)}/${Number(u.places)} places approved · ${Number(u.actioned_reports_90d)} upheld reports (90d)${ok&&!u.verified?' · <b class="text-sky-300">Eligible</b>':""}</p></div><button data-act="verify" data-v="${u.verified?"0":"1"}" class="tl-btn ${u.verified?"tl-btn-ghost":"tl-btn-primary"} !min-h-10">${u.verified?"Remove verification":"Verify"}</button></div>`}).join("")||'<p class="text-white/50">No contributors yet.</p>'}
+$("#contributors").addEventListener("click",async e=>{const btn=e.target.closest('[data-act="verify"]'),row=e.target.closest("[data-uid]");if(!btn||!row)return;const on=btn.dataset.v==="1";
+ if(!confirm(on?"Verify this contributor? Their new places will publish without review.":"Remove verification?"))return;
+ const {error}=await supabase.from("profiles").update({verified:on,verified_at:on?new Date().toISOString():null}).eq("id",row.dataset.uid);
+ flash(error?error.message:on?"Contributor verified.":"Verification removed.");if(!error)loadContributors()});
+const TABS=["places","reports","contributors","comments"],loaders={reports:loadReports,contributors:loadContributors,comments:loadComments};
+const show=t=>{TABS.forEach(n=>{$(`#${n}-panel`).classList.toggle("hidden",n!==t);$(`#tab-${n}`).className="tl-btn !min-h-10 "+(n===t?"tl-btn-primary":"tl-btn-ghost")});loaders[t]?.()};
+TABS.forEach(n=>{$(`#tab-${n}`).onclick=()=>show(n)});
+let timer;const refresh=()=>{clearTimeout(timer);timer=setTimeout(loadPlaces,250)};$("#q").oninput=refresh;$("#status").onchange=loadPlaces;
+if(await guard()){const pend=await stats();if(pend>0)$("#status").value="pending";loadPlaces()}
+</script>
+
+
+
+<footer class="tl-footer">
+  <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
+    <div><div class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-xl font-extrabold">Terra<span class="text-sky-300">Lens</span></span></div><p class="mt-4 max-w-md text-sm leading-7 text-white/45">A visual place-discovery platform connecting the photo that inspires you with the context that helps you experience it.</p></div>
+    <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="planner.html">Trips</a></div></div>
+    <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div></div>
+  </div>
+  <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© 2026 TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>
+</footer>
+<script type="module">import {initNav} from "./src/js/app.js"; initNav();</script>
+
+</body></html>
