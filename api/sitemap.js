@@ -1,10 +1,11 @@
+import { clean, cleanUrl } from "./_lib/env.js";
 const STATIC_PAGES = ["", "explore.html", "about.html", "collections.html", "planner.html"];
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[c]));
 
 export default async function handler(req, res) {
-  const site = (process.env.SITE_URL || `https://${req.headers.host}`).replace(/\/+$/, "");
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
+  const site = cleanUrl("SITE_URL") || `https://${req.headers.host}`;
+  const url = cleanUrl("SUPABASE_URL");
+  const key = clean("SUPABASE_PUBLISHABLE_KEY");
   let places = [];
   if (url && key) {
     try {

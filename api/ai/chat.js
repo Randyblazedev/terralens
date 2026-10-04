@@ -1,3 +1,4 @@
+import { clean } from "../_lib/env.js";
 import { clientIp, rateLimit, verifyUser } from "../_lib/guard.js";
 
 export default async function handler(req, res) {
@@ -12,7 +13,7 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: "Message limit reached. Try again later." });
   }
 
-  const key = process.env.DEEPSEEK_API_KEY;
+  const key = clean("DEEPSEEK_API_KEY");
   if (!key) return res.status(500).json({ error: "The AI service is not configured." });
 
   const message = String(req.body?.message || "").trim().slice(0, 2000);

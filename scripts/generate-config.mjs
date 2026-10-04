@@ -22,8 +22,9 @@ function loadLocalEnv() {
 }
 
 loadLocalEnv();
-const url = process.env.SUPABASE_URL || '';
-const key = process.env.SUPABASE_PUBLISHABLE_KEY || '';
+const tidy = v => String(v || '').trim().replace(/^["'`]+|["'`]+$/g, '').trim();
+const url = tidy(process.env.SUPABASE_URL).replace(/\/+$/, '');
+const key = tidy(process.env.SUPABASE_PUBLISHABLE_KEY);
 const requireLogin = (process.env.REQUIRE_LOGIN || 'true').toLowerCase() !== 'false';
 const output = resolve('src/js/runtime-config.js');
 mkdirSync(resolve('src/js'), { recursive: true });

@@ -1,3 +1,4 @@
+import { clean } from "../_lib/env.js";
 import { clientIp, rateLimit } from "../_lib/guard.js";
 
 const ORIENTATIONS = new Set(["landscape", "portrait", "squarish"]);
@@ -11,7 +12,7 @@ export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
   if (!(await rateLimit(`unsplash:${clientIp(req)}`, 30, 60_000))) return res.status(429).json({ error: "Too many searches. Try again soon." });
 
-  const key = process.env.UNSPLASH_ACCESS_KEY;
+  const key = clean("UNSPLASH_ACCESS_KEY");
   if (!key) return res.status(500).json({ error: "Image search is not configured." });
 
   const query = String(req.query.query || "").trim().slice(0, 100);

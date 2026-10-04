@@ -1,3 +1,7 @@
+# TerraLens 6.6.3: tolerant environment variables
+
+Keys pasted on a phone often include a hidden space, newline, quotes or a trailing slash. The server (and the build) now clean every value before using it. Admin -> Check setup also explains whether the server can see your Supabase variables at all.
+
 # TerraLens 6.6.2: upgrading a half-set-up database
 
 If you already ran an older `schema.sql` and/or `003_admin.sql`, just run the NEW `supabase/schema.sql` once. It upgrades everything and repairs the admins table check. Tested: original schema -> old 003 file (with an edited email check) -> new schema.sql finishes with no errors and a second admin can be added.

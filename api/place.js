@@ -1,3 +1,4 @@
+import { clean, cleanUrl } from "./_lib/env.js";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -10,7 +11,7 @@ let template;
 const loadTemplate = () => (template ??= readFileSync(join(process.cwd(), "place.html"), "utf8"));
 
 async function rest(path) {
-  const r = await fetch(`${process.env.SUPABASE_URL}/rest/v1/${path}`, { headers: { apikey: process.env.SUPABASE_PUBLISHABLE_KEY } });
+  const r = await fetch(`${cleanUrl("SUPABASE_URL")}/rest/v1/${path}`, { headers: { apikey: clean("SUPABASE_PUBLISHABLE_KEY") } });
   if (!r.ok) throw new Error(`Supabase ${r.status}`);
   return r.json();
 }
@@ -18,10 +19,10 @@ async function rest(path) {
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   let html = loadTemplate();
-  const site = (process.env.SITE_URL || `https://${req.headers.host}`).replace(/\/+$/, "");
+  const site = cleanUrl("SITE_URL") || `https://${req.headers.host}`;
 
   // Demo mode (no database): let the browser script handle everything.
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_PUBLISHABLE_KEY) {
+  if (!cleanUrl("SUPABASE_URL") || !clean("SUPABASE_PUBLISHABLE_KEY")) {
     res.setHeader("Cache-Control", "no-store");
     return res.status(200).send(html);
   }

@@ -1,3 +1,4 @@
+import { clean } from "../_lib/env.js";
 // One real photo per home-page category, fetched from Unsplash with YOUR key on the server
 // and cached for a day (so it uses ~6 requests/day of the 50/hour demo limit).
 const QUERIES = {
@@ -11,7 +12,7 @@ const QUERIES = {
 
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
-  const key = process.env.UNSPLASH_ACCESS_KEY;
+  const key = clean("UNSPLASH_ACCESS_KEY");
   if (!key) return res.status(200).json({ photos: {} });
 
   const entries = await Promise.all(Object.entries(QUERIES).map(async ([category, query]) => {

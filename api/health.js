@@ -1,4 +1,5 @@
 import { verifyAdmin } from "./_lib/guard.js";
+import { clean, cleanUrl } from "./_lib/env.js";
 
 // Admin-only setup check. Returns pass/fail messages only, never the secret values.
 const probe = async (url, options = {}) => {
@@ -11,9 +12,12 @@ const probe = async (url, options = {}) => {
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
-  if (!(await verifyAdmin(req))) return res.status(403).json({ error: "Admins only." });
+  if (!cleanUrl("SUPABASE_URL") || !clean("SUPABASE_PUBLISHABLE_KEY")) {
+    return res.status(500).json({ error: "The server cannot see SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY. In Vercel, add them for Production (no spaces, no quotes), then redeploy." });
+  }
+  if (!(await verifyAdmin(req))) return res.status(403).json({ error: "The server could not confirm you are an admin. Sign out, sign in with Google again, and check that your email is in the admins table." });
 
-  const env = process.env;
+  const env = new Proxy({}, { get: (_, name) => (name === "SUPABASE_URL" || name === "SITE_URL" ? cleanUrl(name) : clean(name)) });
   const checks = [];
   const add = (name, ok, detail) => checks.push({ name, ok, detail });
 
@@ -23,7 +27,7 @@ export default async function handler(req, res) {
   add("SITE_URL", /^https:\/\/[^/]+$/.test(site) && !site.includes("YOUR-DOMAIN"), site ? (/\/$/.test(site) ? "Remove the trailing slash." : "Set.") : "Missing. Example: https://yourproject.vercel.app");
   add("UNSPLASH_ACCESS_KEY", !!env.UNSPLASH_ACCESS_KEY, env.UNSPLASH_ACCESS_KEY ? "Set." : "Missing.");
   add("DEEPSEEK_API_KEY", !!env.DEEPSEEK_API_KEY, env.DEEPSEEK_API_KEY ? "Set." : "Missing.");
-  add("Strict rate limits (optional)", !!(env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN), env.UPSTASH_REDIS_REST_URL ? "Upstash connected." : "Not set. Using basic limits, which is fine for now.");
+  add("Strict rate limits (optional)", true, env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN ? "Upstash connected." : "Optional and not set. Basic limits are active, which is fine for now.");
 
   const [db, auth, uns, ds] = await Promise.all([
     url && key ? probe(`${url.replace(/\/$/, "")}/rest/v1/places?select=id&limit=1`, { headers: { apikey: key } }) : null,

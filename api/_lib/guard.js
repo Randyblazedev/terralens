@@ -1,3 +1,4 @@
+import { clean, cleanUrl } from "./env.js";
 // Shared helpers for API routes. Files starting with "_" are not deployed as routes.
 const buckets = new Map();
 
@@ -11,7 +12,7 @@ export function clientIp(req) {
 // shared across all serverless instances (strict). Otherwise it falls back to
 // per-instance memory, which slows abuse but is not a hard guarantee.
 export async function rateLimit(key, limit, windowMs) {
-  const upUrl = process.env.UPSTASH_REDIS_REST_URL, upToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const upUrl = cleanUrl("UPSTASH_REDIS_REST_URL"), upToken = clean("UPSTASH_REDIS_REST_TOKEN");
   if (upUrl && upToken) {
     try {
       const r = await fetch(`${upUrl}/pipeline`, {
@@ -43,8 +44,8 @@ function memoryLimit(key, limit, windowMs) {
 export async function verifyUser(req) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
+  const url = cleanUrl("SUPABASE_URL");
+  const key = clean("SUPABASE_PUBLISHABLE_KEY");
   if (!token || !url || !key) return null;
   try {
     const r = await fetch(`${url}/auth/v1/user`, { headers: { apikey: key, Authorization: `Bearer ${token}` } });
@@ -60,8 +61,8 @@ export async function verifyUser(req) {
 export async function verifyAdmin(req) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
+  const url = cleanUrl("SUPABASE_URL");
+  const key = clean("SUPABASE_PUBLISHABLE_KEY");
   if (!token || !url || !key) return false;
   try {
     const r = await fetch(`${url}/rest/v1/rpc/is_admin`, {
