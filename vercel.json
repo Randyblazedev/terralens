@@ -1,8 +1,8 @@
 {
   "functions": {
-    "api/**/*.js": { "maxDuration": 30 },
-    "api/place.js": { "includeFiles": "place.html" }
-  },
+  "api/place.js": { "includeFiles": "place.html", "maxDuration": 15 },
+  "api/ai/chat.js": { "maxDuration": 30 }
+},
   "rewrites": [
     { "source": "/place/:slug", "destination": "/api/place?slug=:slug" },
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
