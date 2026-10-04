@@ -142,64 +142,91 @@ alter table public.trips enable row level security;
 alter table public.trip_places enable row level security;
 alter table public.creator_links enable row level security;
 
+drop policy if exists "public profiles are readable" on public.profiles;
 create policy "public profiles are readable" on public.profiles for select using (true);
+drop policy if exists "users manage own profile" on public.profiles;
 create policy "users manage own profile" on public.profiles for all using (auth.uid() = id) with check (auth.uid() = id);
 
+drop policy if exists "published places are readable" on public.places;
 create policy "published places are readable" on public.places for select using (status = 'published' or created_by = auth.uid());
+drop policy if exists "signed users create places" on public.places;
 create policy "signed users create places" on public.places for insert with check (auth.uid() = created_by);
+drop policy if exists "owners update places" on public.places;
 create policy "owners update places" on public.places for update using (auth.uid() = created_by) with check (auth.uid() = created_by);
+drop policy if exists "owners delete places" on public.places;
 create policy "owners delete places" on public.places for delete using (auth.uid() = created_by);
 
+drop policy if exists "place images readable" on public.place_images;
 create policy "place images readable" on public.place_images for select using (
   exists (select 1 from public.places p where p.id = place_id and (p.status = 'published' or p.created_by = auth.uid()))
 );
+drop policy if exists "owners add images" on public.place_images;
 create policy "owners add images" on public.place_images for insert with check (
   auth.uid() = created_by
   and exists (select 1 from public.places p where p.id = place_id and p.created_by = auth.uid())
 );
+drop policy if exists "owners delete images" on public.place_images;
 create policy "owners delete images" on public.place_images for delete using (auth.uid() = created_by);
 
+drop policy if exists "likes readable" on public.likes;
 create policy "likes readable" on public.likes for select using (true);
+drop policy if exists "users manage own likes" on public.likes;
 create policy "users manage own likes" on public.likes for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+drop policy if exists "saves readable for owner" on public.saves;
 create policy "saves readable for owner" on public.saves for select using (auth.uid() = user_id);
+drop policy if exists "users manage own saves" on public.saves;
 create policy "users manage own saves" on public.saves for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+drop policy if exists "public collections readable" on public.collections;
 create policy "public collections readable" on public.collections for select using (is_public or auth.uid() = user_id);
+drop policy if exists "users manage own collections" on public.collections;
 create policy "users manage own collections" on public.collections for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+drop policy if exists "collection items readable" on public.collection_items;
 create policy "collection items readable" on public.collection_items for select using (
   exists (select 1 from public.collections c where c.id = collection_id and (c.is_public or c.user_id = auth.uid()))
 );
+drop policy if exists "collection owners manage items" on public.collection_items;
 create policy "collection owners manage items" on public.collection_items for all using (
   exists (select 1 from public.collections c where c.id = collection_id and c.user_id = auth.uid())
 ) with check (
   exists (select 1 from public.collections c where c.id = collection_id and c.user_id = auth.uid())
 );
 
+drop policy if exists "comments readable" on public.comments;
 create policy "comments readable" on public.comments for select using (true);
+drop policy if exists "users manage own comments" on public.comments;
 create policy "users manage own comments" on public.comments for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+drop policy if exists "users manage own trips" on public.trips;
 create policy "users manage own trips" on public.trips for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "trip places readable" on public.trip_places;
 create policy "trip places readable" on public.trip_places for select using (
   exists (select 1 from public.trips t where t.id = trip_id and t.user_id = auth.uid())
 );
+drop policy if exists "trip owners manage places" on public.trip_places;
 create policy "trip owners manage places" on public.trip_places for all using (
   exists (select 1 from public.trips t where t.id = trip_id and t.user_id = auth.uid())
 ) with check (
   exists (select 1 from public.trips t where t.id = trip_id and t.user_id = auth.uid())
 );
 
+drop policy if exists "creator links readable" on public.creator_links;
 create policy "creator links readable" on public.creator_links for select using (true);
+drop policy if exists "creators manage links" on public.creator_links;
 create policy "creators manage links" on public.creator_links for all using (auth.uid() = creator_id) with check (auth.uid() = creator_id);
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('place-images', 'place-images', true, 8388608, array['image/jpeg','image/png','image/webp'])
 on conflict (id) do update set file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
+drop policy if exists "public place images" on storage.objects;
 create policy "public place images" on storage.objects for select using (bucket_id = 'place-images');
+drop policy if exists "users upload to own folder" on storage.objects;
 create policy "users upload to own folder" on storage.objects for insert to authenticated
   with check (bucket_id = 'place-images' and (storage.foldername(name))[1] = auth.uid()::text);
+drop policy if exists "owners delete place images" on storage.objects;
 create policy "owners delete place images" on storage.objects for delete to authenticated
   using (bucket_id = 'place-images' and (storage.foldername(name))[1] = auth.uid()::text);
 

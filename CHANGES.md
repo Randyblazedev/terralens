@@ -1,3 +1,9 @@
+# TerraLens 6.6.1: database setup made simple and tested
+
+- **Run ONE file:** `supabase/schema.sql` already contains everything (migrations 002-005 are only for databases set up from an older version). It is now safe to run more than once.
+- I tested the full schema on a real Postgres: fresh install, running it twice, and running the migrations on top all finish with no errors. Security rules were checked with simulated users (self-verify blocked, unconfirmed email blocked, fake likes reset, one like per user, likers hidden, admin-only functions).
+- **Login goes to localhost?** In Supabase -> Authentication -> URL Configuration set Site URL to your live address and add `https://YOUR-ADDRESS/login.html` under Redirect URLs.
+
 # TerraLens 6.6: photo categories, setup check, sign-in wall
 
 - **Real photos on the home page categories** (no more emojis). Each tile shows a TerraLens place photo from that category when one exists, otherwise a photo fetched from Unsplash with your key (cached for a day), with photographer credit under the tiles. New route: `api/unsplash/categories.js`.
