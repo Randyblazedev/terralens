@@ -46,9 +46,9 @@
  <div class="tl-shell">
   <div class="max-w-3xl"><p class="tl-eyebrow">Explore</p><h1 class="mt-3 text-4xl font-extrabold sm:text-6xl">Places through a new lens.</h1><p class="mt-5 leading-7 text-white/55">Search the community, browse categories, or start with a place you already have in mind.</p></div>
   <div class="mt-10 grid gap-3 md:grid-cols-[1fr_180px_180px_auto]">
-   <input id="q" class="tl-input" placeholder="Search places, countries, regions...">
+   <input id="q" type="search" class="tl-input" placeholder="Search by name or region..." aria-label="Search places">
    <select id="category" class="tl-input"><option value="">All categories</option><option>Waterfall</option><option>Mountain</option><option>Beach</option><option>Lake</option><option>Forest</option><option>National Park</option><option>Culture</option><option>Viewpoint</option><option>Other</option></select>
-   <input id="country" class="tl-input" placeholder="Country">
+   <select id="country" class="tl-input" aria-label="Country"><option value="">All countries</option></select>
    <button id="search" class="tl-btn tl-btn-primary">Search</button>
   </div>
   <div id="status" class="mt-8 text-sm text-white/45"></div>
@@ -57,12 +57,20 @@
  </div>
 </main>
 <script type="module">
-import {queryPlaces,card} from "./src/js/app.js";
+import {queryPlaces,card,fallbackPlaces} from "./src/js/app.js";
+import {supabase} from "./src/js/supabase.js";
 const params=new URLSearchParams(location.search);
 const q=document.querySelector("#q"),cat=document.querySelector("#category"),country=document.querySelector("#country");
-q.value=params.get("q")||"";cat.value=params.get("category")||"";country.value=params.get("country")||"";
+q.value=params.get("q")||"";cat.value=params.get("category")||"";
 async function run(){document.querySelector("#status").textContent="Finding places...";const data=await queryPlaces({q:q.value,category:cat.value,country:country.value});document.querySelector("#status").textContent=data.length?`${data.length} places found`:"No places found yet.";document.querySelector("#grid").innerHTML=data.map(card).join("")}
-document.querySelector("#search").onclick=run;run();
+async function loadCountries(){let list=[];
+ if(supabase){const {data}=await supabase.from("places").select("country").eq("status","published").not("country","is",null).limit(1000);list=(data||[]).map(r=>r.country)}
+ else list=fallbackPlaces.map(p=>p.country);
+ const want=params.get("country")||"";if(want)list.push(want);
+ [...new Set(list.map(c=>String(c).trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b)).forEach(c=>country.add(new Option(c,c)));
+ country.value=want}
+document.querySelector("#search").onclick=run;cat.onchange=run;country.onchange=run;q.onkeydown=e=>{if(e.key==="Enter")run()};
+await loadCountries();run();
 </script>
 
 <footer class="tl-footer">

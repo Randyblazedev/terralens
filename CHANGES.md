@@ -1,3 +1,10 @@
+# TerraLens 6.8: one-hour edit window, cleaner Explore filters
+
+- **Edit window = 1 hour.** Uploaders can edit their place (details and photos) for one hour after uploading it. After that the Edit button disappears, the edit page explains why, and the database refuses the change. Admins are not limited, and owners can still delete their own place. Profile cards show "Edit · N min left". To change the length, edit `edit_window()` in `schema.sql` (and `EDIT_WINDOW_MS` in `src/js/app.js`).
+- **Explore page:** the separate "Country" text box duplicated the search box. It is now a dropdown of countries that actually have places, so it no longer overlaps. Filters apply as soon as you pick one, and Enter runs the search.
+
+**Run the new `supabase/schema.sql` once** (safe to re-run).
+
 # TerraLens 6.7: edits, logout, gold badge, public browsing
 
 - **Public browsing is back (default):** anyone can view pages. Uploading, editing, liking, saving, reporting and the AI assistant need Google sign-in. (The optional sign-in wall now only turns on if you set `REQUIRE_LOGIN=true`.) The Upload page shows a "Sign in to upload" box for visitors.

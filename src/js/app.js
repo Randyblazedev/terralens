@@ -60,6 +60,11 @@ export function verifiedBadge(size = 18) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" role="img" aria-label="Verified contributor" class="inline-block shrink-0 align-[-0.2em]" fill="#F5B301" stroke="#F5B301" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Verified contributor</title><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m16 9-5.5 5.5L8 12" stroke="#fff"/></svg>`;
 }
 
+// Uploaders can edit a place for one hour after uploading it (the database enforces this too).
+export const EDIT_WINDOW_MS = 60 * 60 * 1000;
+export const editMinutesLeft = place => Math.max(0, Math.ceil((new Date(place.created_at).getTime() + EDIT_WINDOW_MS - Date.now()) / 60000));
+export const canEdit = place => editMinutesLeft(place) > 0;
+
 export async function initNav() {
   // Sign-in wall: everything except the login, terms and privacy pages needs an account.
   const open = /\/(login|terms|privacy)(\.html)?$/.test(location.pathname);

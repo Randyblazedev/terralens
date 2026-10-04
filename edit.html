@@ -79,7 +79,7 @@
 </main>
 <script type="module">
 import {supabase,getUser} from "./src/js/supabase.js";
-import {escapeHtml} from "./src/js/app.js";
+import {escapeHtml,canEdit,editMinutesLeft} from "./src/js/app.js";
 const $=s=>document.querySelector(s),slug=new URLSearchParams(location.search).get("slug")||"";
 const TYPES={"image/jpeg":1,"image/png":1,"image/webp":1},MAX_BYTES=25*1024*1024,FIELDS={name:"name",description:"description",country:"country",region:"region",city:"city",category:"category",season:"best_season",time:"best_time",fee:"entry_fee",access:"access_info"};
 async function shrink(file,max=2000){let bmp;try{bmp=await createImageBitmap(file,{imageOrientation:"from-image"})}catch{bmp=await createImageBitmap(file)}
@@ -87,7 +87,7 @@ async function shrink(file,max=2000){let bmp;try{bmp=await createImageBitmap(fil
  const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(bmp,0,0,c.width,c.height);bmp.close?.();
  const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",0.85));if(!blob)throw new Error("encode failed");return blob}
 let place=null,user=null,verified=false,images=[];
-const stateNote=()=>{$("#note").textContent=verified?"You are a verified contributor, so your changes go live immediately.":place.status==="published"?"Your place is live. Saving changes sends it back for a quick review before it shows again.":"Your place is awaiting review. You can keep editing it."};
+const stateNote=()=>{const left=`You can edit for ${editMinutesLeft(place)} more minute${editMinutesLeft(place)===1?"":"s"}. `;$("#note").textContent=left+(verified?"You are a verified contributor, so your changes go live immediately.":place.status==="published"?"Your place is live. Saving changes sends it back for a quick review before it shows again.":"Your place is awaiting review.")};
 async function loadImages(){const r=await supabase.from("place_images").select("id,image_url,created_by").eq("place_id",place.id).order("created_at");images=r.data||[];
  $("#photos").innerHTML=images.map(i=>`<div class="relative"><img src="${escapeHtml(i.image_url)}" alt="" class="aspect-[4/3] w-full rounded-xl object-cover">${i.created_by===user.id?`<button type="button" data-rm="${escapeHtml(i.id)}" class="absolute right-1 top-1 rounded-lg bg-black/70 px-2 py-1 text-xs text-red-300">Remove</button>`:""}</div>`).join("")||'<p class="col-span-3 text-sm text-white/45">No photos yet.</p>'}
 async function refreshPlace(){const r=await supabase.from("places").select("*").eq("id",place.id).maybeSingle();if(r.data){place=r.data;stateNote()}}
@@ -96,6 +96,7 @@ async function init(){
  if(!user){location.replace("login.html?next="+encodeURIComponent("edit.html?slug="+slug));return}
  const r=await supabase.from("places").select("*").eq("slug",slug).maybeSingle();place=r.data;
  if(!place||place.created_by!==user.id){$("#note").textContent="This place was not found, or it is not yours to edit.";return}
+ if(!canEdit(place)){$("#note").textContent="The 1-hour edit window for this place has passed, so it can no longer be edited. Contact the site team if something needs fixing.";return}
  if(place.status==="hidden"){$("#note").textContent="A moderator hid this place, so it cannot be edited. Please contact the site team.";return}
  verified=!!(await supabase.from("profiles").select("verified").eq("id",user.id).maybeSingle()).data?.verified;
  Object.entries(FIELDS).forEach(([id,col])=>{$("#"+id).value=place[col]??""});
@@ -129,7 +130,7 @@ $("#edit-form").onsubmit=async e=>{e.preventDefault();const msg=$("#message"),be
  payload.latitude=lat?Number(lat):null;payload.longitude=lng?Number(lng):null;
  msg.textContent="Saving...";
  const {data,error}=await supabase.from("places").update(payload).eq("id",place.id).select().single();
- if(error){msg.textContent=error.message;return}
+ if(error){msg.textContent=/edit window/i.test(error.message)?"The 1-hour edit window has just closed, so this change was not saved.":error.message;return}
  place=data;stateNote();
  msg.textContent=before==="published"&&data.status==="pending"?"Saved. Your changes are awaiting a quick review.":"Saved.";
  $("#view").classList.remove("hidden")};
