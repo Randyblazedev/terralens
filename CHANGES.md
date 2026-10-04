@@ -1,3 +1,9 @@
+# TerraLens 6.9: comments, simpler verified label
+
+- **Comments on place pages** (there were none before): signed-in users can post, delete their own, and report others. Each comment shows the user's name, and verified users get the gold badge with the word "Verified" (no "photographer"). Signed-out visitors can read comments and see a sign-in button. Comments only exist on live places. Limit: 15 per hour per user. Admins moderate from the Comments and Reports tabs.
+- **Verified label:** the place page now shows the uploader's name with the gold badge and "Verified".
+- **Run the new `supabase/schema.sql` once** (safe to re-run). It tightens comment rules: comments on hidden or unreviewed places can no longer be read, and posting needs a live place.
+
 # TerraLens 6.8.1: saved places are now reachable
 
 Nothing on the site linked to the Saved page, so people could save places but never find them. Added a "Saved" link to the menu (desktop and hamburger), the footer, and the profile's Saved count. The Saved page now asks signed-out visitors to sign in, shows newest first, has a "Remove from saved" button, and explains when a saved place is hidden or under review.

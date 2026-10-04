@@ -104,7 +104,7 @@ saveBtn.onclick=async()=>{if(!isReal){status("Connect Supabase to save places.")
  saved=!saved;paint();status(saved?"Saved to your places.":"Removed from your saved places.")};
 if(isReal){const {data:{user:me}}=await supabase.auth.getUser();if(me&&me.id===place.created_by&&canEdit(place))document.querySelector("#share").parentElement.insertAdjacentHTML("beforeend",`<a class="tl-btn tl-btn-ghost" href="edit.html?slug=${encodeURIComponent(place.slug)}">Edit</a>`)}
 if(place.status==="pending")document.querySelector("#contributor").textContent="This place is awaiting review and is only visible to you.";
-else if(isReal&&place.created_by){const o=await supabase.from("profiles").select("display_name,verified").eq("id",place.created_by).maybeSingle();if(o.data?.verified)document.querySelector("#contributor").innerHTML=verifiedBadge(18)+" Verified photographer"+(o.data.display_name?" · "+escapeHtml(o.data.display_name):"")}
+else if(isReal&&place.created_by){const o=await supabase.from("profiles").select("display_name,verified").eq("id",place.created_by).maybeSingle();if(o.data?.verified)document.querySelector("#contributor").innerHTML=(o.data.display_name?escapeHtml(o.data.display_name)+" ":"")+verifiedBadge(18)+" Verified"}
 document.querySelector("#rsend").onclick=async()=>{if(!isReal){status("Reporting needs Supabase.");return}
  const {data:{user}}=await supabase.auth.getUser();if(!user){location.href="login.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);return}
  const btn=document.querySelector("#rsend");btn.disabled=true;
@@ -122,6 +122,27 @@ likeBtns.forEach(b=>b.onclick=async()=>{if(!isReal)return;
  b.disabled=false;
  if(r.error){if(r.error.code==="23505")paintLike(b,true);else status("Couldn't update your like. Please try again.");return}
  paintLike(b,!was);c.textContent=Math.max(0,Number(c.textContent)+(was?-1:1))});
+if(isReal&&place.status==="published"){
+ document.querySelector("#place").insertAdjacentHTML("beforeend",`<div class="tl-shell max-w-3xl pb-20"><h2 class="text-2xl font-extrabold">Comments <span id="ccount" class="text-base font-normal text-white/40"></span></h2><div id="cbox" class="mt-5"></div><p id="cmsg" role="status" aria-live="polite" class="mt-3 min-h-5 text-sm text-white/50"></p><div id="clist" class="mt-4 grid gap-4"></div></div>`);
+ const {data:{user:cu}}=await supabase.auth.getUser(),cmsg=m=>{document.querySelector("#cmsg").textContent=m};
+ const when=t=>new Date(t).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"});
+ const row=c=>{const a=c.profiles||{},name=a.display_name||a.username||"Traveler";
+  return `<article class="tl-card p-4" data-cid="${escapeHtml(c.id)}"><div class="flex items-center justify-between gap-3"><p class="text-sm font-bold">${escapeHtml(name)}${a.verified?" "+verifiedBadge(16)+' <span class="font-normal text-white/45">Verified</span>':""}</p><span class="text-xs text-white/35">${escapeHtml(when(c.created_at))}</span></div><p class="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-white/70">${escapeHtml(c.body)}</p><div class="mt-3 text-xs text-white/40">${cu&&c.user_id===cu.id?'<button data-cdel class="underline">Delete</button>':cu?'<button data-crep class="underline">Report</button>':""}</div></article>`};
+ const count=()=>{const n=document.querySelectorAll("#clist [data-cid]").length;document.querySelector("#ccount").textContent=n?`(${n})`:""};
+ const SEL="id,body,created_at,user_id,profiles(display_name,username,verified)";
+ const r=await supabase.from("comments").select(SEL).eq("place_id",place.id).order("created_at",{ascending:false}).limit(50);
+ document.querySelector("#clist").innerHTML=(r.data||[]).map(row).join("")||'<p class="text-sm text-white/45">No comments yet. Be the first to share a tip.</p>';count();
+ document.querySelector("#cbox").innerHTML=cu?'<form id="cform"><label class="sr-only" for="cbody">Add a comment</label><textarea id="cbody" maxlength="500" rows="3" class="tl-input tl-textarea" placeholder="Share a tip or your experience..."></textarea><button class="tl-btn tl-btn-primary mt-3 !min-h-10">Post comment</button></form>':`<a class="tl-btn tl-btn-primary" href="login.html?next=${encodeURIComponent(location.pathname.replace(/^\//,"")+location.search)}">Sign in with Google to comment</a>`;
+ document.querySelector("#cform")?.addEventListener("submit",async e=>{e.preventDefault();const t=document.querySelector("#cbody"),body=t.value.trim();if(!body){cmsg("Write something first.");return}
+  const btn=e.target.querySelector("button");btn.disabled=true;
+  const ins=await supabase.from("comments").insert({place_id:place.id,user_id:cu.id,body}).select(SEL).single();btn.disabled=false;
+  if(ins.error){cmsg(/row-level security/i.test(ins.error.message)?"Please sign in again to comment.":ins.error.message);return}
+  document.querySelector("#clist p")?.remove();document.querySelector("#clist").insertAdjacentHTML("afterbegin",row(ins.data));t.value="";cmsg("Comment posted.");count()});
+ document.querySelector("#clist").addEventListener("click",async e=>{const art=e.target.closest("[data-cid]");if(!art)return;const id=art.dataset.cid;
+  if(e.target.hasAttribute("data-cdel")){if(!confirm("Delete your comment?"))return;const d=await supabase.from("comments").delete().eq("id",id);if(d.error){cmsg("Couldn't delete it. Please try again.");return}art.remove();count();cmsg("Comment deleted.")}
+  if(e.target.hasAttribute("data-crep")){if(!confirm("Report this comment to the moderators?"))return;const rr=await supabase.from("reports").insert({target_type:"comment",target_id:id,reason:"inappropriate"});
+   cmsg(rr.error?(rr.error.code==="23505"?"You already reported this comment.":/row-level security/i.test(rr.error.message)?"Please sign in again to report.":rr.error.message):"Thanks. We will review it.")}})
+}
 }
 </script>
 
