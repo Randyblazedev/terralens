@@ -80,18 +80,28 @@
 <section class="tl-section">
  <div class="tl-shell"><p class="tl-eyebrow">Browse by feeling</p><h2 class="mt-3 text-3xl font-extrabold">What are you looking for?</h2>
  <div class="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-  <a href="explore.html?category=Waterfall" class="tl-card p-5 hover:bg-white/5">💧<span class="mt-8 block font-bold">Waterfalls</span></a>
-  <a href="explore.html?category=Mountain" class="tl-card p-5 hover:bg-white/5">⛰️<span class="mt-8 block font-bold">Mountains</span></a>
-  <a href="explore.html?category=Beach" class="tl-card p-5 hover:bg-white/5">🌊<span class="mt-8 block font-bold">Beaches</span></a>
-  <a href="explore.html?category=Lake" class="tl-card p-5 hover:bg-white/5">🏞️<span class="mt-8 block font-bold">Lakes</span></a>
-  <a href="explore.html?category=Forest" class="tl-card p-5 hover:bg-white/5">🌲<span class="mt-8 block font-bold">Forests</span></a>
-  <a href="explore.html?category=Culture" class="tl-card p-5 hover:bg-white/5">🏛️<span class="mt-8 block font-bold">Culture</span></a>
- </div></div>
+  <a href="explore.html?category=Waterfall" data-cat="Waterfall" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Waterfalls</span></a>
+  <a href="explore.html?category=Mountain" data-cat="Mountain" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Mountains</span></a>
+  <a href="explore.html?category=Beach" data-cat="Beach" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Beaches</span></a>
+  <a href="explore.html?category=Lake" data-cat="Lake" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Lakes</span></a>
+  <a href="explore.html?category=Forest" data-cat="Forest" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Forests</span></a>
+  <a href="explore.html?category=Culture" data-cat="Culture" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Culture</span></a>
+ </div><p id="photo-credits" class="mt-4 text-xs text-white/35"></p></div>
 </section>
 </main>
 <script type="module">
-import {queryPlaces,card} from "./src/js/app.js";
+import {queryPlaces,card,escapeHtml} from "./src/js/app.js";
+import {supabase} from "./src/js/supabase.js";
 document.querySelector("#hero-search").addEventListener("submit",e=>{e.preventDefault();location.href="explore.html?q="+encodeURIComponent(document.querySelector("#hero-query").value)});
+(async()=>{const tiles=[...document.querySelectorAll("[data-cat]")],photos={};
+ try{const r=await fetch("/api/unsplash/categories");if(r.ok)Object.assign(photos,(await r.json()).photos||{})}catch{}
+ if(supabase){const {data}=await supabase.from("places").select("category,cover_url").eq("status","published").not("cover_url","is",null).order("featured",{ascending:false}).order("created_at",{ascending:false}).limit(60);
+  const own={};(data||[]).forEach(p=>{if(!own[p.category])own[p.category]=p.cover_url});
+  tiles.forEach(t=>{if(own[t.dataset.cat])photos[t.dataset.cat]={url:own[t.dataset.cat],own:true}})}
+ const credits=[];
+ tiles.forEach(t=>{const p=photos[t.dataset.cat];if(!p)return;const img=t.querySelector("[data-img]");img.src=p.url;img.alt=p.alt||t.textContent.trim();img.onload=()=>img.classList.remove("hidden");
+  if(!p.own&&p.credit)credits.push(p.link?`<a class="underline" target="_blank" rel="noopener" href="${escapeHtml(p.link)}">${escapeHtml(p.credit)}</a>`:escapeHtml(p.credit))});
+ if(credits.length)document.querySelector("#photo-credits").innerHTML=`Photos: ${credits.join(", ")} on <a class="underline" target="_blank" rel="noopener" href="https://unsplash.com/?utm_source=terralens&utm_medium=referral">Unsplash</a>`})();
 document.querySelector("#featured-grid").innerHTML=(await queryPlaces({limit:8})).map(card).join("");
 </script>
 

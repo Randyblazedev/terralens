@@ -47,6 +47,7 @@
 <p id="gate" role="status" class="mt-6 text-white/55">Checking access...</p>
 <div id="app" class="hidden">
  <div id="stats" class="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-5"></div>
+ <div class="mt-6"><button id="health" class="tl-btn tl-btn-ghost !min-h-10">Check setup</button><ul id="health-out" class="mt-3 grid gap-2 text-sm" aria-live="polite"></ul></div>
  <div class="mt-10 flex flex-wrap gap-2" role="tablist">
   <button id="tab-places" role="tab" class="tl-btn tl-btn-primary !min-h-10">Places</button>
   <button id="tab-reports" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Reports</button>
@@ -173,6 +174,9 @@ $("#contributors").addEventListener("click",async e=>{const btn=e.target.closest
  if(!confirm(on?"Verify this contributor? Their new places will publish without review.":"Remove verification?"))return;
  const {error}=await supabase.from("profiles").update({verified:on,verified_at:on?new Date().toISOString():null}).eq("id",row.dataset.uid);
  flash(error?error.message:on?"Contributor verified.":"Verification removed.");if(!error)loadContributors()});
+$("#health").onclick=async()=>{const out=$("#health-out");out.innerHTML='<li class="text-white/50">Checking...</li>';
+ const d=await api("/api/health",{});if(!d.checks){out.innerHTML=`<li class="text-red-300">${escapeHtml(d.error||"Check failed.")}</li>`;return}
+ out.innerHTML=d.checks.map(c=>`<li class="tl-card flex items-start gap-3 p-3"><span aria-hidden="true">${c.ok?"✅":"❌"}</span><span><b>${escapeHtml(c.name)}</b><br><span class="text-white/55">${escapeHtml(c.detail)}</span></span></li>`).join("")};
 const TABS=["places","reports","contributors","comments"],loaders={reports:loadReports,contributors:loadContributors,comments:loadComments};
 const show=t=>{TABS.forEach(n=>{$(`#${n}-panel`).classList.toggle("hidden",n!==t);$(`#tab-${n}`).className="tl-btn !min-h-10 "+(n===t?"tl-btn-primary":"tl-btn-ghost")});loaders[t]?.()};
 TABS.forEach(n=>{$(`#tab-${n}`).onclick=()=>show(n)});

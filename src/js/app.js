@@ -1,4 +1,5 @@
 import { supabase, getUser, ensureProfile } from "./supabase.js";
+import { REQUIRE_LOGIN } from "./config.js";
 
 export const fallbackPlaces = [
   {id:"seed-1",slug:"mount-cameroon",name:"Mount Cameroon",description:"A volcanic landscape rising above Buea with forest, cloud, and dramatic mountain views.",country:"Cameroon",region:"South-West",city:"Buea",category:"Mountain",cover_url:"https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=85"},
@@ -55,6 +56,17 @@ export async function requireAuth(next = location.href) {
 }
 
 export async function initNav() {
+  // Sign-in wall: everything except the login, terms and privacy pages needs an account.
+  const open = /\/(login|terms|privacy)(\.html)?$/.test(location.pathname);
+  if (REQUIRE_LOGIN && supabase && !open) {
+    document.documentElement.style.visibility = "hidden";
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      location.replace("login.html?next=" + encodeURIComponent(location.pathname.replace(/^\//, "") + location.search));
+      return;
+    }
+    document.documentElement.style.visibility = "";
+  }
   const user = await getUser();
   document.querySelectorAll("[data-auth-label]").forEach(el => {
     el.textContent = user ? (user.user_metadata?.full_name || "Profile") : "Sign in";

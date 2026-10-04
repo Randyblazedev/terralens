@@ -24,7 +24,8 @@ function loadLocalEnv() {
 loadLocalEnv();
 const url = process.env.SUPABASE_URL || '';
 const key = process.env.SUPABASE_PUBLISHABLE_KEY || '';
+const requireLogin = (process.env.REQUIRE_LOGIN || 'true').toLowerCase() !== 'false';
 const output = resolve('src/js/runtime-config.js');
 mkdirSync(resolve('src/js'), { recursive: true });
-writeFileSync(output, `// Generated at build time. Do not commit secrets.\nexport const SUPABASE_URL = ${JSON.stringify(url)};\nexport const SUPABASE_KEY = ${JSON.stringify(key)};\n`);
-console.log(`Generated ${output} (${url ? 'Supabase URL configured' : 'Supabase URL missing'})`);
+writeFileSync(output, `// Generated at build time. Do not commit secrets.\nexport const SUPABASE_URL = ${JSON.stringify(url)};\nexport const SUPABASE_KEY = ${JSON.stringify(key)};\nexport const REQUIRE_LOGIN = ${requireLogin};\n`);
+console.log(`Generated ${output} (${url ? 'Supabase URL configured' : 'Supabase URL missing'}, login ${requireLogin ? 'required' : 'optional'})`);

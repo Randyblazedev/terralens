@@ -1,4 +1,11 @@
-# TerraLens 6.5: Google-only sign-in, photo likes, logo
+# TerraLens 6.6: photo categories, setup check, sign-in wall
+
+- **Real photos on the home page categories** (no more emojis). Each tile shows a TerraLens place photo from that category when one exists, otherwise a photo fetched from Unsplash with your key (cached for a day), with photographer credit under the tiles. New route: `api/unsplash/categories.js`.
+- **Admin -> "Check setup" button** (`api/health.js`, admin only): tests your Vercel variables for real (Supabase reachable, Google sign-in on, Email sign-in off, Unsplash key, DeepSeek key, SITE_URL format). It never shows secret values.
+- **Sign-in wall (ON by default):** visitors are sent to the login page for everything except login, terms and privacy. To open browsing to the public again, add the Vercel variable `REQUIRE_LOGIN=false` and redeploy. This is a page-level wall; the database still allows public reads of published places.
+- **Fixed a bug I introduced earlier:** the planner's AI button did not send the sign-in token, so it always failed. It now does.
+
+# Earlier: 6.5 Google-only sign-in, photo likes, logo
 
 ## Do these first (in order)
 1. **Google sign-in setup (once):**
