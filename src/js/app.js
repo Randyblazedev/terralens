@@ -20,19 +20,34 @@ export function placeUrl(place) {
   return `place/${encodeURIComponent(place.slug || place.id)}`;
 }
 
+// Looks up the uploader (name + verified flag) for a list of places in one request.
+export async function attachAuthors(places) {
+  if (!supabase || !places?.length) return places;
+  const ids = [...new Set(places.map(p => p.created_by).filter(Boolean))];
+  if (!ids.length) return places;
+  const { data } = await supabase.from("profiles").select("id,display_name,username,verified").in("id", ids);
+  const byId = Object.fromEntries((data || []).map(a => [a.id, a]));
+  places.forEach(p => { p.author = byId[p.created_by] || null; });
+  return places;
+}
+
 export function card(place) {
-  return `<a href="${placeUrl(place)}" class="group block overflow-hidden rounded-3xl border border-white/10 bg-white/[.025]">
-    <div class="aspect-[4/3] overflow-hidden bg-white/5">
-      <img src="${escapeHtml(place.cover_url || place.image_url || "")}" alt="${escapeHtml(place.name)}" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
-    </div>
+  const url = placeUrl(place);
+  const name = place.author ? (place.author.display_name || place.author.username || "") : "";
+  const by = name ? `<span class="flex min-w-0 items-center gap-1.5 text-xs text-white/55"><span class="truncate">${escapeHtml(name)}</span>${place.author.verified ? verifiedBadge(15) : ""}</span>` : "<span></span>";
+  return `<article class="group overflow-hidden rounded-3xl border border-white/10 bg-white/[.025]">
+    <a href="${url}" class="block aspect-[4/3] overflow-hidden bg-white/5" tabindex="-1" aria-hidden="true">
+      <img src="${escapeHtml(place.cover_url || place.image_url || "")}" alt="" loading="lazy" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
+    </a>
     <div class="p-5">
       <div class="mb-2 flex items-center justify-between gap-3 text-[11px] font-bold uppercase tracking-[.16em] text-sky-300">
         <span>${escapeHtml(place.category || "Place")}</span><span>${escapeHtml(place.country || "")}</span>
       </div>
-      <h3 class="font-display text-xl font-bold">${escapeHtml(place.name)}</h3>
+      <h3 class="font-display text-xl font-bold"><a href="${url}">${escapeHtml(place.name)}</a></h3>
       <p class="mt-2 line-clamp-2 text-sm leading-6 text-white/55">${escapeHtml(place.description || "")}</p>
+      <div class="mt-4 flex items-center justify-between gap-3">${by}<a href="${url}" class="tl-btn tl-btn-ghost !min-h-9 shrink-0 !px-4" aria-label="View ${escapeHtml(place.name)}">View</a></div>
     </div>
-  </a>`;
+  </article>`;
 }
 
 const cleanSearch = q => String(q).replace(/[,()%*_\\"'`:]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
@@ -46,7 +61,7 @@ export async function queryPlaces({q="",category="",country="",limit=24}={}) {
   if (country) query = query.eq("country",country);
   const {data,error} = await query;
   if (error) return fallbackPlaces.slice(0,limit);
-  return data || [];
+  return attachAuthors(data || []);
 }
 
 export async function requireAuth(next = location.href) {
@@ -67,7 +82,7 @@ export const canEdit = place => editMinutesLeft(place) > 0;
 
 export async function initNav() {
   // Sign-in wall: everything except the login, terms and privacy pages needs an account.
-  const open = /\/(login|terms|privacy)(\.html)?$/.test(location.pathname);
+  const open = /\/(login|terms|privacy|content-policy)(\.html)?$/.test(location.pathname);
   if (REQUIRE_LOGIN && supabase && !open) {
     document.documentElement.style.visibility = "hidden";
     const { data: { session } } = await supabase.auth.getSession();
@@ -77,12 +92,14 @@ export async function initNav() {
     }
     document.documentElement.style.visibility = "";
   }
-  const user = await getUser();
+  const session = supabase ? (await supabase.auth.getSession()).data.session : null;
+  const user = session?.user || null;
   document.querySelectorAll("[data-auth-label]").forEach(el => {
     el.textContent = user ? (user.user_metadata?.full_name || "Profile") : "Sign in";
   });
   document.querySelectorAll("[data-auth-href]").forEach(el => {
     el.href = user ? "profile.html" : `login.html?next=${encodeURIComponent(location.href)}`;
+    el.classList.add("tl-ready");
   });
   document.querySelectorAll("[data-upload-link]").forEach(el => {
     el.addEventListener("click", async e => {

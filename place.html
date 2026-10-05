@@ -47,6 +47,7 @@
  <div id="place"></div>
 </main>
 <script type="module">
+import {confirmDialog} from "./src/js/ui.js";
 import {supabase} from "./src/js/supabase.js";import {fallbackPlaces,escapeHtml,placeUrl,verifiedBadge,canEdit} from "./src/js/app.js";
 const slug=new URLSearchParams(location.search).get("slug")||decodeURIComponent(location.pathname.match(/^\/place\/([^/]+)/)?.[1]||"");
 let place=null,images=[];
@@ -104,7 +105,7 @@ saveBtn.onclick=async()=>{if(!isReal){status("Connect Supabase to save places.")
  saved=!saved;paint();status(saved?"Saved to your places.":"Removed from your saved places.")};
 if(isReal){const {data:{user:me}}=await supabase.auth.getUser();if(me&&me.id===place.created_by&&canEdit(place))document.querySelector("#share").parentElement.insertAdjacentHTML("beforeend",`<a class="tl-btn tl-btn-ghost" href="edit.html?slug=${encodeURIComponent(place.slug)}">Edit</a>`)}
 if(place.status==="pending")document.querySelector("#contributor").textContent="This place is awaiting review and is only visible to you.";
-else if(isReal&&place.created_by){const o=await supabase.from("profiles").select("display_name,verified").eq("id",place.created_by).maybeSingle();if(o.data?.verified)document.querySelector("#contributor").innerHTML=(o.data.display_name?escapeHtml(o.data.display_name)+" ":"")+verifiedBadge(18)+" Verified"}
+else if(isReal&&place.created_by){const o=await supabase.from("profiles").select("display_name,username,verified").eq("id",place.created_by).maybeSingle();if(o.data){const nm=o.data.display_name||o.data.username||"";if(nm)document.querySelector("#contributor").innerHTML="By "+escapeHtml(nm)+(o.data.verified?" "+verifiedBadge(18):"")}}
 document.querySelector("#rsend").onclick=async()=>{if(!isReal){status("Reporting needs Supabase.");return}
  const {data:{user}}=await supabase.auth.getUser();if(!user){location.href="login.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);return}
  const btn=document.querySelector("#rsend");btn.disabled=true;
@@ -127,7 +128,7 @@ if(isReal&&place.status==="published"){
  const {data:{user:cu}}=await supabase.auth.getUser(),cmsg=m=>{document.querySelector("#cmsg").textContent=m};
  const when=t=>new Date(t).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"});
  const row=c=>{const a=c.profiles||{},name=a.display_name||a.username||"Traveler";
-  return `<article class="tl-card p-4" data-cid="${escapeHtml(c.id)}"><div class="flex items-center justify-between gap-3"><p class="text-sm font-bold">${escapeHtml(name)}${a.verified?" "+verifiedBadge(16)+' <span class="font-normal text-white/45">Verified</span>':""}</p><span class="text-xs text-white/35">${escapeHtml(when(c.created_at))}</span></div><p class="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-white/70">${escapeHtml(c.body)}</p><div class="mt-3 text-xs text-white/40">${cu&&c.user_id===cu.id?'<button data-cdel class="underline">Delete</button>':cu?'<button data-crep class="underline">Report</button>':""}</div></article>`};
+  return `<article class="tl-card p-4" data-cid="${escapeHtml(c.id)}"><div class="flex items-center justify-between gap-3"><p class="text-sm font-bold">${escapeHtml(name)}${a.verified?" "+verifiedBadge(16):""}</p><span class="text-xs text-white/35">${escapeHtml(when(c.created_at))}</span></div><p class="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-white/70">${escapeHtml(c.body)}</p><div class="mt-3 text-xs text-white/40">${cu&&c.user_id===cu.id?'<button data-cdel class="underline">Delete</button>':cu?'<button data-crep class="underline">Report</button>':""}</div></article>`};
  const count=()=>{const n=document.querySelectorAll("#clist [data-cid]").length;document.querySelector("#ccount").textContent=n?`(${n})`:""};
  const SEL="id,body,created_at,user_id,profiles(display_name,username,verified)";
  const r=await supabase.from("comments").select(SEL).eq("place_id",place.id).order("created_at",{ascending:false}).limit(50);
@@ -139,8 +140,8 @@ if(isReal&&place.status==="published"){
   if(ins.error){cmsg(/row-level security/i.test(ins.error.message)?"Please sign in again to comment.":ins.error.message);return}
   document.querySelector("#clist p")?.remove();document.querySelector("#clist").insertAdjacentHTML("afterbegin",row(ins.data));t.value="";cmsg("Comment posted.");count()});
  document.querySelector("#clist").addEventListener("click",async e=>{const art=e.target.closest("[data-cid]");if(!art)return;const id=art.dataset.cid;
-  if(e.target.hasAttribute("data-cdel")){if(!confirm("Delete your comment?"))return;const d=await supabase.from("comments").delete().eq("id",id);if(d.error){cmsg("Couldn't delete it. Please try again.");return}art.remove();count();cmsg("Comment deleted.")}
-  if(e.target.hasAttribute("data-crep")){if(!confirm("Report this comment to the moderators?"))return;const rr=await supabase.from("reports").insert({target_type:"comment",target_id:id,reason:"inappropriate"});
+  if(e.target.hasAttribute("data-cdel")){if(!await confirmDialog("Delete your comment?",{danger:true,confirmText:"Delete"}))return;const d=await supabase.from("comments").delete().eq("id",id);if(d.error){cmsg("Couldn't delete it. Please try again.");return}art.remove();count();cmsg("Comment deleted.")}
+  if(e.target.hasAttribute("data-crep")){if(!await confirmDialog("Report this comment to the moderators?",{danger:false,confirmText:"Confirm"}))return;const rr=await supabase.from("reports").insert({target_type:"comment",target_id:id,reason:"inappropriate"});
    cmsg(rr.error?(rr.error.code==="23505"?"You already reported this comment.":/row-level security/i.test(rr.error.message)?"Please sign in again to report.":rr.error.message):"Thanks. We will review it.")}})
 }
 }
@@ -150,7 +151,7 @@ if(isReal&&place.status==="published"){
   <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
     <div><div class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-xl font-extrabold">Terra<span class="text-sky-300">Lens</span></span></div><p class="mt-4 max-w-md text-sm leading-7 text-white/45">A visual place-discovery platform connecting the photo that inspires you with the context that helps you experience it.</p></div>
     <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="planner.html">Trips</a><a href="saved.html">Saved places</a></div></div>
-    <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div></div>
+    <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy policy</a><a href="terms.html">Terms of service</a><a href="content-policy.html">Content policy</a></div></div>
   </div>
   <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© 2026 TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>
 </footer>

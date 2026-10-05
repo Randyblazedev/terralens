@@ -29,3 +29,7 @@ h1,h2,h3,h4,h5{font-family:'Manrope',sans-serif}
 .hero-grid{background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:60px 60px}
 .line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .drop-active{border-color:rgba(125,211,252,.8)!important;background:rgba(125,211,252,.06)!important}
+
+[data-auth-href]{visibility:hidden;animation:tl-reveal 0s linear 1.8s forwards}
+[data-auth-href].tl-ready{visibility:visible;animation:none}
+@keyframes tl-reveal{to{visibility:visible}}

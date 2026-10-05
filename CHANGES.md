@@ -1,3 +1,20 @@
+# TerraLens 7.0
+
+## Do these first (in order)
+1. **Vercel:** add `OPENROUTER_API_KEY` (create one at openrouter.ai/keys). Optional: `OPENROUTER_MODEL` (default `openai/gpt-4o-mini`). You can delete `DEEPSEEK_API_KEY`. Redeploy.
+2. **Supabase SQL editor:** if you have not yet, run `supabase/schema.sql` once (unchanged since 6.9).
+3. **Seed 95 places:** sign in once with your admin Google account, then run `supabase/seed-places.sql` once. It adds 95 places (16 each for Waterfall, Mountain, Beach, Lake and Forest, 15 for Culture) as drafts.
+4. **Open `/admin.html` and tap "Add photos to new places".** It finds a real Unsplash photo (with credit) for up to 40 places per tap and publishes each one. Unsplash's demo key allows about 50 searches an hour, so tap again after an hour for the rest (3 taps total).
+5. **Contact email:** the legal pages show `asonganyirandy143@gmail.com` (the only email I have). Change it in `src/js/site.js` if you want a different public address.
+
+## What changed
+- **Cards:** every place card now has a **View** button, plus the uploader's name with the gold badge if they are verified. The word "Verified" is gone everywhere (comments, place page); only the badge shows. Place pages show "By name" for any uploader.
+- **No more sign-in flash:** the header waits for your stored session instead of a network call, so you never see "Sign in" before your name. (If scripts fail it still appears after 1.8 seconds.)
+- **Styled pop-ups:** the browser's grey alert, confirm and prompt boxes are replaced by site-styled dialogs and toasts (`src/js/ui.js`): new collection name, delete and remove confirmations, moderation actions.
+- **Real legal pages:** full Terms of Service, Privacy Policy and a new Content Policy (`content-policy.html`), linked from every footer and the login page. I am not a lawyer: have them reviewed for your country before you rely on them.
+- **AI now uses OpenRouter.** Admin -> Check setup tests the key and its credit.
+- **95 starter places** with descriptions, coordinates and best seasons, spread across the categories.
+
 # TerraLens 6.9: comments, simpler verified label
 
 - **Comments on place pages** (there were none before): signed-in users can post, delete their own, and report others. Each comment shows the user's name, and verified users get the gold badge with the word "Verified" (no "photographer"). Signed-out visitors can read comments and see a sign-in button. Comments only exist on live places. Limit: 15 per hour per user. Admins moderate from the Comments and Reports tabs.

@@ -1,5 +1,5 @@
 import { clean, cleanUrl } from "./_lib/env.js";
-const STATIC_PAGES = ["", "explore.html", "about.html", "collections.html", "planner.html"];
+const STATIC_PAGES = ["", "explore.html", "about.html", "collections.html", "planner.html", "terms.html", "privacy.html", "content-policy.html"];
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[c]));
 
 export default async function handler(req, res) {

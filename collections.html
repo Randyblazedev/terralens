@@ -44,17 +44,18 @@
 
 <main class="tl-section"><div class="tl-shell"><div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p class="tl-eyebrow">Community libraries</p><h1 class="mt-3 text-5xl font-extrabold">Collections.</h1><p class="mt-4 text-white/50">Curate places around a feeling, region, trip or idea.</p></div><button id="new" class="tl-btn tl-btn-primary">＋ New collection</button></div><div id="grid" class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3"></div></div></main>
 <script type="module">
+import {promptDialog,toast} from "./src/js/ui.js";
 import {supabase, getUser} from "./src/js/supabase.js";import {escapeHtml} from "./src/js/app.js";
 const grid=document.querySelector("#grid");
 async function run(){if(!supabase){grid.innerHTML='<div class="tl-card p-7 text-white/50">Connect Supabase to create collections.</div>';return}const r=await supabase.from("collections").select("*,profiles(display_name,username)").eq("is_public",true).order("created_at",{ascending:false}).limit(30);grid.innerHTML=(r.data||[]).map(c=>`<a href="collection.html?id=${c.id}" class="tl-card block p-6 hover:bg-white/5"><p class="tl-eyebrow">Collection</p><h2 class="mt-3 text-2xl font-bold">${escapeHtml(c.name)}</h2><p class="mt-2 text-sm text-white/50">${escapeHtml(c.description||"A collection of places.")}</p><p class="mt-6 text-xs text-white/35">by ${escapeHtml(c.profiles?.display_name||"Traveler")}</p></a>`).join("")||'<p class="text-white/45">No public collections yet.</p>'}
-document.querySelector("#new").onclick=async()=>{const u=await getUser();if(!u){location.href="login.html?next=collections.html";return}const name=prompt("Collection name");if(!name)return;await supabase.from("collections").insert({user_id:u.id,name,description:"",is_public:true});run()};run();
+document.querySelector("#new").onclick=async()=>{const u=await getUser();if(!u){location.href="login.html?next=collections.html";return}const name=await promptDialog("Collection name",{title:"New collection",placeholder:"e.g. Weekend waterfalls",confirmText:"Create"});if(!name)return;const ins=await supabase.from("collections").insert({user_id:u.id,name,description:"",is_public:true});toast(ins.error?"Couldn't create the collection. Please try again.":"Collection created.",ins.error?"error":"success");run()};run();
 </script>
 
 <footer class="tl-footer">
   <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
     <div><div class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-xl font-extrabold">Terra<span class="text-sky-300">Lens</span></span></div><p class="mt-4 max-w-md text-sm leading-7 text-white/45">A visual place-discovery platform connecting the photo that inspires you with the context that helps you experience it.</p></div>
     <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="planner.html">Trips</a><a href="saved.html">Saved places</a></div></div>
-    <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div></div>
+    <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy policy</a><a href="terms.html">Terms of service</a><a href="content-policy.html">Content policy</a></div></div>
   </div>
   <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© 2026 TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>
 </footer>

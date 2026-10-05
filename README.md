@@ -30,13 +30,13 @@ The full product combines:
 - Static frontend: HTML + Tailwind CSS v4 browser build + vanilla JavaScript
 - Auth/data/storage: Supabase
 - Discovery fallback/seed imagery: Unsplash API through `/api/unsplash/search`
-- AI: DeepSeek through `/api/ai/chat`
+- AI: OpenRouter through `/api/ai/chat`
 - Maps: Leaflet + OpenStreetMap tiles in the included map layer
 - Deployment: Vercel
 
 ## Important security rule
 
-Never put `UNSPLASH_ACCESS_KEY` or `DEEPSEEK_API_KEY` in browser code.
+Never put `UNSPLASH_ACCESS_KEY` or `OPENROUTER_API_KEY` in browser code.
 
 Only `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are used by the browser. They are generated into a runtime config during the Vercel build; the publishable key is intended for client-side use.
 
@@ -44,7 +44,7 @@ Only `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are used by the browser. They
 
 1. Copy `.env.example` to `.env.local`.
 2. Add your Supabase URL and publishable key.
-3. Add Unsplash and DeepSeek keys for server functions.
+3. Add Unsplash and OpenRouter keys for server functions.
 4. Run the SQL in `supabase/schema.sql`.
 5. In Supabase Storage, create a public bucket named `place-images`, or run the storage section in the SQL.
 6. In Supabase Auth, enable Google and add your Vercel/local callback URL.

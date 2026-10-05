@@ -9,7 +9,7 @@ Use:
 - `SUPABASE_URL`
 - `SUPABASE_PUBLISHABLE_KEY`
 - `UNSPLASH_ACCESS_KEY`
-- `DEEPSEEK_API_KEY`
+- `OPENROUTER_API_KEY` (optional: `OPENROUTER_MODEL`, default `openai/gpt-4o-mini`)
 
 Do not paste secret keys into HTML or JavaScript.
 
@@ -52,3 +52,6 @@ Optional: set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` in Vercel 
 
 ## Sign-in (v6.5)
 TerraLens uses Google sign-in only. See "Do these first" in CHANGES.md for the Google Cloud + Supabase setup, and disable the Email provider in Supabase.
+
+## Starter places (v7)
+Run `supabase/seed-places.sql` once after signing in as admin, then tap "Add photos to new places" in `/admin.html` (repeat after an hour until done).

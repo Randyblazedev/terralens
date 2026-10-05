@@ -48,7 +48,7 @@
 <p id="gate" role="status" class="mt-6 text-white/55">Checking access...</p>
 <div id="app" class="hidden">
  <div id="stats" class="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-5"></div>
- <div class="mt-6"><button id="health" class="tl-btn tl-btn-ghost !min-h-10">Check setup</button><ul id="health-out" class="mt-3 grid gap-2 text-sm" aria-live="polite"></ul></div>
+ <div class="mt-6"><button id="health" class="tl-btn tl-btn-ghost !min-h-10">Check setup</button> <button id="fill" class="tl-btn tl-btn-ghost !min-h-10">Add photos to new places</button><p id="fill-out" role="status" aria-live="polite" class="mt-3 text-sm text-white/55"></p><ul id="health-out" class="mt-3 grid gap-2 text-sm" aria-live="polite"></ul></div>
  <div class="mt-10 flex flex-wrap gap-2" role="tablist">
   <button id="tab-places" role="tab" class="tl-btn tl-btn-primary !min-h-10">Places</button>
   <button id="tab-reports" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Reports</button>
@@ -69,6 +69,7 @@
 </div>
 </div></main>
 <script type="module">
+import {confirmDialog} from "./src/js/ui.js";
 import {supabase} from "./src/js/supabase.js";
 import {escapeHtml,verifiedBadge} from "./src/js/app.js";
 const $=s=>document.querySelector(s),gate=$("#gate"),flash=m=>{$("#flash").textContent=m};
@@ -131,8 +132,8 @@ $("#places").addEventListener("click",async e=>{
  if(act==="more"){const m=card.querySelector("[data-more]");m.classList.toggle("hidden");const box=card.querySelector("[data-photos]");
   if(!m.classList.contains("hidden")&&!box.dataset.loaded){box.dataset.loaded="1";const {data}=await supabase.from("place_images").select("id,image_url").eq("place_id",id);
    box.innerHTML=(data||[]).map(i=>`<div class="relative"><img src="${escapeHtml(i.image_url)}" alt="" class="aspect-[4/3] w-full rounded-xl object-cover"><button data-act="rmimg" data-iid="${escapeHtml(i.id)}" class="absolute right-1 top-1 rounded-lg bg-black/70 px-2 py-1 text-xs text-red-300">Remove</button></div>`).join("")||'<p class="col-span-full text-sm text-white/45">No photos.</p>'}}
- if(act==="rmimg"){if(!confirm("Remove this photo?"))return;const {error}=await supabase.from("place_images").delete().eq("id",btn.dataset.iid);flash(error?error.message:"Photo removed.");if(!error)btn.parentElement.remove()}
- if(act==="delete"){const name=card.querySelector("a").textContent;if(!confirm(`Delete "${name}" and its photos? This cannot be undone.`))return;const {error}=await supabase.from("places").delete().eq("id",id);flash(error?error.message:"Place deleted.");if(!error){card.remove();stats()}}
+ if(act==="rmimg"){if(!await confirmDialog("Remove this photo?",{danger:true,confirmText:"Remove"}))return;const {error}=await supabase.from("place_images").delete().eq("id",btn.dataset.iid);flash(error?error.message:"Photo removed.");if(!error)btn.parentElement.remove()}
+ if(act==="delete"){const name=card.querySelector("a").textContent;if(!await confirmDialog(`Delete "${name}" and its photos? This cannot be undone.`,{danger:true,confirmText:"Delete"}))return;const {error}=await supabase.from("places").delete().eq("id",id);flash(error?error.message:"Place deleted.");if(!error){card.remove();stats()}}
  if(act==="savemeta"){const aff=card.querySelector('[data-f="affiliate_url"]').value.trim();if(aff&&!httpsUrl(aff)){flash("Affiliate link must start with https://");return}
   const {error}=await supabase.from("places").update({sponsor_name:card.querySelector('[data-f="sponsor_name"]').value.trim()||null,affiliate_url:aff||null}).eq("id",id);flash(error?error.message:"Sponsor details saved.")}
  if(act==="usearch"){const term=card.querySelector('[data-f="usq"]').value.trim();if(!term)return;const box=card.querySelector("[data-results]");box.textContent="Searching...";
@@ -149,7 +150,7 @@ $("#places").addEventListener("click",async e=>{
   if(p.links?.download_location)await api("/api/unsplash/download",{download_location:p.links.download_location});
   flash(`Added photo by ${p.user.name||"Unsplash photographer"} to ${name}.`)}
 });
-$("#comments").addEventListener("click",async e=>{const btn=e.target.closest('[data-act="delcomment"]'),row=e.target.closest("[data-cid]");if(!btn||!row||!confirm("Delete this comment?"))return;
+$("#comments").addEventListener("click",async e=>{const btn=e.target.closest('[data-act="delcomment"]'),row=e.target.closest("[data-cid]");if(!btn||!row||!await confirmDialog("Delete this comment?",{danger:true,confirmText:"Delete"}))return;
  const {error}=await supabase.from("comments").delete().eq("id",row.dataset.cid);flash(error?error.message:"Comment deleted.");if(!error){row.remove();stats()}});
 async function loadReports(){
  const {data,error}=await supabase.from("reports").select("*").eq("status","open").order("created_at",{ascending:false}).limit(50);
@@ -162,7 +163,7 @@ async function loadReports(){
   return `<div class="tl-card p-4" data-rid="${escapeHtml(r.id)}" data-type="${escapeHtml(r.target_type)}" data-target="${escapeHtml(r.target_id)}"><p class="text-sm"><b>${escapeHtml(r.reason)}</b> · ${escapeHtml(r.target_type)}: ${label}</p>${r.details?`<p class="mt-2 text-sm text-white/55">${escapeHtml(r.details)}</p>`:""}<div class="mt-3 flex flex-wrap gap-2"><button data-act="rdismiss" class="tl-btn tl-btn-ghost !min-h-10">Dismiss</button><button data-act="raction" class="tl-btn tl-btn-primary !min-h-10">${r.target_type==="place"?"Hide place":"Delete comment"}</button></div></div>`}).join("")||'<p class="text-white/50">No open reports.</p>'}
 $("#reports").addEventListener("click",async e=>{const btn=e.target.closest("[data-act]"),card=e.target.closest("[data-rid]");if(!btn||!card)return;
  const act=btn.dataset.act,type=card.dataset.type,target=card.dataset.target;
- if(act==="raction"){if(!confirm(type==="place"?"Hide this place?":"Delete this comment?"))return;
+ if(act==="raction"){if(!await confirmDialog(type==="place"?"Hide this place?":"Delete this comment?",{danger:true,confirmText:"Confirm"}))return;
   const res=type==="place"?await supabase.from("places").update({status:"hidden"}).eq("id",target):await supabase.from("comments").delete().eq("id",target);
   if(res.error){flash(res.error.message);return}}
  const r=await supabase.from("reports").update({status:act==="raction"?"actioned":"dismissed",handled_by:session.user.id,handled_at:new Date().toISOString()}).eq("id",card.dataset.rid);
@@ -172,12 +173,28 @@ async function loadContributors(){
  $("#contributors").innerHTML=(data||[]).map(u=>{const ok=Number(u.approved_photos)>=100&&Number(u.approved_places)>=10&&Number(u.actioned_reports_90d)===0;
   return `<div class="tl-card flex flex-wrap items-center justify-between gap-4 p-4" data-uid="${escapeHtml(u.id)}"><div><p class="font-bold">${escapeHtml(u.display_name||u.username||"Unnamed user")} ${u.verified?verifiedBadge(18):""}</p><p class="text-xs text-white/45">${Number(u.approved_photos)} approved photos · ${Number(u.approved_places)}/${Number(u.places)} places approved · ${Number(u.actioned_reports_90d)} upheld reports (90d)${ok&&!u.verified?' · <b class="text-sky-300">Eligible</b>':""}</p></div><button data-act="verify" data-v="${u.verified?"0":"1"}" class="tl-btn ${u.verified?"tl-btn-ghost":"tl-btn-primary"} !min-h-10">${u.verified?"Remove verification":"Verify"}</button></div>`}).join("")||'<p class="text-white/50">No contributors yet.</p>'}
 $("#contributors").addEventListener("click",async e=>{const btn=e.target.closest('[data-act="verify"]'),row=e.target.closest("[data-uid]");if(!btn||!row)return;const on=btn.dataset.v==="1";
- if(!confirm(on?"Verify this contributor? Their new places will publish without review.":"Remove verification?"))return;
+ if(!await confirmDialog(on?"Verify this contributor? Their new places will publish without review.":"Remove verification?",{danger:true,confirmText:"Confirm"}))return;
  const {error}=await supabase.from("profiles").update({verified:on,verified_at:on?new Date().toISOString():null}).eq("id",row.dataset.uid);
  flash(error?error.message:on?"Contributor verified.":"Verification removed.");if(!error)loadContributors()});
 $("#health").onclick=async()=>{const out=$("#health-out");out.innerHTML='<li class="text-white/50">Checking...</li>';
  const d=await api("/api/health",{});if(!d.checks){out.innerHTML=`<li class="text-red-300">${escapeHtml(d.error||"Check failed.")}</li>`;return}
  out.innerHTML=d.checks.map(c=>`<li class="tl-card flex items-start gap-3 p-3"><span aria-hidden="true">${c.ok?"✅":"❌"}</span><span><b>${escapeHtml(c.name)}</b><br><span class="text-white/55">${escapeHtml(c.detail)}</span></span></li>`).join("")};
+$("#fill").onclick=async()=>{const out=$("#fill-out"),btn=$("#fill");btn.disabled=true;out.textContent="Looking for places without photos...";
+ const {data,error}=await supabase.from("places").select("id,name,country,status").is("cover_url",null).limit(40);
+ if(error){out.textContent=error.message;btn.disabled=false;return}
+ if(!data.length){out.textContent="Every place already has a photo.";btn.disabled=false;return}
+ const wait=()=>new Promise(z=>setTimeout(z,2200));let ok=0,skipped=0;
+ for(const [i,p] of data.entries()){out.textContent=`Adding photos: ${i+1} of ${data.length} (${p.name})`;
+  const r=await fetch(`/api/unsplash/search?${new URLSearchParams({query:`${p.name} ${p.country||""}`.trim(),per_page:"1",orientation:"landscape"})}`);
+  if(r.status===429){out.textContent=`Paused after ${ok} places: the Unsplash limit was reached. Tap again in about an hour.`;btn.disabled=false;stats();loadPlaces();return}
+  const d=await r.json().catch(()=>({})),ph=d.results?.[0];
+  if(!ph){skipped++;await wait();continue}
+  const ins=await supabase.from("place_images").insert({place_id:p.id,image_url:ph.urls.regular,alt_text:ph.description||p.name,credit_name:ph.user?.name||"Unsplash photographer",credit_url:ph.user?.profile?ph.user.profile+"?utm_source=terralens&utm_medium=referral":null,created_by:session.user.id});
+  if(ins.error){skipped++;await wait();continue}
+  const upd=await supabase.from("places").update(p.status==="draft"?{cover_url:ph.urls.regular,status:"published"}:{cover_url:ph.urls.regular}).eq("id",p.id);
+  if(upd.error)skipped++;else{ok++;if(ph.links?.download_location)api("/api/unsplash/download",{download_location:ph.links.download_location})}
+  await wait()}
+ out.textContent=`Done: ${ok} place${ok===1?"":"s"} now ${ok===1?"has":"have"} a photo and ${ok===1?"is":"are"} live${skipped?`. ${skipped} skipped, tap again to retry`:""}.`;btn.disabled=false;stats();loadPlaces()};
 const TABS=["places","reports","contributors","comments"],loaders={reports:loadReports,contributors:loadContributors,comments:loadComments};
 const show=t=>{TABS.forEach(n=>{$(`#${n}-panel`).classList.toggle("hidden",n!==t);$(`#tab-${n}`).className="tl-btn !min-h-10 "+(n===t?"tl-btn-primary":"tl-btn-ghost")});loaders[t]?.()};
 TABS.forEach(n=>{$(`#tab-${n}`).onclick=()=>show(n)});
@@ -191,7 +208,7 @@ if(await guard()){const pend=await stats();if(pend>0)$("#status").value="pending
   <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
     <div><div class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-xl font-extrabold">Terra<span class="text-sky-300">Lens</span></span></div><p class="mt-4 max-w-md text-sm leading-7 text-white/45">A visual place-discovery platform connecting the photo that inspires you with the context that helps you experience it.</p></div>
     <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="planner.html">Trips</a><a href="saved.html">Saved places</a></div></div>
-    <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></div></div>
+    <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy policy</a><a href="terms.html">Terms of service</a><a href="content-policy.html">Content policy</a></div></div>
   </div>
   <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© 2026 TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>
 </footer>
