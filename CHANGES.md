@@ -1,3 +1,8 @@
+# TerraLens 7.0.3: full information for every seeded place
+
+`supabase/seed-places.sql` now fills, for each of the 95 places: full description (3+ sentences), name, country, region and city, how to get there, entry fee, best season, and best time of day. Fees and times are approximate and each fee says to confirm before you go.
+Run it once. It adds missing places as drafts, upgrades places from the earlier shorter seed (only if you have not edited them), and skips places you added yourself. Tested: fresh database, upgrade, and skip-your-own all finish with no errors and no empty fields.
+
 # TerraLens 7.0.2: seed skips places you already added
 
 `supabase/seed-places.sql` now skips any place you added yourself, even if the name or spelling differs a little (Victoria Falls, Lake Malawi, Mount Cameroon, Anse Source d'Argent and Bwindi are matched). It adds 90 new draft places, so with your 6 you have 96. Safe to re-run.
