@@ -1,3 +1,7 @@
+# TerraLens 7.0.2: seed skips places you already added
+
+`supabase/seed-places.sql` now skips any place you added yourself, even if the name or spelling differs a little (Victoria Falls, Lake Malawi, Mount Cameroon, Anse Source d'Argent and Bwindi are matched). It adds 90 new draft places, so with your 6 you have 96. Safe to re-run.
+
 # TerraLens 7.0.1: no more flash on place pages
 
 The like hearts, the Save button, the "By name" line and the Edit button used to appear in their default state and then change a moment later. The place page now loads your stored session and your likes, saved state and the uploader in one parallel step before the first paint, so everything shows the right state straight away. Checked in a simulated browser for visitors, signed-in users, owners and pending places.

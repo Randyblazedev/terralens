@@ -1,4 +1,4 @@
--- seed-places.sql: 95 starter places (16 each for Waterfall, Mountain, Beach, Lake and Forest, 15 for Culture).
+-- seed-places.sql: up to 95 starter places (places you already added yourself are skipped) (16 each for Waterfall, Mountain, Beach, Lake and Forest, 15 for Culture).
 -- Run ONCE in the Supabase SQL editor AFTER schema.sql, after you have signed in with your admin Google account
 -- and added yourself to public.admins. Safe to re-run (existing places are skipped).
 -- Places start as DRAFT with no photo. In /admin.html tap "Add photos to new places": each place gets a real
@@ -113,5 +113,20 @@ begin
   ('Fushimi Inari Shrine','fushimi-inari-shrine','Culture','Japan','Kyoto','Kyoto',34.9671,135.7727,'March to May and October to November','Early morning or late afternoon','A shrine famous for thousands of vermilion torii gates winding up a forested hill. It is open all day, and early or late visits are far quieter.'),
   ('Pyramids of Giza','pyramids-of-giza','Culture','Egypt','Giza','Giza',29.9792,31.1342,'October to April','Early morning or late afternoon','The last surviving wonder of the ancient world, built over 4,500 years ago as royal tombs beside the Sphinx. Start early to avoid the midday heat.')
   ) as v(name, slug, category, country, region, city, latitude, longitude, best_season, best_time, description)
+  -- Skip anything you already added yourself, even if you named or spelled it a little differently.
+  where not exists (
+          select 1 from public.places p
+          where p.slug = v.slug or p.slug like v.slug || '-%'
+             or regexp_replace(lower(p.name), '[^a-z0-9]+', '', 'g') = regexp_replace(lower(v.name), '[^a-z0-9]+', '', 'g'))
+    and not exists (
+          select 1 from (values
+            ('victoria-falls', '%victoria%'),
+            ('lake-malawi', '%malawi%'),
+            ('mount-cameroon', '%cameroon%'),
+            ('anse-source-d-argent', '%source%argent%'),
+            ('bwindi-impenetrable-forest', '%bwindi%')
+          ) as skip(slug, pattern)
+          join public.places p on p.name ilike skip.pattern
+          where skip.slug = v.slug)
   on conflict (slug) do nothing;
 end $$;
