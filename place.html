@@ -48,7 +48,7 @@
 </main>
 <script type="module">
 import {confirmDialog} from "./src/js/ui.js";
-import {supabase} from "./src/js/supabase.js";import {fallbackPlaces,escapeHtml,placeUrl,verifiedBadge,canEdit} from "./src/js/app.js";
+import {supabase} from "./src/js/supabase.js";import {fallbackPlaces,escapeHtml,placeUrl,verifiedBadge,canEdit,backLink,backFab} from "./src/js/app.js";
 const slug=new URLSearchParams(location.search).get("slug")||decodeURIComponent(location.pathname.match(/^\/place\/([^/]+)/)?.[1]||"");
 let place=null,images=[];
 let loadError=false;
@@ -75,6 +75,7 @@ if(isReal){
 }
 document.title=`${place.name} — TerraLens`;
 document.querySelector("#place").innerHTML=`
+<div class="tl-shell pb-4 pt-2">${backLink("explore.html","Back")}</div>
 <div class="tl-shell">
  <div class="grid gap-2 overflow-hidden rounded-[28px] sm:grid-cols-2 lg:grid-cols-3">
   ${photos.map((x,i)=>`<figure class="relative ${i===0?'sm:col-span-2 lg:row-span-2':''}"><img src="${escapeHtml(x.url)}" class="w-full object-cover ${i===0?'h-[320px] sm:h-[420px] lg:h-full':'aspect-[4/3]'}" alt="${escapeHtml(place.name)}" ${i?'loading="lazy"':''}>${x.id&&place.status==="published"?likeBtn(x):""}</figure>`).join("")}
@@ -129,6 +130,7 @@ likeBtns.forEach(b=>b.onclick=async()=>{if(!isReal)return;
  b.disabled=false;
  if(r.error){if(r.error.code==="23505")paintLike(b,true);else status("Couldn't update your like. Please try again.");return}
  paintLike(b,!was);c.textContent=Math.max(0,Number(c.textContent)+(was?-1:1))});
+document.body.insertAdjacentHTML("beforeend",backFab("explore.html"));
 if(isReal&&place.status==="published"){
  document.querySelector("#place").insertAdjacentHTML("beforeend",`<div class="tl-shell max-w-3xl pb-20"><h2 class="text-2xl font-extrabold">Comments <span id="ccount" class="text-base font-normal text-white/40"></span></h2><div id="cbox" class="mt-5"></div><p id="cmsg" role="status" aria-live="polite" class="mt-3 min-h-5 text-sm text-white/50"></p><div id="clist" class="mt-4 grid gap-4"></div></div>`);
  const {data:{user:cu}}=await supabase.auth.getUser(),cmsg=m=>{document.querySelector("#cmsg").textContent=m};

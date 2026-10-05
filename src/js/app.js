@@ -80,7 +80,24 @@ export const EDIT_WINDOW_MS = 60 * 60 * 1000;
 export const editMinutesLeft = place => Math.max(0, Math.ceil((new Date(place.created_at).getTime() + EDIT_WINDOW_MS - Date.now()) / 60000));
 export const canEdit = place => editMinutesLeft(place) > 0;
 
+// Back arrow (Lucide "arrow-left"). The link always works (it goes to the fallback page); when the visitor
+// came from another TerraLens page it goes back one step instead, so filters and scroll position are kept.
+const ARROW = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`;
+export function backLink(fallback = "explore.html", label = "Back") {
+  return `<a href="${fallback}" data-back class="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-white/[.03] px-4 text-sm font-bold text-white/80 hover:bg-white/10">${ARROW}${label}</a>`;
+}
+export function backFab(fallback = "explore.html") {
+  return `<a href="${fallback}" data-back aria-label="Back" class="fixed bottom-5 left-4 z-40 grid h-12 w-12 place-items-center rounded-full border border-white/15 bg-[#0b1220]/90 text-white shadow-xl backdrop-blur">${ARROW}</a>`;
+}
+
 export async function initNav() {
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-back]");
+    if (!b || e.defaultPrevented || e.metaKey || e.ctrlKey) return;
+    let same = false;
+    try { same = !!document.referrer && new URL(document.referrer).origin === location.origin; } catch {}
+    if (same && history.length > 1) { e.preventDefault(); history.back(); }
+  });
   // Sign-in wall: everything except the login, terms and privacy pages needs an account.
   const open = /\/(login|terms|privacy|content-policy)(\.html)?$/.test(location.pathname);
   if (REQUIRE_LOGIN && supabase && !open) {

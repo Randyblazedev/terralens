@@ -1,3 +1,9 @@
+# TerraLens 7.0.4: back arrows
+
+- **Back arrow on place pages:** a "Back" button at the top and a round arrow button that stays in the bottom-left corner while you scroll, so you can leave when you finish reading. Also on the edit page and on a collection page.
+- **Goes back where you came from:** if you arrived from another TerraLens page it goes back one step; if you opened the link directly (for example from WhatsApp) it goes to Explore instead of doing nothing.
+- **Explore remembers your place:** your search, category and country now stay in the address, and the list scrolls back to where you were when you return from a place.
+
 # TerraLens 7.0.3: full information for every seeded place
 
 `supabase/seed-places.sql` now fills, for each of the 95 places: full description (3+ sentences), name, country, region and city, how to get there, entry fee, best season, and best time of day. Fees and times are approximate and each fee says to confirm before you go.

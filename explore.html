@@ -62,7 +62,7 @@ import {supabase} from "./src/js/supabase.js";
 const params=new URLSearchParams(location.search);
 const q=document.querySelector("#q"),cat=document.querySelector("#category"),country=document.querySelector("#country");
 q.value=params.get("q")||"";cat.value=params.get("category")||"";
-async function run(){document.querySelector("#status").textContent="Finding places...";const data=await queryPlaces({q:q.value,category:cat.value,country:country.value});document.querySelector("#status").textContent=data.length?`${data.length} places found`:"No places found yet.";document.querySelector("#grid").innerHTML=data.map(card).join("")}
+async function run(){const qs=new URLSearchParams();if(q.value.trim())qs.set("q",q.value.trim());if(cat.value)qs.set("category",cat.value);if(country.value)qs.set("country",country.value);history.replaceState(null,"",location.pathname+(qs.toString()?"?"+qs:""));document.querySelector("#status").textContent="Finding places...";const data=await queryPlaces({q:q.value,category:cat.value,country:country.value});document.querySelector("#status").textContent=data.length?`${data.length} places found`:"No places found yet.";document.querySelector("#grid").innerHTML=data.map(card).join("")}
 async function loadCountries(){let list=[];
  if(supabase){const {data}=await supabase.from("places").select("country").eq("status","published").not("country","is",null).limit(1000);list=(data||[]).map(r=>r.country)}
  else list=fallbackPlaces.map(p=>p.country);
@@ -70,7 +70,9 @@ async function loadCountries(){let list=[];
  [...new Set(list.map(c=>String(c).trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b)).forEach(c=>country.add(new Option(c,c)));
  country.value=want}
 document.querySelector("#search").onclick=run;cat.onchange=run;country.onchange=run;q.onkeydown=e=>{if(e.key==="Enter")run()};
-await loadCountries();run();
+document.querySelector("#grid").addEventListener("click",e=>{if(e.target.closest("a"))sessionStorage.setItem("tl_explore_scroll",String(scrollY))});
+await loadCountries();await run();
+if(performance.getEntriesByType("navigation")[0]?.type==="back_forward"){const y=Number(sessionStorage.getItem("tl_explore_scroll")||0);if(y)scrollTo(0,y)}
 </script>
 
 <footer class="tl-footer">
