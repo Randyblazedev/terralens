@@ -60,7 +60,19 @@ const httpsUrl=u=>{try{const x=new URL(u);return x.protocol==="https:"?x.href:""
 const credits=images.filter(x=>x.credit_name&&httpsUrl(x.credit_url));
 const affiliate=httpsUrl(place.affiliate_url);
 const photos=(images.length?images.map(i=>({id:i.id,url:i.image_url,likes:i.like_count})):[{url:place.cover_url}]).filter(x=>x.url);
-const likeBtn=p=>`<button data-like="${escapeHtml(p.id)}" aria-pressed="false" aria-label="Like this photo" class="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-2 text-sm font-bold backdrop-blur"><span data-heart aria-hidden="true">♡</span><span data-count>${Number(p.likes)||0}</span></button>`;
+const likeBtn=p=>`<button data-like="${escapeHtml(p.id)}" aria-pressed="${likedIds.has(p.id)}" aria-label="Like this photo" class="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-2 text-sm font-bold backdrop-blur"><span data-heart aria-hidden="true">${likedIds.has(p.id)?"♥":"♡"}</span><span data-count>${Number(p.likes)||0}</span></button>`;
+const isReal=supabase&&!String(place.id).startsWith("seed-");
+let likedIds=new Set(),savedInit=false,isOwner=false,contribHtml="";
+if(isReal){
+ const me=(await supabase.auth.getSession()).data.session?.user||null,ids=photos.filter(p=>p.id).map(p=>p.id);
+ const [lk,sv,ow]=await Promise.all([
+  me&&ids.length?supabase.from("image_likes").select("image_id").in("image_id",ids):null,
+  me?supabase.from("saves").select("place_id").eq("user_id",me.id).eq("place_id",place.id).maybeSingle():null,
+  place.created_by?supabase.from("profiles").select("display_name,username,verified").eq("id",place.created_by).maybeSingle():null]);
+ likedIds=new Set((lk?.data||[]).map(x=>x.image_id));savedInit=!!sv?.data;isOwner=!!me&&me.id===place.created_by;
+ const nm=ow?.data?(ow.data.display_name||ow.data.username||""):"";
+ contribHtml=place.status==="pending"?"This place is awaiting review and is only visible to you.":nm?"By "+escapeHtml(nm)+(ow.data.verified?" "+verifiedBadge(18):""):"";
+}
 document.title=`${place.name} — TerraLens`;
 document.querySelector("#place").innerHTML=`
 <div class="tl-shell">
@@ -73,7 +85,7 @@ document.querySelector("#place").innerHTML=`
    <div class="flex flex-wrap items-center gap-3 text-xs font-bold uppercase tracking-[.16em] text-sky-300"><span>${escapeHtml(place.category||"Place")}</span><span>•</span><span>${escapeHtml(place.country||"")}</span></div>
    <h1 class="mt-4 text-5xl font-extrabold tracking-tight sm:text-7xl">${escapeHtml(place.name)}</h1>
    <p class="mt-6 max-w-3xl text-lg leading-8 text-white/60">${escapeHtml(place.description||"")}</p>
-   <div class="mt-8 flex flex-wrap gap-3"><button id="save" aria-pressed="false" class="tl-btn tl-btn-ghost">♡ Save</button><button id="trip" class="tl-btn tl-btn-primary">＋ Add to trip</button><button id="share" class="tl-btn tl-btn-ghost">Share</button>${affiliate?`<a href="${escapeHtml(affiliate)}" target="_blank" rel="sponsored nofollow noopener" class="tl-btn tl-btn-primary">Plan your trip ↗</a>`:""}</div>${place.sponsored||affiliate?`<p class="mt-3 text-xs text-white/40">${place.sponsored?`Sponsored${place.sponsor_name?` by ${escapeHtml(place.sponsor_name)}`:""}. `:""}${affiliate?"Some links are affiliate links; we may earn a commission at no cost to you.":""}</p>`:""}<p id="status" role="status" aria-live="polite" class="mt-3 min-h-5 text-sm text-white/55"></p><p id="contributor" class="mt-1 text-sm text-white/55"></p><details id="report" class="mt-4 max-w-md"><summary class="cursor-pointer text-sm text-white/55 hover:text-white">Report this place</summary><div class="mt-3 grid gap-3"><select id="rreason" class="tl-input" aria-label="Reason"><option value="copyright">Copyright / photo not shared with permission</option><option value="inappropriate">Inappropriate content</option><option value="spam">Spam or fake place</option><option value="wrong_info">Wrong information</option><option value="other">Other</option></select><textarea id="rdetails" class="tl-input !min-h-24" maxlength="500" placeholder="Details (optional)" aria-label="Details"></textarea><button id="rsend" class="tl-btn tl-btn-primary">Send report</button></div></details>
+   <div class="mt-8 flex flex-wrap gap-3"><button id="save" aria-pressed="${savedInit}" class="tl-btn tl-btn-ghost">${savedInit?"♥ Saved":"♡ Save"}</button><button id="trip" class="tl-btn tl-btn-primary">＋ Add to trip</button><button id="share" class="tl-btn tl-btn-ghost">Share</button>${isOwner&&canEdit(place)?`<a class="tl-btn tl-btn-ghost" href="edit.html?slug=${encodeURIComponent(place.slug)}">Edit</a>`:""}${affiliate?`<a href="${escapeHtml(affiliate)}" target="_blank" rel="sponsored nofollow noopener" class="tl-btn tl-btn-primary">Plan your trip ↗</a>`:""}</div>${place.sponsored||affiliate?`<p class="mt-3 text-xs text-white/40">${place.sponsored?`Sponsored${place.sponsor_name?` by ${escapeHtml(place.sponsor_name)}`:""}. `:""}${affiliate?"Some links are affiliate links; we may earn a commission at no cost to you.":""}</p>`:""}<p id="status" role="status" aria-live="polite" class="mt-3 min-h-5 text-sm text-white/55"></p><p id="contributor" class="mt-1 text-sm text-white/55">${contribHtml}</p><details id="report" class="mt-4 max-w-md"><summary class="cursor-pointer text-sm text-white/55 hover:text-white">Report this place</summary><div class="mt-3 grid gap-3"><select id="rreason" class="tl-input" aria-label="Reason"><option value="copyright">Copyright / photo not shared with permission</option><option value="inappropriate">Inappropriate content</option><option value="spam">Spam or fake place</option><option value="wrong_info">Wrong information</option><option value="other">Other</option></select><textarea id="rdetails" class="tl-input !min-h-24" maxlength="500" placeholder="Details (optional)" aria-label="Details"></textarea><button id="rsend" class="tl-btn tl-btn-primary">Send report</button></div></details>
    <div class="mt-12 grid gap-4 sm:grid-cols-2"><div class="tl-card p-5"><p class="tl-eyebrow">When</p><h3 class="mt-3 font-bold">Best season</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(place.best_season||"Community information coming soon.")}</p><h3 class="mt-5 font-bold">Best time</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(place.best_time||"Ask the community or check local conditions.")}</p></div><div class="tl-card p-5"><p class="tl-eyebrow">Getting there</p><h3 class="mt-3 font-bold">Access</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(place.access_info||"Access details coming soon.")}</p><h3 class="mt-5 font-bold">Entry</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(place.entry_fee||"Check the official/local source before visiting.")}</p></div></div>
    ${place.latitude!=null&&place.longitude!=null?`<div class="mt-6 overflow-hidden rounded-3xl border border-white/10"><iframe title="Map" class="h-[360px] w-full border-0" src="https://www.openstreetmap.org/export/embed.html?bbox=${place.longitude-.02}%2C${place.latitude-.02}%2C${place.longitude+.02}%2C${place.latitude+.02}&layer=mapnik&marker=${place.latitude}%2C${place.longitude}"></iframe></div>`:""}
   </div>
@@ -92,10 +104,8 @@ if(!document.querySelector('script[type="application/ld+json"]')){const ld=head(
 ld.textContent=JSON.stringify({"@context":"https://schema.org","@type":"TouristAttraction",name:place.name,description:place.description,image:imgs.filter(Boolean),...(place.latitude!=null&&place.longitude!=null?{geo:{"@type":"GeoCoordinates",latitude:place.latitude,longitude:place.longitude}}:{}),address:{"@type":"PostalAddress",addressLocality:place.city||undefined,addressRegion:place.region||undefined,addressCountry:place.country||undefined}})}
 document.querySelector("#share").onclick=async()=>{try{await navigator.clipboard.writeText(location.href);status("Place link copied.")}catch{status(location.href)}};
 document.querySelector("#trip").onclick=()=>location.href="planner.html?place="+encodeURIComponent(place.slug);
-const saveBtn=document.querySelector("#save");let saved=false;
+const saveBtn=document.querySelector("#save");let saved=savedInit;
 const paint=()=>{saveBtn.textContent=saved?"♥ Saved":"♡ Save";saveBtn.setAttribute("aria-pressed",String(saved))};
-const isReal=supabase&&!String(place.id).startsWith("seed-");
-if(isReal){const {data:{user}}=await supabase.auth.getUser();if(user){const r=await supabase.from("saves").select("place_id").eq("user_id",user.id).eq("place_id",place.id).maybeSingle();saved=!!r.data;paint()}}
 saveBtn.onclick=async()=>{if(!isReal){status("Connect Supabase to save places.");return}
  const {data:{user}}=await supabase.auth.getUser();if(!user){location.href="login.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);return}
  saveBtn.disabled=true;
@@ -103,9 +113,6 @@ saveBtn.onclick=async()=>{if(!isReal){status("Connect Supabase to save places.")
  saveBtn.disabled=false;
  if(r.error){status("Couldn't update your saved places. Please try again.");return}
  saved=!saved;paint();status(saved?"Saved to your places.":"Removed from your saved places.")};
-if(isReal){const {data:{user:me}}=await supabase.auth.getUser();if(me&&me.id===place.created_by&&canEdit(place))document.querySelector("#share").parentElement.insertAdjacentHTML("beforeend",`<a class="tl-btn tl-btn-ghost" href="edit.html?slug=${encodeURIComponent(place.slug)}">Edit</a>`)}
-if(place.status==="pending")document.querySelector("#contributor").textContent="This place is awaiting review and is only visible to you.";
-else if(isReal&&place.created_by){const o=await supabase.from("profiles").select("display_name,username,verified").eq("id",place.created_by).maybeSingle();if(o.data){const nm=o.data.display_name||o.data.username||"";if(nm)document.querySelector("#contributor").innerHTML="By "+escapeHtml(nm)+(o.data.verified?" "+verifiedBadge(18):"")}}
 document.querySelector("#rsend").onclick=async()=>{if(!isReal){status("Reporting needs Supabase.");return}
  const {data:{user}}=await supabase.auth.getUser();if(!user){location.href="login.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);return}
  const btn=document.querySelector("#rsend");btn.disabled=true;
@@ -115,7 +122,6 @@ document.querySelector("#rsend").onclick=async()=>{if(!isReal){status("Reporting
  document.querySelector("#report").open=false;status("Thanks. We will review your report.")};
 const likeBtns=[...document.querySelectorAll("[data-like]")];
 const paintLike=(b,on)=>{b.setAttribute("aria-pressed",String(on));b.querySelector("[data-heart]").textContent=on?"♥":"♡"};
-if(isReal&&likeBtns.length){const {data:{user}}=await supabase.auth.getUser();if(user){const r=await supabase.from("image_likes").select("image_id").in("image_id",likeBtns.map(b=>b.dataset.like));const mine=new Set((r.data||[]).map(x=>x.image_id));likeBtns.forEach(b=>paintLike(b,mine.has(b.dataset.like)))}}
 likeBtns.forEach(b=>b.onclick=async()=>{if(!isReal)return;
  const {data:{user}}=await supabase.auth.getUser();if(!user){location.href="login.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);return}
  const was=b.getAttribute("aria-pressed")==="true",c=b.querySelector("[data-count]");b.disabled=true;
