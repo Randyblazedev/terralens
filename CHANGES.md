@@ -1,3 +1,7 @@
+# TerraLens 7.0.5: back button on every page
+
+Every page now has a Back button at the top, except the home page (there is nothing before it). It is added automatically (`injectBack` in `src/js/app.js`), so any new page gets one too. Long reading pages (Terms, Privacy, Content Policy, About) and place pages also have the round arrow that stays in the corner. Arriving from another TerraLens page goes back one step; arriving any other way goes to the home page.
+
 # TerraLens 7.0.4: back arrows
 
 - **Back arrow on place pages:** a "Back" button at the top and a round arrow button that stays in the bottom-left corner while you scroll, so you can leave when you finish reading. Also on the edit page and on a collection page.

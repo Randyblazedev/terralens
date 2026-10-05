@@ -90,7 +90,22 @@ export function backFab(fallback = "explore.html") {
   return `<a href="${fallback}" data-back aria-label="Back" class="fixed bottom-5 left-4 z-40 grid h-12 w-12 place-items-center rounded-full border border-white/15 bg-[#0b1220]/90 text-white shadow-xl backdrop-blur">${ARROW}</a>`;
 }
 
+// Adds a Back button to every page that does not already have one (the home page has nothing to go back to).
+// Long reading pages also get the round arrow that stays in the corner while you scroll.
+const OWN_BACK = new Set(["index", "place", "edit", "collection", "login", "logout"]);
+const READING_PAGES = new Set(["terms", "privacy", "content-policy", "about"]);
+export function injectBack(doc = document, path = location.pathname) {
+  const name = path.startsWith("/place/") ? "place" : ((path.split("/").pop() || "index").replace(/\.html$/, "") || "index");
+  if (OWN_BACK.has(name) || doc.querySelector("[data-back]")) return name;
+  const main = doc.querySelector("main");
+  if (!main) return name;
+  (main.querySelector(".tl-shell") || main).insertAdjacentHTML("afterbegin", `<div class="mb-6">${backLink("index.html")}</div>`);
+  if (READING_PAGES.has(name)) doc.body.insertAdjacentHTML("beforeend", backFab("index.html"));
+  return name;
+}
+
 export async function initNav() {
+  injectBack();
   document.addEventListener("click", e => {
     const b = e.target.closest("[data-back]");
     if (!b || e.defaultPrevented || e.metaKey || e.ctrlKey) return;
