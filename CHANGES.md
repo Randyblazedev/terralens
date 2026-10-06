@@ -1,3 +1,9 @@
+# TerraLens 7.1
+
+- **Generate plan now generates a real plan** (it used to print a placeholder). Add places (search, pick from your saved places, or tap Add to trip on a place), choose dates, budget and preferences, and tap Generate plan. It groups nearby places into days, adds the distance and travel time between places, and shows each place's best time, how to get there, entry fee and best season, with a warning if your dates fall outside the best season. Ask TerraLens AI is still there: it now improves the plan you generated and shows its answer below it instead of replacing it. Plan builder: `src/js/planner.js` (tested).
+- **Admins can edit any upload at any time:** an Edit button on every place in the admin list and on place pages. No one-hour limit, no photo cap, and hidden places can be edited.
+- **Your uploads come first, even with millions of places:** the profile page shows your uploads right under your header, newest first, 12 at a time with Load more; Explore pins a "Your uploads" row at the top and has Load more; the admin list has a My uploads filter and Load more; a "My uploads" link is in the menu.
+
 # TerraLens 7.0.5: back button on every page
 
 Every page now has a Back button at the top, except the home page (there is nothing before it). It is added automatically (`injectBack` in `src/js/app.js`), so any new page gets one too. Long reading pages (Terms, Privacy, Content Policy, About) and place pages also have the round arrow that stays in the corner. Arriving from another TerraLens page goes back one step; arriving any other way goes to the home page.

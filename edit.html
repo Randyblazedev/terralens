@@ -88,19 +88,21 @@ async function shrink(file,max=2000){let bmp;try{bmp=await createImageBitmap(fil
  const s=Math.min(1,max/Math.max(bmp.width,bmp.height)),c=document.createElement("canvas");c.width=Math.round(bmp.width*s);c.height=Math.round(bmp.height*s);
  const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(bmp,0,0,c.width,c.height);bmp.close?.();
  const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",0.85));if(!blob)throw new Error("encode failed");return blob}
-let place=null,user=null,verified=false,images=[];
-const stateNote=()=>{const left=`You can edit for ${editMinutesLeft(place)} more minute${editMinutesLeft(place)===1?"":"s"}. `;$("#note").textContent=left+(verified?"You are a verified contributor, so your changes go live immediately.":place.status==="published"?"Your place is live. Saving changes sends it back for a quick review before it shows again.":"Your place is awaiting review.")};
+let place=null,user=null,verified=false,isAdmin=false,images=[];
+const stateNote=()=>{if(isAdmin){$("#note").textContent="Editing as an admin: there is no time limit, and your changes go live immediately.";return}
+ const left=`You can edit for ${editMinutesLeft(place)} more minute${editMinutesLeft(place)===1?"":"s"}. `;$("#note").textContent=left+(verified?"You are a verified contributor, so your changes go live immediately.":place.status==="published"?"Your place is live. Saving changes sends it back for a quick review before it shows again.":"Your place is awaiting review.")};
 async function loadImages(){const r=await supabase.from("place_images").select("id,image_url,created_by").eq("place_id",place.id).order("created_at");images=r.data||[];
- $("#photos").innerHTML=images.map(i=>`<div class="relative"><img src="${escapeHtml(i.image_url)}" alt="" class="aspect-[4/3] w-full rounded-xl object-cover">${i.created_by===user.id?`<button type="button" data-rm="${escapeHtml(i.id)}" class="absolute right-1 top-1 rounded-lg bg-black/70 px-2 py-1 text-xs text-red-300">Remove</button>`:""}</div>`).join("")||'<p class="col-span-3 text-sm text-white/45">No photos yet.</p>'}
+ $("#photos").innerHTML=images.map(i=>`<div class="relative"><img src="${escapeHtml(i.image_url)}" alt="" class="aspect-[4/3] w-full rounded-xl object-cover">${(i.created_by===user.id||isAdmin)?`<button type="button" data-rm="${escapeHtml(i.id)}" class="absolute right-1 top-1 rounded-lg bg-black/70 px-2 py-1 text-xs text-red-300">Remove</button>`:""}</div>`).join("")||'<p class="col-span-3 text-sm text-white/45">No photos yet.</p>'}
 async function refreshPlace(){const r=await supabase.from("places").select("*").eq("id",place.id).maybeSingle();if(r.data){place=r.data;stateNote()}}
 async function init(){
  user=supabase?await getUser():null;
  if(!user){location.replace("login.html?next="+encodeURIComponent("edit.html?slug="+slug));return}
+ isAdmin=(await supabase.rpc("is_admin")).data===true;
  const r=await supabase.from("places").select("*").eq("slug",slug).maybeSingle();place=r.data;
- if(!place||place.created_by!==user.id){$("#note").textContent="This place was not found, or it is not yours to edit.";return}
- if(!canEdit(place)){$("#note").textContent="The 1-hour edit window for this place has passed, so it can no longer be edited. Contact the site team if something needs fixing.";return}
- if(place.status==="hidden"){$("#note").textContent="A moderator hid this place, so it cannot be edited. Please contact the site team.";return}
- verified=!!(await supabase.from("profiles").select("verified").eq("id",user.id).maybeSingle()).data?.verified;
+ if(!place||(place.created_by!==user.id&&!isAdmin)){$("#note").textContent="This place was not found, or it is not yours to edit.";return}
+ if(!isAdmin&&!canEdit(place)){$("#note").textContent="The 1-hour edit window for this place has passed, so it can no longer be edited. Contact the site team if something needs fixing.";return}
+ if(place.status==="hidden"&&!isAdmin){$("#note").textContent="A moderator hid this place, so it cannot be edited. Please contact the site team.";return}
+ verified=!!(await supabase.from("profiles").select("verified").eq("id",user.id).maybeSingle()).data?.verified||isAdmin;
  Object.entries(FIELDS).forEach(([id,col])=>{$("#"+id).value=place[col]??""});
  $("#lat").value=place.latitude??"";$("#lng").value=place.longitude??"";
  stateNote();await loadImages();$("#edit-form").classList.remove("hidden");$("#edit-form").classList.add("grid");
@@ -112,7 +114,7 @@ $("#photos").addEventListener("click",async e=>{const id=e.target.dataset.rm;if(
  if(img&&place.cover_url===img.image_url){const rest=images.filter(i=>i.id!==id);await supabase.from("places").update({cover_url:rest[0]?.image_url??null}).eq("id",place.id)}
  $("#photo-msg").textContent="Photo removed.";await loadImages();await refreshPlace()});
 $("#files").onchange=async()=>{const picked=[...$("#files").files],msg=$("#photo-msg");
- if(images.length+picked.length>10){msg.textContent="A place can have at most 10 photos.";return}
+ if(!isAdmin&&images.length+picked.length>10){msg.textContent="A place can have at most 10 photos.";return}
  const bad=picked.find(f=>!TYPES[f.type]||f.size>MAX_BYTES);if(bad){msg.textContent=`"${bad.name}" must be a JPG, PNG or WebP under 25 MB.`;return}
  msg.textContent="Uploading...";let added=0;
  for(const original of picked){let file;try{file=await shrink(original)}catch{continue}

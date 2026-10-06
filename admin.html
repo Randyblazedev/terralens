@@ -57,11 +57,12 @@
  </div>
  <p id="flash" role="status" aria-live="polite" class="mt-4 min-h-5 text-sm text-sky-300"></p>
  <section id="places-panel" class="mt-4">
-  <div class="grid gap-3 sm:grid-cols-[1fr_180px]">
+  <div class="grid gap-3 sm:grid-cols-[1fr_180px_auto]">
    <input id="q" class="tl-input" type="search" placeholder="Search name, country, category" aria-label="Search places">
-   <select id="status" class="tl-input" aria-label="Filter by status"><option value="">All statuses</option><option>pending</option><option>published</option><option>draft</option><option>hidden</option></select>
+   <label class="flex min-h-[50px] items-center gap-2 text-sm text-white/70"><input id="mine" type="checkbox">My uploads</label><select id="status" class="tl-input" aria-label="Filter by status"><option value="">All statuses</option><option>pending</option><option>published</option><option>draft</option><option>hidden</option></select>
   </div>
   <div id="places" class="mt-6 grid gap-4"></div>
+  <div class="mt-6 text-center"><button id="more-places-admin" class="tl-btn tl-btn-ghost hidden">Load more</button></div>
  </section>
  <section id="reports-panel" class="mt-4 hidden"><div id="reports" class="grid gap-3"></div></section>
  <section id="contributors-panel" class="mt-4 hidden"><p class="mb-4 text-sm text-white/50">Eligible = 100+ approved photos, 10+ approved places, no upheld reports in 90 days. You decide who to verify.</p><div id="contributors" class="grid gap-3"></div></section>
@@ -89,12 +90,15 @@ async function stats(){
  const [pend,pub,hid,users,reports]=await Promise.all([count("places",st("pending")),count("places",st("published")),count("places",st("hidden")),count("profiles"),count("reports",st("open"))]);
  $("#stats").innerHTML=[["Pending",pend],["Published",pub],["Hidden",hid],["Users",users],["Open reports",reports]].map(([k,v])=>`<div class="tl-card p-4"><p class="tl-eyebrow">${k}</p><p class="mt-2 text-3xl font-extrabold">${v}</p></div>`).join("");
  return pend}
-async function loadPlaces(){
- let q=supabase.from("places").select("id,slug,name,country,category,status,featured,sponsored,sponsor_name,affiliate_url,cover_url").order("created_at",{ascending:false}).limit(100);
+let placeOffset=0;const PLACE_PAGE=50;
+async function loadPlaces(append=false){
+ if(!append)placeOffset=0;
+ let q=supabase.from("places").select("id,slug,name,country,category,status,featured,sponsored,sponsor_name,affiliate_url,cover_url").order("created_at",{ascending:false}).range(placeOffset,placeOffset+PLACE_PAGE-1);
+ if($("#mine").checked)q=q.eq("created_by",session.user.id);
  const term=clean($("#q").value);if(term)q=q.or(`name.ilike.%${term}%,country.ilike.%${term}%,category.ilike.%${term}%`);
  if($("#status").value)q=q.eq("status",$("#status").value);
  const {data,error}=await q;if(error){flash(error.message);return}
- $("#places").innerHTML=(data||[]).map(p=>`<article class="tl-card p-4" data-id="${escapeHtml(p.id)}">
+ const html=(data||[]).map(p=>`<article class="tl-card p-4" data-id="${escapeHtml(p.id)}">
   <div class="flex flex-wrap items-center gap-4">
    <img src="${escapeHtml(p.cover_url||"")}" alt="" class="h-16 w-24 rounded-xl bg-white/5 object-cover">
    <div class="min-w-0 flex-1"><a class="font-bold hover:underline" href="place/${encodeURIComponent(p.slug)}">${escapeHtml(p.name)}</a><p class="text-xs text-white/45">${escapeHtml([p.category,p.country].filter(Boolean).join(" · "))}</p></div>
@@ -102,6 +106,7 @@ async function loadPlaces(){
    <label class="flex items-center gap-2 text-sm"><input type="checkbox" data-act="featured" ${p.featured?"checked":""}>Featured</label>
    <label class="flex items-center gap-2 text-sm"><input type="checkbox" data-act="sponsored" ${p.sponsored?"checked":""}>Sponsored</label>
    ${p.status==="pending"?'<button data-act="approve" class="tl-btn tl-btn-primary !min-h-10">Approve</button>':""}
+   <a href="edit.html?slug=${encodeURIComponent(p.slug)}" class="tl-btn tl-btn-ghost !min-h-10">Edit</a>
    <button data-act="more" class="tl-btn tl-btn-ghost !min-h-10">Details</button>
    <button data-act="delete" class="tl-btn tl-btn-ghost !min-h-10 text-red-300">Delete</button>
   </div>
@@ -115,7 +120,9 @@ async function loadPlaces(){
    <div class="mt-6"><p class="tl-eyebrow">Add Unsplash photo</p>
     <div class="mt-3 flex gap-2"><input data-f="usq" class="tl-input" placeholder="Search photos" aria-label="Search Unsplash"><button data-act="usearch" class="tl-btn tl-btn-ghost !min-h-[50px]">Search</button></div>
     <div data-results class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4"></div></div>
-  </div></article>`).join("")||'<p class="text-white/50">No places found.</p>'}
+  </div></article>`).join("");
+ if(append)$("#places").insertAdjacentHTML("beforeend",html);else $("#places").innerHTML=html||'<p class="text-white/50">No places found.</p>';
+ placeOffset+=(data||[]).length;$("#more-places-admin").classList.toggle("hidden",(data||[]).length<PLACE_PAGE)}
 async function loadComments(){
  const {data,error}=await supabase.from("comments").select("id,body,created_at,places(name,slug)").order("created_at",{ascending:false}).limit(50);
  if(error){flash(error.message);return}
@@ -198,7 +205,7 @@ $("#fill").onclick=async()=>{const out=$("#fill-out"),btn=$("#fill");btn.disable
 const TABS=["places","reports","contributors","comments"],loaders={reports:loadReports,contributors:loadContributors,comments:loadComments};
 const show=t=>{TABS.forEach(n=>{$(`#${n}-panel`).classList.toggle("hidden",n!==t);$(`#tab-${n}`).className="tl-btn !min-h-10 "+(n===t?"tl-btn-primary":"tl-btn-ghost")});loaders[t]?.()};
 TABS.forEach(n=>{$(`#tab-${n}`).onclick=()=>show(n)});
-let timer;const refresh=()=>{clearTimeout(timer);timer=setTimeout(loadPlaces,250)};$("#q").oninput=refresh;$("#status").onchange=loadPlaces;
+let timer;const refresh=()=>{clearTimeout(timer);timer=setTimeout(loadPlaces,250)};$("#q").oninput=refresh;$("#status").onchange=()=>loadPlaces();$("#mine").onchange=()=>loadPlaces();$("#more-places-admin").onclick=()=>loadPlaces(true);
 if(await guard()){const pend=await stats();if(pend>0)$("#status").value="pending";loadPlaces()}
 </script>
 

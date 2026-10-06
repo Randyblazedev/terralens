@@ -52,15 +52,15 @@ export function card(place) {
 
 const cleanSearch = q => String(q).replace(/[,()%*_\\"'`:]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
 
-export async function queryPlaces({q="",category="",country="",limit=24}={}) {
-  if (!supabase) return fallbackPlaces.filter(p => (!q || `${p.name} ${p.description} ${p.country}`.toLowerCase().includes(q.toLowerCase())) && (!category || p.category===category) && (!country || p.country===country)).slice(0,limit);
-  let query = supabase.from("places").select("*").eq("status","published").order("created_at",{ascending:false}).limit(limit);
+export async function queryPlaces({q="",category="",country="",limit=24,offset=0}={}) {
+  if (!supabase) return fallbackPlaces.filter(p => (!q || `${p.name} ${p.description} ${p.country}`.toLowerCase().includes(q.toLowerCase())) && (!category || p.category===category) && (!country || p.country===country)).slice(offset,offset+limit);
+  let query = supabase.from("places").select("*").eq("status","published").order("created_at",{ascending:false}).range(offset, offset + limit - 1);
   const term = cleanSearch(q);
   if (term) query = query.or(`name.ilike.%${term}%,description.ilike.%${term}%,country.ilike.%${term}%,region.ilike.%${term}%`);
   if (category) query = query.eq("category",category);
   if (country) query = query.eq("country",country);
   const {data,error} = await query;
-  if (error) return fallbackPlaces.slice(0,limit);
+  if (error) return fallbackPlaces.slice(offset,offset+limit);
   return attachAuthors(data || []);
 }
 
@@ -143,6 +143,8 @@ export async function initNav() {
   document.querySelectorAll("header nav").forEach(n => n.insertAdjacentHTML("beforeend", '<a class="hover:text-white" href="saved.html">Saved</a>'));
   document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.insertAdjacentHTML("beforeend", '<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="saved.html">Saved places</a>'));
   if (user) {
+    document.querySelectorAll("header nav").forEach(n => n.insertAdjacentHTML("beforeend", '<a class="hover:text-white" href="profile.html#places">My uploads</a>'));
+    document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.insertAdjacentHTML("beforeend", '<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="profile.html#places">My uploads</a>'));
     document.querySelectorAll("header nav").forEach(n => n.insertAdjacentHTML("beforeend", '<a class="hover:text-white" href="logout.html">Sign out</a>'));
     document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.insertAdjacentHTML("beforeend", '<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="logout.html">Sign out</a>'));
   }

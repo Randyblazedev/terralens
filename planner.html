@@ -44,14 +44,56 @@
 
 <main class="tl-section"><div class="tl-shell max-w-6xl"><div class="max-w-3xl"><p class="tl-eyebrow">Turn inspiration into a plan</p><h1 class="mt-3 text-5xl font-extrabold sm:text-7xl">Build a trip around the places you love.</h1><p class="mt-5 leading-7 text-white/55">Start simple, then let TerraLens AI help organize the places into days.</p></div>
 <div class="mt-12 grid gap-6 lg:grid-cols-[.75fr_1.25fr]">
-<form id="trip-form" class="tl-card p-6"><label class="text-sm font-bold">Trip name<input id="name" class="tl-input mt-2" required placeholder="Weekend in..."></label><div class="mt-4 grid gap-4 sm:grid-cols-2"><label class="text-sm font-bold">Start<input id="start" type="date" class="tl-input mt-2"></label><label class="text-sm font-bold">End<input id="end" type="date" class="tl-input mt-2"></label></div><label class="mt-4 block text-sm font-bold">Budget<input id="budget" class="tl-input mt-2" placeholder="Low / medium / flexible"></label><label class="mt-4 block text-sm font-bold">What do you want to experience?<textarea id="notes" class="tl-input tl-textarea mt-2" placeholder="Nature, photography, food, quiet places..."></textarea></label><button class="tl-btn tl-btn-primary mt-5 w-full">Generate plan</button><p id="msg" class="mt-4 text-sm text-white/45"></p></form>
-<div class="tl-card min-h-[480px] p-6"><div class="flex items-center justify-between"><div><p class="tl-eyebrow">Itinerary</p><h2 class="mt-2 text-2xl font-bold">Your trip</h2></div><button id="ai" class="tl-btn tl-btn-ghost">Ask TerraLens AI</button></div><div id="output" class="mt-8 whitespace-pre-wrap text-sm leading-7 text-white/60">Your generated itinerary will appear here.</div></div>
+<form id="trip-form" class="tl-card p-6"><label class="text-sm font-bold">Trip name<input id="name" class="tl-input mt-2" required placeholder="Weekend in..."></label><div class="mt-4 grid gap-4 sm:grid-cols-2"><label class="text-sm font-bold">Start<input id="start" type="date" class="tl-input mt-2"></label><label class="text-sm font-bold">End<input id="end" type="date" class="tl-input mt-2"></label></div><label class="mt-4 block text-sm font-bold">Budget<input id="budget" class="tl-input mt-2" placeholder="Low / medium / flexible"></label><label class="mt-4 block text-sm font-bold">What do you want to experience?<textarea id="notes" class="tl-input tl-textarea mt-2" placeholder="Nature, photography, food, quiet places..."></textarea></label><div class="mt-5"><p class="text-sm font-bold">Places to include</p>
+ <div id="chosen" class="mt-2 flex flex-wrap gap-2"></div>
+ <input id="find" type="search" class="tl-input mt-3" placeholder="Search a place to add..." aria-label="Search places to add" autocomplete="off">
+ <div id="found" class="mt-2 grid gap-2"></div>
+ <div id="saved-box" class="mt-4 hidden"><p class="text-xs text-white/45">From your saved places</p><div id="saved-list" class="mt-2 flex flex-wrap gap-2"></div></div></div>
+ <button class="tl-btn tl-btn-primary mt-5 w-full">Generate plan</button><p id="msg" class="mt-4 text-sm text-white/45"></p></form>
+<div class="tl-card min-h-[480px] p-6"><div class="flex items-center justify-between"><div><p class="tl-eyebrow">Itinerary</p><h2 class="mt-2 text-2xl font-bold">Your trip</h2></div><button id="ai" class="tl-btn tl-btn-ghost">Ask TerraLens AI</button></div><div id="output" class="mt-8 space-y-4 text-sm leading-7 text-white/60" aria-live="polite">Add the places you want to visit, then tap Generate plan. TerraLens will group nearby places into days and show the best time, how to get there, entry fee and season for each.</div><div id="ai-out" class="mt-6"></div></div>
 </div></div></main>
 <script type="module">
-import {supabase} from "./src/js/supabase.js";
-const form=document.querySelector("#trip-form"),out=document.querySelector("#output");
-form.onsubmit=async e=>{e.preventDefault();const name=document.querySelector("#name").value,budget=document.querySelector("#budget").value,notes=document.querySelector("#notes").value;out.textContent=`${name}\n\nDay 1\nStart with your highest-priority place. Leave room for travel time.\n\nPreferences: ${notes||"Explore the places you saved."}\nBudget: ${budget||"Flexible"}\n\nThis planner can be connected to saved places and Supabase trips for persistent itineraries.`};
-document.querySelector("#ai").onclick=async()=>{const prompt=`Create a concise travel itinerary based on this trip request: ${document.querySelector("#name").value}. Dates: ${document.querySelector("#start").value} to ${document.querySelector("#end").value}. Budget: ${document.querySelector("#budget").value}. Preferences: ${document.querySelector("#notes").value}`;const sess=supabase?(await supabase.auth.getSession()).data.session:null;if(!sess){location.href="login.html?next=planner.html";return}out.textContent="Thinking...";try{const r=await fetch("/api/ai/chat",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+sess.access_token},body:JSON.stringify({message:prompt})});const d=await r.json();out.textContent=d.reply||d.error}catch{out.textContent="AI endpoint unavailable. Deploy with the DeepSeek environment variable configured."}};
+import {supabase,getUser} from "./src/js/supabase.js";
+import {queryPlaces,escapeHtml as esc} from "./src/js/app.js";
+import {buildPlan,planToText} from "./src/js/planner.js";
+const $=s=>document.querySelector(s),out=$("#output"),aiOut=$("#ai-out"),msg=$("#msg");
+const chosen=new Map();let lastPlan=null,found=[],savedRows=[];
+const drawChosen=()=>{$("#chosen").innerHTML=[...chosen.values()].map(p=>`<span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[.05] py-1 pl-3 pr-1 text-xs">${esc(p.name)}<button type="button" data-rm="${esc(p.id)}" class="grid h-6 w-6 place-items-center rounded-full hover:bg-white/10" aria-label="Remove ${esc(p.name)}">✕</button></span>`).join("")||'<span class="text-xs text-white/40">No places yet.</span>'};
+const add=p=>{if(p&&!chosen.has(p.id)){chosen.set(p.id,p);drawChosen();msg.textContent=""}};
+let timer;$("#find").oninput=()=>{clearTimeout(timer);timer=setTimeout(async()=>{const q=$("#find").value.trim();if(q.length<2){$("#found").innerHTML="";return}
+ found=await queryPlaces({q,limit:6});
+ $("#found").innerHTML=found.map((p,i)=>`<button type="button" data-add="${i}" class="flex items-center justify-between rounded-xl border border-white/10 px-3 py-2 text-left text-sm hover:bg-white/5"><span>${esc(p.name)}<span class="text-white/40"> · ${esc(p.country||"")}</span></span><span aria-hidden="true">＋</span></button>`).join("")||'<p class="text-xs text-white/40">No places found.</p>'},300)};
+$("#found").addEventListener("click",e=>{const b=e.target.closest("[data-add]");if(b){add(found[Number(b.dataset.add)]);$("#find").value="";$("#found").innerHTML=""}});
+$("#saved-list").addEventListener("click",e=>{const b=e.target.closest("[data-sv]");if(b)add(savedRows[Number(b.dataset.sv)])});
+$("#chosen").addEventListener("click",e=>{const id=e.target.dataset.rm;if(id){chosen.delete(id);drawChosen()}});
+const line=(k,v)=>v?`<div><span class="text-white/40">${k}:</span> ${esc(v)}</div>`:"";
+const item=i=>{const p=i.place;return `${i.travel?`<p class="mt-4 text-xs text-sky-300">↳ ${esc(i.travel)}</p>`:""}<div class="mt-4"><a class="font-bold text-white hover:underline" href="place/${encodeURIComponent(p.slug||"")}">${esc(p.name)}</a><span class="text-white/40"> · ${esc(p.country||"")}</span><div class="mt-2 grid gap-1 text-xs text-white/60">${line("Best time",p.best_time)}${line("Getting there",p.access_info)}${line("Entry",p.entry_fee)}${line("Best season",p.best_season)}${i.warning?`<div class="text-amber-300">⚠ ${esc(i.warning)}</div>`:""}</div></div>`};
+function render(plan,name){
+ const tips=plan.tips.length?`<div class="rounded-2xl border border-sky-300/20 bg-sky-300/[.05] p-4"><p class="font-bold text-white">Good to know</p><ul class="mt-2 list-disc space-y-1 pl-5">${plan.tips.map(t=>`<li>${esc(t)}</li>`).join("")}</ul></div>`:"";
+ const days=plan.days.map(d=>`<section class="rounded-2xl border border-white/10 bg-white/[.03] p-5"><div class="flex items-baseline justify-between gap-3"><h3 class="text-lg font-bold text-white">Day ${d.n}</h3><span class="text-xs text-white/40">${esc(d.date)}</span></div>${d.items.map(item).join("")}</section>`).join("");
+ out.innerHTML=`<h3 class="text-xl font-bold text-white">${esc(name||"Your trip")}</h3><p class="text-xs text-white/40">${plan.daysCount} day${plan.daysCount===1?"":"s"} · ${chosen.size} place${chosen.size===1?"":"s"}</p>${tips}${days}`}
+$("#trip-form").onsubmit=e=>{e.preventDefault();
+ if(!chosen.size){msg.textContent="Add at least one place first: search above, or pick one you saved.";return}
+ msg.textContent="";
+ lastPlan=buildPlan({places:[...chosen.values()],start:$("#start").value,end:$("#end").value,budget:$("#budget").value,notes:$("#notes").value});
+ render(lastPlan,$("#name").value.trim());aiOut.innerHTML="";out.scrollIntoView({behavior:"smooth",block:"start"})};
+$("#ai").onclick=async()=>{
+ const sess=supabase?(await supabase.auth.getSession()).data.session:null;if(!sess){location.href="login.html?next=planner.html";return}
+ const name=$("#name").value.trim()||"My trip",start=$("#start").value,end=$("#end").value;
+ const places=lastPlan?planToText(name,lastPlan):[...chosen.values()].map(p=>p.name).join(", ");
+ const prompt=`Improve this travel itinerary and add practical tips (timing, food, packing, safety). Trip: ${name}. Dates: ${start||"not set"} to ${end||"not set"}. Budget: ${$("#budget").value||"flexible"}. Preferences: ${$("#notes").value||"none"}.\nPlaces by day:\n${places||"No places chosen yet. Suggest a plan from the preferences."}`.slice(0,1900);
+ aiOut.innerHTML='<div class="rounded-2xl border border-white/10 bg-white/[.03] p-5"><p class="tl-eyebrow">TerraLens AI</p><div id="ai-text" class="mt-3 whitespace-pre-wrap text-sm leading-7 text-white/65" role="status">Thinking...</div></div>';
+ const t=$("#ai-text"),btn=$("#ai");btn.disabled=true;
+ try{const r=await fetch("/api/ai/chat",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+sess.access_token},body:JSON.stringify({message:prompt})});const d=await r.json().catch(()=>({}));t.textContent=d.reply||d.error||"No answer came back. Please try again."}
+ catch{t.textContent="The AI assistant could not be reached. Please try again."}
+ btn.disabled=false;t.scrollIntoView({block:"nearest"})};
+drawChosen();
+const slug=new URLSearchParams(location.search).get("place");
+if(slug&&supabase){const r=await supabase.from("places").select("*").eq("slug",slug).maybeSingle();add(r.data)}
+const me=supabase?await getUser():null;
+if(me){const r=await supabase.from("saves").select("places(*)").eq("user_id",me.id).order("created_at",{ascending:false}).limit(30);
+ savedRows=(r.data||[]).map(x=>x.places).filter(Boolean);
+ if(savedRows.length){$("#saved-box").classList.remove("hidden");$("#saved-list").innerHTML=savedRows.map((p,i)=>`<button type="button" data-sv="${i}" class="rounded-full border border-white/15 px-3 py-1.5 text-xs hover:bg-white/10">＋ ${esc(p.name)}</button>`).join("")}}
 </script>
 
 <footer class="tl-footer">
