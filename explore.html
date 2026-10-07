@@ -45,7 +45,6 @@
 <main class="tl-section">
  <div class="tl-shell">
   <div class="max-w-3xl"><p class="tl-eyebrow">Explore</p><h1 class="mt-3 text-4xl font-extrabold sm:text-6xl">Places through a new lens.</h1><p class="mt-5 leading-7 text-white/55">Search the community, browse categories, or start with a place you already have in mind.</p></div>
-  <div id="mine" class="mt-10 empty:hidden"></div>
   <div class="mt-10 grid gap-3 md:grid-cols-[1fr_180px_180px_auto]">
    <input id="q" type="search" class="tl-input" placeholder="Search by name or region..." aria-label="Search places">
    <select id="category" class="tl-input"><option value="">All categories</option><option>Waterfall</option><option>Mountain</option><option>Beach</option><option>Lake</option><option>Forest</option><option>National Park</option><option>Culture</option><option>Viewpoint</option><option>Other</option></select>
@@ -66,14 +65,6 @@ const q=document.querySelector("#q"),cat=document.querySelector("#category"),cou
 q.value=params.get("q")||"";cat.value=params.get("category")||"";
 const PAGE=24,grid=document.querySelector("#grid"),moreBtn=document.querySelector("#more"),statusEl=document.querySelector("#status");
 let offset=0,busy=false;
-// Your own uploads are pinned above everything else (only when you are not searching), so you never have to scroll to find them.
-async function loadMine(){const box=document.querySelector("#mine");box.innerHTML="";
- if(!supabase||q.value.trim()||cat.value||country.value)return;
- const me=(await supabase.auth.getSession()).data.session?.user;if(!me)return;
- const {data}=await supabase.from("places").select("*").eq("created_by",me.id).order("created_at",{ascending:false}).limit(6);
- if(!data?.length)return;await attachAuthors(data);
- const label={pending:"Awaiting review",published:"Live",hidden:"Hidden",draft:"Draft"};
- box.innerHTML=`<section class="mb-4"><div class="mb-5 flex items-end justify-between gap-4"><div><p class="tl-eyebrow">Your uploads</p><h2 class="mt-1 text-2xl font-extrabold">Pick up where you left off</h2></div><a class="shrink-0 text-sm text-white/55 underline" href="profile.html">See all</a></div><div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">${data.map(p=>`<div>${card(p)}<div class="mt-2 flex items-center justify-between text-sm"><span class="rounded-full border border-white/10 px-3 py-1 text-white/55">${escapeHtml(label[p.status]||p.status)}</span>${canEdit(p)?`<a class="tl-btn tl-btn-ghost !min-h-9 !px-4" href="edit.html?slug=${encodeURIComponent(p.slug)}">Edit · ${editMinutesLeft(p)} min left</a>`:""}</div></div>`).join("")}</div></section>`}
 async function run(append=false){if(busy)return;busy=true;
  if(!append){offset=0;const qs=new URLSearchParams();if(q.value.trim())qs.set("q",q.value.trim());if(cat.value)qs.set("category",cat.value);if(country.value)qs.set("country",country.value);history.replaceState(null,"",location.pathname+(qs.toString()?"?"+qs:""));statusEl.textContent="Finding places...";grid.innerHTML="";moreBtn.classList.add("hidden")}
  else{moreBtn.disabled=true}
@@ -82,7 +73,6 @@ async function run(append=false){if(busy)return;busy=true;
  grid.insertAdjacentHTML("beforeend",page.map(card).join(""));
  const n=grid.children.length;statusEl.textContent=n?`Showing ${n} place${n===1?"":"s"}${more?" so far":""}`:"No places found yet.";
  moreBtn.disabled=false;moreBtn.classList.toggle("hidden",!more);
- if(!append)await loadMine();
  busy=false}
 async function loadCountries(){let list=[];
  if(supabase){const {data}=await supabase.from("places").select("country").eq("status","published").not("country","is",null).limit(1000);list=(data||[]).map(r=>r.country)}

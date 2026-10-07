@@ -1,3 +1,8 @@
+# TerraLens 7.1.1
+
+- **Profile page:** the Creator stats box now comes before your posts (above them on a phone, on the left on a computer).
+- Removed two extras I had added that you did not ask for: the pinned "Your uploads" row on Explore and the "My uploads" menu link. Load more on Explore, the profile and the admin list stays, so a huge number of places never needs endless scrolling.
+
 # TerraLens 7.1
 
 - **Generate plan now generates a real plan** (it used to print a placeholder). Add places (search, pick from your saved places, or tap Add to trip on a place), choose dates, budget and preferences, and tap Generate plan. It groups nearby places into days, adds the distance and travel time between places, and shows each place's best time, how to get there, entry fee and best season, with a warning if your dates fall outside the best season. Ask TerraLens AI is still there: it now improves the plan you generated and shows its answer below it instead of replacing it. Plan builder: `src/js/planner.js` (tested).
