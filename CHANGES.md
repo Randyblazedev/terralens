@@ -1,3 +1,8 @@
+# TerraLens 8.0: SEO
+
+See `SEO.md` for the full guide and the steps you must do (set SITE_URL, run schema.sql, submit sitemap.xml in Google Search Console and Bing).
+Summary: new server-rendered category and country pages, richer place pages with structured data and breadcrumbs, a sitemap index that scales, tighter robots.txt, unique titles and descriptions, canonical links, social cards, manifest and icons, a 404 page, non-blocking fonts, resized images and a preloaded main photo.
+
 # TerraLens 7.1.1
 
 - **Profile page:** the Creator stats box now comes before your posts (above them on a phone, on the left on a computer).

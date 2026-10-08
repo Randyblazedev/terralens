@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="robots" content="noindex">
+<base href="/">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Saved Places — TerraLens</title>
-<meta name="description" content="Image-first place discovery and travel inspiration on TerraLens.">
-<meta property="og:title" content="Saved Places — TerraLens">
+<title>Terms of Service — TerraLens</title>
+<meta name="description" content="The rules for using TerraLens, uploading content and visiting places.">
+<meta property="og:title" content="Terms — TerraLens">
 <meta property="og:description" content="Image-first place discovery and travel inspiration on TerraLens.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="assets/og-image.png">
@@ -49,27 +49,7 @@
   </div>
 </header>
 
-<main class="tl-section"><div class="tl-shell"><p class="tl-eyebrow">Your library</p><h1 class="mt-3 text-5xl font-extrabold">Saved places.</h1><p class="mt-4 text-white/50">The places you don't want to lose.</p><div id="grid" class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div><p id="empty" class="hidden mt-12 text-center text-white/45">Nothing saved yet. <a class="text-sky-300" href="explore.html">Explore places →</a></p></div></main>
-<script type="module">
-import {supabase} from "./src/js/supabase.js";import {card,attachAuthors} from "./src/js/app.js";
-const grid=document.querySelector("#grid"),empty=document.querySelector("#empty");
-const note=m=>{let p=document.querySelector("#note");if(!p){grid.insertAdjacentHTML("beforebegin",'<p id="note" role="status" class="mt-6 text-sm text-white/50"></p>');p=document.querySelector("#note")}p.innerHTML=m};
-const user=supabase?(await supabase.auth.getUser()).data.user:null;
-if(!user){note('<a class="tl-btn tl-btn-primary" href="login.html?next=saved.html">Sign in with Google to see your saved places</a>')}
-else{
- const r=await supabase.from("saves").select("place_id,created_at,places(*)").eq("user_id",user.id).order("created_at",{ascending:false});
- if(r.error){note("Couldn't load your saved places. Please refresh and try again.")}
- else{
-  const rows=(r.data||[]).filter(x=>x.places),hidden=(r.data||[]).length-rows.length;await attachAuthors(rows.map(x=>x.places));
-  grid.innerHTML=rows.map(x=>`<div data-pid="${x.place_id}">${card(x.places)}<button data-unsave="${x.place_id}" class="tl-btn tl-btn-ghost mt-2 w-full !min-h-10">Remove from saved</button></div>`).join("");
-  if(!rows.length)empty.classList.remove("hidden");
-  if(hidden>0)note(`${hidden} saved place${hidden>1?"s are":" is"} not showing because ${hidden>1?"they are":"it is"} hidden or waiting for review.`);
-  grid.addEventListener("click",async e=>{const id=e.target.dataset.unsave;if(!id)return;e.target.disabled=true;
-   const d=await supabase.from("saves").delete().eq("user_id",user.id).eq("place_id",id);
-   if(d.error){e.target.disabled=false;note("Couldn't remove it. Please try again.");return}
-   grid.querySelector(`[data-pid="${id}"]`)?.remove();if(!grid.children.length)empty.classList.remove("hidden")})}
-}
-</script>
+<main id="hub"></main>
 
 <footer class="tl-footer">
   <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
