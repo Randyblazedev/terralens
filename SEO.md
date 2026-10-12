@@ -24,3 +24,10 @@ Nobody can promise rankings. This gives search engines everything they need, qui
 - Get links from other sites: travel blogs, social media bios, local tourism pages and directories.
 - Share place pages on social media. Link previews now show a proper title, description and image.
 - Search Console -> Performance shows which searches bring people. Write more about the ones that almost rank.
+
+## Blog (added in 8.1)
+- **Public pages:** `/blog`, `/blog/category/<name>` and `/blog/<slug>`, server-rendered with article structured data, breadcrumbs, related articles and links to your place pages. They are in the sitemap (`/sitemap-blog.xml`).
+- **Only admins can post.** Write in `/admin.html` -> Blog (Markdown, live preview, title and summary length hints). Normal users cannot publish, edit or delete anything: the database blocks it.
+- **Guest posts:** people email you and pay US$5 (see `/write-for-us.html`). Paste their article in the Blog tab, tick "Guest post (paid)", add their name and optional website, and publish. Guest posts are labelled, and links inside them use `rel="sponsored nofollow"` so they follow Google's rules for paid content.
+- **First posts:** run `supabase/seed-posts.sql` once for three starter articles (photography, trip planning, best time to visit).
+- Write at least one useful article a week about places you cover: each article is another page that can rank and bring visitors to your place pages.

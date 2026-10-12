@@ -28,6 +28,7 @@
     <nav class="hidden items-center gap-6 text-sm text-white/65 lg:flex">
       <a class="hover:text-white" href="explore.html">Explore</a>
       <a class="hover:text-white" href="collections.html">Collections</a>
+      <a class="hover:text-white" href="/blog">Blog</a>
       <a class="hover:text-white" href="planner.html">Trips</a>
       <a class="hover:text-white" href="about.html">About</a>
     </nav>
@@ -42,6 +43,7 @@
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="index.html">Home</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="explore.html">Explore</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="collections.html">Collections</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="/blog">Blog</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="planner.html">Trips</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="about.html">About</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="upload.html">Upload a place</a>
@@ -54,7 +56,7 @@
 </main>
 <script type="module">
 import {confirmDialog} from "./src/js/ui.js";
-import {supabase} from "./src/js/supabase.js";import {fallbackPlaces,escapeHtml,placeUrl,verifiedBadge,canEdit,backLink,backFab,imgSize} from "./src/js/app.js";
+import {supabase} from "./src/js/supabase.js";import {fallbackPlaces,escapeHtml,placeUrl,verifiedBadge,canEdit,backLink,backFab,imgSize,formatCount,EYE} from "./src/js/app.js";
 const slug=new URLSearchParams(location.search).get("slug")||decodeURIComponent(location.pathname.match(/^\/place\/([^/]+)/)?.[1]||"");
 let place=null,images=[];
 let loadError=false;
@@ -94,7 +96,7 @@ document.querySelector("#place").innerHTML=`
    <div class="flex flex-wrap items-center gap-3 text-xs font-bold uppercase tracking-[.16em] text-sky-300"><span>${escapeHtml(place.category||"Place")}</span><span>•</span><span>${escapeHtml(place.country||"")}</span></div>
    <h1 class="mt-4 text-5xl font-extrabold tracking-tight sm:text-7xl">${escapeHtml(place.name)}</h1>
    <p class="mt-6 max-w-3xl text-lg leading-8 text-white/60">${escapeHtml(place.description||"")}</p>
-   <div class="mt-8 flex flex-wrap gap-3"><button id="save" aria-pressed="${savedInit}" class="tl-btn tl-btn-ghost">${savedInit?"♥ Saved":"♡ Save"}</button><button id="trip" class="tl-btn tl-btn-primary">＋ Add to trip</button><button id="share" class="tl-btn tl-btn-ghost">Share</button>${(isOwner&&canEdit(place))||isAdmin?`<a class="tl-btn tl-btn-ghost" href="edit.html?slug=${encodeURIComponent(place.slug)}">Edit</a>`:""}${affiliate?`<a href="${escapeHtml(affiliate)}" target="_blank" rel="sponsored nofollow noopener" class="tl-btn tl-btn-primary">Plan your trip ↗</a>`:""}</div>${place.sponsored||affiliate?`<p class="mt-3 text-xs text-white/40">${place.sponsored?`Sponsored${place.sponsor_name?` by ${escapeHtml(place.sponsor_name)}`:""}. `:""}${affiliate?"Some links are affiliate links; we may earn a commission at no cost to you.":""}</p>`:""}<p id="status" role="status" aria-live="polite" class="mt-3 min-h-5 text-sm text-white/55"></p><p id="contributor" class="mt-1 text-sm text-white/55">${contribHtml}</p><details id="report" class="mt-4 max-w-md"><summary class="cursor-pointer text-sm text-white/55 hover:text-white">Report this place</summary><div class="mt-3 grid gap-3"><select id="rreason" class="tl-input" aria-label="Reason"><option value="copyright">Copyright / photo not shared with permission</option><option value="inappropriate">Inappropriate content</option><option value="spam">Spam or fake place</option><option value="wrong_info">Wrong information</option><option value="other">Other</option></select><textarea id="rdetails" class="tl-input !min-h-24" maxlength="500" placeholder="Details (optional)" aria-label="Details"></textarea><button id="rsend" class="tl-btn tl-btn-primary">Send report</button></div></details>
+   <div class="mt-8 flex flex-wrap gap-3"><button id="save" aria-pressed="${savedInit}" class="tl-btn tl-btn-ghost">${savedInit?"♥ Saved":"♡ Save"}</button><button id="trip" class="tl-btn tl-btn-primary">＋ Add to trip</button><button id="share" class="tl-btn tl-btn-ghost">Share</button>${(isOwner&&canEdit(place))||isAdmin?`<a class="tl-btn tl-btn-ghost" href="edit.html?slug=${encodeURIComponent(place.slug)}">Edit</a>`:""}${affiliate?`<a href="${escapeHtml(affiliate)}" target="_blank" rel="sponsored nofollow noopener" class="tl-btn tl-btn-primary">Plan your trip ↗</a>`:""}</div>${place.sponsored||affiliate?`<p class="mt-3 text-xs text-white/40">${place.sponsored?`Sponsored${place.sponsor_name?` by ${escapeHtml(place.sponsor_name)}`:""}. `:""}${affiliate?"Some links are affiliate links; we may earn a commission at no cost to you.":""}</p>`:""}<p id="status" role="status" aria-live="polite" class="mt-3 min-h-5 text-sm text-white/55"></p><p id="contributor" class="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-white/55">${contribHtml}<span id="views" class="inline-flex items-center gap-1 text-white/45" title="${Number(place.view_count)||0} views">${EYE}<span id="views-n">${formatCount(place.view_count)}</span> views</span></p><details id="report" class="mt-4 max-w-md"><summary class="cursor-pointer text-sm text-white/55 hover:text-white">Report this place</summary><div class="mt-3 grid gap-3"><select id="rreason" class="tl-input" aria-label="Reason"><option value="copyright">Copyright / photo not shared with permission</option><option value="inappropriate">Inappropriate content</option><option value="spam">Spam or fake place</option><option value="wrong_info">Wrong information</option><option value="other">Other</option></select><textarea id="rdetails" class="tl-input !min-h-24" maxlength="500" placeholder="Details (optional)" aria-label="Details"></textarea><button id="rsend" class="tl-btn tl-btn-primary">Send report</button></div></details>
    <div class="mt-12 grid gap-4 sm:grid-cols-2"><div class="tl-card p-5"><p class="tl-eyebrow">When</p><h3 class="mt-3 font-bold">Best season</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(place.best_season||"Community information coming soon.")}</p><h3 class="mt-5 font-bold">Best time</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(place.best_time||"Ask the community or check local conditions.")}</p></div><div class="tl-card p-5"><p class="tl-eyebrow">Getting there</p><h3 class="mt-3 font-bold">Access</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(place.access_info||"Access details coming soon.")}</p><h3 class="mt-5 font-bold">Entry</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(place.entry_fee||"Check the official/local source before visiting.")}</p></div></div>
    ${place.latitude!=null&&place.longitude!=null?`<div class="mt-6 overflow-hidden rounded-3xl border border-white/10"><iframe title="Map" class="h-[360px] w-full border-0" src="https://www.openstreetmap.org/export/embed.html?bbox=${place.longitude-.02}%2C${place.latitude-.02}%2C${place.longitude+.02}%2C${place.latitude+.02}&layer=mapnik&marker=${place.latitude}%2C${place.longitude}"></iframe></div>`:""}
   </div>
@@ -138,6 +140,13 @@ likeBtns.forEach(b=>b.onclick=async()=>{if(!isReal)return;
  b.disabled=false;
  if(r.error){if(r.error.code==="23505")paintLike(b,true);else status("Couldn't update your like. Please try again.");return}
  paintLike(b,!was);c.textContent=Math.max(0,Number(c.textContent)+(was?-1:1))});
+if(isReal&&place.status==="published"){
+ const seen="tl_viewed_"+place.id;
+ if(!sessionStorage.getItem(seen)){sessionStorage.setItem(seen,"1");
+  let vid=(await supabase.auth.getSession()).data.session?.user?.id;
+  if(!vid){try{vid=localStorage.getItem("tl_vid");if(!vid){vid=crypto.randomUUID();localStorage.setItem("tl_vid",vid)}}catch{vid=crypto.randomUUID()}}
+  const r=await supabase.rpc("record_place_view",{p_place:place.id,p_viewer:vid});
+  if(r.data===true){place.view_count=(Number(place.view_count)||0)+1;const n=document.querySelector("#views-n");if(n)n.textContent=formatCount(place.view_count)}}}
 document.body.insertAdjacentHTML("beforeend",backFab("explore.html"));
 if(isReal&&place.status==="published"){
  document.querySelector("#place").insertAdjacentHTML("beforeend",`<div class="tl-shell max-w-3xl pb-20"><h2 class="text-2xl font-extrabold">Comments <span id="ccount" class="text-base font-normal text-white/40"></span></h2><div id="cbox" class="mt-5"></div><p id="cmsg" role="status" aria-live="polite" class="mt-3 min-h-5 text-sm text-white/50"></p><div id="clist" class="mt-4 grid gap-4"></div></div>`);
@@ -166,7 +175,7 @@ if(isReal&&place.status==="published"){
 <footer class="tl-footer">
   <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
     <div><div class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-xl font-extrabold">Terra<span class="text-sky-300">Lens</span></span></div><p class="mt-4 max-w-md text-sm leading-7 text-white/45">A visual place-discovery platform connecting the photo that inspires you with the context that helps you experience it.</p></div>
-    <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="planner.html">Trips</a><a href="saved.html">Saved places</a></div><p class="tl-eyebrow mt-8">Browse</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="/category/waterfall">Waterfalls</a><a href="/category/mountain">Mountains</a><a href="/category/beach">Beaches</a><a href="/category/lake">Lakes</a><a href="/category/forest">Forests</a><a href="/category/culture">Culture</a></div></div>
+    <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="planner.html">Trips</a><a href="/blog">Blog</a><a href="write-for-us.html">Write for us</a><a href="saved.html">Saved places</a></div><p class="tl-eyebrow mt-8">Browse</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="/category/waterfall">Waterfalls</a><a href="/category/mountain">Mountains</a><a href="/category/beach">Beaches</a><a href="/category/lake">Lakes</a><a href="/category/forest">Forests</a><a href="/category/culture">Culture</a></div></div>
     <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy policy</a><a href="terms.html">Terms of service</a><a href="content-policy.html">Content policy</a></div></div>
   </div>
   <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© 2026 TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>

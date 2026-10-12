@@ -1,3 +1,10 @@
+# TerraLens 8.1
+
+- **View counts on every place card and place page.** One view is counted per visitor per place per day; nobody can fake or edit the count (the database blocks it). Shown with an eye icon, for example "1.2K".
+- **Blog, admin-only posting.** `/blog` and articles, plus a Blog tab in the admin page. For guests: email you and pay US$5; the Write for us page (`/write-for-us.html`) explains it, and the Terms, Privacy and Content Policy now cover it. Guest posts are labelled and their links are marked sponsored.
+
+**Do these:** run the new `supabase/schema.sql` once; then `supabase/seed-posts.sql` once for three starter articles. Details in `SEO.md`.
+
 # TerraLens 8.0: SEO
 
 See `SEO.md` for the full guide and the steps you must do (set SITE_URL, run schema.sql, submit sitemap.xml in Google Search Console and Bing).

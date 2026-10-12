@@ -28,6 +28,7 @@
     <nav class="hidden items-center gap-6 text-sm text-white/65 lg:flex">
       <a class="hover:text-white" href="explore.html">Explore</a>
       <a class="hover:text-white" href="collections.html">Collections</a>
+      <a class="hover:text-white" href="/blog">Blog</a>
       <a class="hover:text-white" href="planner.html">Trips</a>
       <a class="hover:text-white" href="about.html">About</a>
     </nav>
@@ -42,6 +43,7 @@
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="index.html">Home</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="explore.html">Explore</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="collections.html">Collections</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="/blog">Blog</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="planner.html">Trips</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="about.html">About</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="upload.html">Upload a place</a>
@@ -60,6 +62,7 @@
   <button id="tab-reports" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Reports</button>
   <button id="tab-contributors" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Contributors</button>
   <button id="tab-comments" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Comments</button>
+  <button id="tab-posts" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Blog</button>
  </div>
  <p id="flash" role="status" aria-live="polite" class="mt-4 min-h-5 text-sm text-sky-300"></p>
  <section id="places-panel" class="mt-4">
@@ -72,6 +75,23 @@
  </section>
  <section id="reports-panel" class="mt-4 hidden"><div id="reports" class="grid gap-3"></div></section>
  <section id="contributors-panel" class="mt-4 hidden"><p class="mb-4 text-sm text-white/50">Eligible = 100+ approved photos, 10+ approved places, no upheld reports in 90 days. You decide who to verify.</p><div id="contributors" class="grid gap-3"></div></section>
+ <section id="posts-panel" class="mt-4 hidden">
+  <div class="flex flex-wrap items-center justify-between gap-3"><p class="max-w-xl text-sm text-white/50">Only admins can publish blog posts. Guests email you and pay US$5; paste their article here, tick "Guest post" and publish.</p><button id="new-post" type="button" class="tl-btn tl-btn-primary !min-h-10">New post</button></div>
+  <form id="post-form" class="tl-card mt-6 hidden gap-4 p-5">
+   <input id="p-title" class="tl-input" maxlength="120" placeholder="Title (about 60 characters works best in search)" aria-label="Title" required>
+   <p id="p-title-count" class="-mt-2 text-xs text-white/40"></p>
+   <div class="grid gap-3 sm:grid-cols-2"><input id="p-slug" class="tl-input" maxlength="90" placeholder="web-address-slug" aria-label="Slug" required><select id="p-category" class="tl-input" aria-label="Category"><option value="travel-tips">Travel Tips</option><option value="destinations">Destinations</option><option value="photography">Photography</option><option value="guides">Guides</option><option value="news">News</option></select></div>
+   <textarea id="p-excerpt" class="tl-input tl-textarea" rows="3" maxlength="300" placeholder="Short summary shown in search results (120 to 160 characters is ideal)" aria-label="Excerpt" required></textarea>
+   <p id="p-excerpt-count" class="-mt-2 text-xs text-white/40"></p>
+   <input id="p-cover" class="tl-input" placeholder="Cover image address (https://...) optional" aria-label="Cover image address">
+   <textarea id="p-content" class="tl-input tl-textarea !min-h-72" rows="14" placeholder="Write in Markdown: ## Heading, **bold**, - list, [link](https://...)" aria-label="Article content" required></textarea>
+   <div class="flex flex-wrap items-center gap-4"><label class="flex items-center gap-2 text-sm"><input id="p-guest" type="checkbox">Guest post (paid)</label><select id="p-status" class="tl-input !w-auto" aria-label="Status"><option value="draft">Draft</option><option value="published">Published</option></select></div>
+   <div id="p-guest-fields" class="hidden gap-3 sm:grid-cols-2"><input id="p-guest-name" class="tl-input" maxlength="80" placeholder="Guest author name" aria-label="Guest author name"><input id="p-guest-link" class="tl-input" placeholder="Author website (https://...) optional" aria-label="Author website"></div>
+   <div class="flex flex-wrap gap-3"><button class="tl-btn tl-btn-primary !min-h-10">Save post</button><button id="p-preview-btn" type="button" class="tl-btn tl-btn-ghost !min-h-10">Preview</button><button id="p-delete" type="button" class="tl-btn tl-btn-ghost hidden !min-h-10 text-red-300">Delete</button><button id="p-cancel" type="button" class="tl-btn tl-btn-ghost !min-h-10">Cancel</button><a id="p-view" class="hidden self-center text-sm text-sky-300 underline" href="#" target="_blank" rel="noopener">View post</a></div>
+   <article id="p-preview" class="hidden rounded-2xl border border-white/10 p-5"></article>
+  </form>
+  <div id="posts" class="mt-6 grid gap-3"></div>
+ </section>
  <section id="comments-panel" class="mt-4 hidden"><div id="comments" class="grid gap-3"></div></section>
 </div>
 </div></main>
@@ -79,6 +99,7 @@
 import {confirmDialog} from "./src/js/ui.js";
 import {supabase} from "./src/js/supabase.js";
 import {escapeHtml,verifiedBadge} from "./src/js/app.js";
+import {renderMarkdown} from "./src/js/markdown.js";
 const $=s=>document.querySelector(s),gate=$("#gate"),flash=m=>{$("#flash").textContent=m};
 const httpsUrl=u=>{try{const x=new URL(u);return x.protocol==="https:"?x.href:""}catch{return ""}};
 const clean=v=>String(v||"").replace(/[,()%*_\\"'`:]/g," ").trim().slice(0,80);
@@ -208,7 +229,46 @@ $("#fill").onclick=async()=>{const out=$("#fill-out"),btn=$("#fill");btn.disable
   if(upd.error)skipped++;else{ok++;if(ph.links?.download_location)api("/api/unsplash/download",{download_location:ph.links.download_location})}
   await wait()}
  out.textContent=`Done: ${ok} place${ok===1?"":"s"} now ${ok===1?"has":"have"} a photo and ${ok===1?"is":"are"} live${skipped?`. ${skipped} skipped, tap again to retry`:""}.`;btn.disabled=false;stats();loadPlaces()};
-const TABS=["places","reports","contributors","comments"],loaders={reports:loadReports,contributors:loadContributors,comments:loadComments};
+const POST_CATS={"travel-tips":"Travel Tips",destinations:"Destinations",photography:"Photography",guides:"Guides",news:"News"};
+let editingPost=null;
+const pslug=s=>s.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,90);
+const pcount=()=>{const t=$("#p-title").value.length,e=$("#p-excerpt").value.length;
+ $("#p-title-count").textContent=`${t} characters${t>60?" (long: search may cut it off)":""}`;$("#p-excerpt-count").textContent=`${e} characters${e&&(e<120||e>160)?" (120 to 160 is ideal)":""}`};
+function showPostForm(p){editingPost=p?p.id:null;const f=$("#post-form");f.classList.remove("hidden");f.classList.add("grid");
+ $("#p-title").value=p?.title||"";$("#p-slug").value=p?.slug||"";$("#p-slug").dataset.touched=p?"1":"";$("#p-category").value=p?.category||"travel-tips";
+ $("#p-excerpt").value=p?.excerpt||"";$("#p-cover").value=p?.cover_url||"";$("#p-content").value=p?.content||"";$("#p-status").value=p?.status||"draft";
+ $("#p-guest").checked=!!p?.is_guest;$("#p-guest-name").value=p?.guest_name||"";$("#p-guest-link").value=p?.guest_link||"";
+ const gf=$("#p-guest-fields");gf.classList.toggle("hidden",!p?.is_guest);gf.classList.toggle("grid",!!p?.is_guest);
+ $("#p-delete").classList.toggle("hidden",!p);const v=$("#p-view");v.classList.toggle("hidden",!(p&&p.status==="published"));if(p)v.href="/blog/"+p.slug;
+ $("#p-preview").classList.add("hidden");pcount();f.scrollIntoView({behavior:"smooth",block:"start"})}
+async function loadPosts(){
+ const {data,error}=await supabase.from("posts").select("id,slug,title,status,category,is_guest,published_at,created_at").order("created_at",{ascending:false}).limit(100);
+ if(error){flash(error.message);return}
+ $("#posts").innerHTML=(data||[]).map(p=>`<div class="tl-card flex flex-wrap items-center justify-between gap-3 p-4"><div class="min-w-0"><p class="truncate font-bold">${escapeHtml(p.title)}</p><p class="text-xs text-white/45">${escapeHtml(POST_CATS[p.category]||p.category)} · ${escapeHtml(p.status)}${p.is_guest?" · guest post":""} · ${escapeHtml(new Date(p.published_at||p.created_at).toLocaleDateString())}</p></div><button data-pedit="${escapeHtml(p.id)}" class="tl-btn tl-btn-ghost !min-h-10">Edit</button></div>`).join("")||'<p class="text-white/50">No posts yet. Tap New post to write the first one.</p>'}
+$("#new-post").onclick=()=>showPostForm(null);
+$("#p-cancel").onclick=()=>{const f=$("#post-form");f.classList.add("hidden");f.classList.remove("grid")};
+$("#posts").addEventListener("click",async e=>{const id=e.target.dataset.pedit;if(!id)return;const {data,error}=await supabase.from("posts").select("*").eq("id",id).single();if(error){flash(error.message);return}showPostForm(data)});
+$("#p-title").addEventListener("input",()=>{if(!$("#p-slug").dataset.touched&&!editingPost)$("#p-slug").value=pslug($("#p-title").value);pcount()});
+$("#p-slug").addEventListener("input",()=>{$("#p-slug").dataset.touched="1"});$("#p-excerpt").addEventListener("input",pcount);
+$("#p-guest").addEventListener("change",()=>{const on=$("#p-guest").checked,gf=$("#p-guest-fields");gf.classList.toggle("hidden",!on);gf.classList.toggle("grid",on)});
+$("#p-preview-btn").onclick=()=>{const pv=$("#p-preview");pv.innerHTML=`<h2 class="text-2xl font-extrabold">${escapeHtml($("#p-title").value)}</h2>`+renderMarkdown($("#p-content").value,{sponsored:$("#p-guest").checked});pv.classList.toggle("hidden")};
+$("#post-form").onsubmit=async e=>{e.preventDefault();
+ const title=$("#p-title").value.trim(),slug=$("#p-slug").value.trim(),excerpt=$("#p-excerpt").value.trim(),content=$("#p-content").value.trim(),cover=$("#p-cover").value.trim(),link=$("#p-guest-link").value.trim(),guest=$("#p-guest").checked;
+ if(title.length<3||title.length>120){flash("The title needs 3 to 120 characters.");return}
+ if(!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)||slug==="category"){flash("The slug can only use lowercase letters, numbers and single dashes, and cannot be 'category'.");return}
+ if(excerpt.length<20||excerpt.length>300){flash("The summary needs 20 to 300 characters.");return}
+ if(content.length<50){flash("The article is too short.");return}
+ if(cover&&!httpsUrl(cover)){flash("The cover image address must start with https://");return}
+ if(guest&&!$("#p-guest-name").value.trim()){flash("Add the guest author's name.");return}
+ if(link&&!httpsUrl(link)){flash("The author website must start with https://");return}
+ const row={title,slug,excerpt,content,category:$("#p-category").value,cover_url:cover||null,status:$("#p-status").value,is_guest:guest,guest_name:guest?$("#p-guest-name").value.trim():null,guest_link:guest&&link?link:null};
+ const r=editingPost?await supabase.from("posts").update(row).eq("id",editingPost).select("id,slug,status").single():await supabase.from("posts").insert(row).select("id,slug,status").single();
+ if(r.error){flash(r.error.code==="23505"?"That slug is already used by another post.":r.error.message);return}
+ flash(row.status==="published"?"Saved and published.":"Saved as a draft.");editingPost=r.data.id;$("#p-delete").classList.remove("hidden");
+ const v=$("#p-view");v.href="/blog/"+r.data.slug;v.classList.toggle("hidden",r.data.status!=="published");loadPosts()};
+$("#p-delete").onclick=async()=>{if(!editingPost)return;if(!await confirmDialog("Delete this post? This cannot be undone.",{danger:true,confirmText:"Delete"}))return;
+ const {error}=await supabase.from("posts").delete().eq("id",editingPost);flash(error?error.message:"Post deleted.");if(!error){$("#p-cancel").click();loadPosts()}};
+const TABS=["places","reports","contributors","comments","posts"],loaders={reports:loadReports,contributors:loadContributors,comments:loadComments,posts:loadPosts};
 const show=t=>{TABS.forEach(n=>{$(`#${n}-panel`).classList.toggle("hidden",n!==t);$(`#tab-${n}`).className="tl-btn !min-h-10 "+(n===t?"tl-btn-primary":"tl-btn-ghost")});loaders[t]?.()};
 TABS.forEach(n=>{$(`#tab-${n}`).onclick=()=>show(n)});
 let timer;const refresh=()=>{clearTimeout(timer);timer=setTimeout(loadPlaces,250)};$("#q").oninput=refresh;$("#status").onchange=()=>loadPlaces();$("#mine").onchange=()=>loadPlaces();$("#more-places-admin").onclick=()=>loadPlaces(true);
@@ -220,7 +280,7 @@ if(await guard()){const pend=await stats();if(pend>0)$("#status").value="pending
 <footer class="tl-footer">
   <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
     <div><div class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-xl font-extrabold">Terra<span class="text-sky-300">Lens</span></span></div><p class="mt-4 max-w-md text-sm leading-7 text-white/45">A visual place-discovery platform connecting the photo that inspires you with the context that helps you experience it.</p></div>
-    <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="planner.html">Trips</a><a href="saved.html">Saved places</a></div><p class="tl-eyebrow mt-8">Browse</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="/category/waterfall">Waterfalls</a><a href="/category/mountain">Mountains</a><a href="/category/beach">Beaches</a><a href="/category/lake">Lakes</a><a href="/category/forest">Forests</a><a href="/category/culture">Culture</a></div></div>
+    <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="planner.html">Trips</a><a href="/blog">Blog</a><a href="write-for-us.html">Write for us</a><a href="saved.html">Saved places</a></div><p class="tl-eyebrow mt-8">Browse</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="/category/waterfall">Waterfalls</a><a href="/category/mountain">Mountains</a><a href="/category/beach">Beaches</a><a href="/category/lake">Lakes</a><a href="/category/forest">Forests</a><a href="/category/culture">Culture</a></div></div>
     <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy policy</a><a href="terms.html">Terms of service</a><a href="content-policy.html">Content policy</a></div></div>
   </div>
   <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© 2026 TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>

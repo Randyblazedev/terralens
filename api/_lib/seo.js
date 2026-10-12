@@ -53,6 +53,17 @@ export async function facets() {
   return cache.value;
 }
 
+export function formatCount(n) {
+  n = Math.max(0, Number(n) || 0);
+  if (n < 1000) return String(n);
+  if (n < 1e6) {
+    const k = n < 10000 ? Math.round(n / 100) / 10 : Math.round(n / 1000);
+    if (k < 1000) return String(k).replace(/\.0$/, "") + "K";
+  }
+  const m = n < 1e7 ? Math.round(n / 1e5) / 10 : Math.round(n / 1e6);
+  return String(m).replace(/\.0$/, "") + "M";
+}
+const EYE = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>`;
 export const placePath = p => `/place/${encodeURIComponent(p.slug)}`;
 export const categoryPath = c => `/category/${slugify(c)}`;
 export const countryPath = c => `/country/${slugify(c)}`;
@@ -60,7 +71,7 @@ export const countryPath = c => `/country/${slugify(c)}`;
 // A static card (no JavaScript needed) for lists inside server-rendered pages.
 export function cardHtml(p) {
   const img = p.cover_url ? `<img src="${esc(imgSize(p.cover_url, 640))}" srcset="${esc(imgSize(p.cover_url, 480))} 480w, ${esc(imgSize(p.cover_url, 800))} 800w" sizes="(min-width:1024px) 30vw, (min-width:640px) 45vw, 90vw" alt="${esc(p.name)}${p.country ? ", " + esc(p.country) : ""}" loading="lazy" decoding="async" class="h-full w-full object-cover">` : "";
-  return `<article class="group overflow-hidden rounded-3xl border border-white/10 bg-white/[.025]"><a href="${placePath(p)}" class="block aspect-[4/3] overflow-hidden bg-white/5" tabindex="-1" aria-hidden="true">${img}</a><div class="p-5"><div class="mb-2 flex items-center justify-between gap-3 text-[11px] font-bold uppercase tracking-[.16em] text-sky-300"><span>${esc(p.category || "Place")}</span><span>${esc(p.country || "")}</span></div><h3 class="font-display text-xl font-bold"><a href="${placePath(p)}">${esc(p.name)}</a></h3><p class="mt-2 line-clamp-2 text-sm leading-6 text-white/55">${esc(trunc(p.description, 140))}</p><div class="mt-4 flex justify-end"><a href="${placePath(p)}" class="tl-btn tl-btn-ghost !min-h-9 shrink-0 !px-4" aria-label="View ${esc(p.name)}">View</a></div></div></article>`;
+  return `<article class="group overflow-hidden rounded-3xl border border-white/10 bg-white/[.025]"><a href="${placePath(p)}" class="block aspect-[4/3] overflow-hidden bg-white/5" tabindex="-1" aria-hidden="true">${img}</a><div class="p-5"><div class="mb-2 flex items-center justify-between gap-3 text-[11px] font-bold uppercase tracking-[.16em] text-sky-300"><span>${esc(p.category || "Place")}</span><span>${esc(p.country || "")}</span></div><h3 class="font-display text-xl font-bold"><a href="${placePath(p)}">${esc(p.name)}</a></h3><p class="mt-2 line-clamp-2 text-sm leading-6 text-white/55">${esc(trunc(p.description, 140))}</p><div class="mt-4 flex items-center justify-between gap-3"><span class="inline-flex items-center gap-1 text-xs text-white/45" aria-label="${Number(p.view_count) || 0} views" title="${Number(p.view_count) || 0} views">${EYE}${formatCount(p.view_count)}</span><a href="${placePath(p)}" class="tl-btn tl-btn-ghost !min-h-9 shrink-0 !px-4" aria-label="View ${esc(p.name)}">View</a></div></div></article>`;
 }
 
 export const jsonLd = obj => `<script type="application/ld+json">${JSON.stringify(obj).replace(/</g, "\\u003c")}</script>`;

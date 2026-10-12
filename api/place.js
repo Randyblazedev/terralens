@@ -8,7 +8,7 @@ import { esc, siteUrl, trunc, configured, CATEGORY_PLURAL, imgSize, rest, placeP
 const SLUG = /^[a-z0-9][a-z0-9-]{0,119}$/i;
 let template;
 const loadTemplate = () => (template ??= readFileSync(join(process.cwd(), "place.html"), "utf8"));
-const FIELDS = "slug,name,category,country,description,cover_url,created_at";
+const FIELDS = "slug,name,category,country,description,cover_url,created_at,view_count";
 
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "text/html; charset=utf-8");

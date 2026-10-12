@@ -41,6 +41,20 @@ export function imgSize(url, w, q = 75) {
   } catch { return url; }
 }
 
+// 1234 -> "1.2K", 2500000 -> "2.5M"
+export function formatCount(n) {
+  n = Math.max(0, Number(n) || 0);
+  if (n < 1000) return String(n);
+  if (n < 1e6) {
+    const k = n < 10000 ? Math.round(n / 100) / 10 : Math.round(n / 1000);
+    if (k < 1000) return String(k).replace(/\.0$/, "") + "K";
+  }
+  const m = n < 1e7 ? Math.round(n / 1e5) / 10 : Math.round(n / 1e6);
+  return String(m).replace(/\.0$/, "") + "M";
+}
+export const EYE = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>`;
+export const viewsBadge = n => `<span class="inline-flex items-center gap-1 text-xs text-white/45" aria-label="${Number(n) || 0} views" title="${Number(n) || 0} views">${EYE}${formatCount(n)}</span>`;
+
 export function card(place) {
   const url = placeUrl(place);
   const name = place.author ? (place.author.display_name || place.author.username || "") : "";
@@ -55,7 +69,7 @@ export function card(place) {
       </div>
       <h3 class="font-display text-xl font-bold"><a href="${url}">${escapeHtml(place.name)}</a></h3>
       <p class="mt-2 line-clamp-2 text-sm leading-6 text-white/55">${escapeHtml(place.description || "")}</p>
-      <div class="mt-4 flex items-center justify-between gap-3">${by}<a href="${url}" class="tl-btn tl-btn-ghost !min-h-9 shrink-0 !px-4" aria-label="View ${escapeHtml(place.name)}">View</a></div>
+      <div class="mt-4 flex items-center justify-between gap-3">${by}<div class="flex shrink-0 items-center gap-3">${viewsBadge(place.view_count)}<a href="${url}" class="tl-btn tl-btn-ghost !min-h-9 shrink-0 !px-4" aria-label="View ${escapeHtml(place.name)}">View</a></div></div>
     </div>
   </article>`;
 }

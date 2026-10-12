@@ -1,21 +1,27 @@
+import { BLOG_CATEGORIES } from "./blog.js";
 import { esc, siteUrl, configured, rest, facets, categoryPath, countryPath, placePath } from "./_lib/seo.js";
 
 // Sitemap index at /sitemap.xml. Part 0 lists the main pages plus every category and country page;
 // parts 1, 2, 3... list places, 2,000 per file, so the site can grow to millions of places.
 const PER = 2000;
-const STATIC_PAGES = ["/", "/explore.html", "/collections.html", "/planner.html", "/about.html", "/terms.html", "/privacy.html", "/content-policy.html"];
+const STATIC_PAGES = ["/", "/explore.html", "/collections.html", "/planner.html", "/about.html", "/terms.html", "/privacy.html", "/content-policy.html", "/write-for-us.html"];
 const XML = '<?xml version="1.0" encoding="UTF-8"?>\n';
 
 export default async function handler(req, res) {
-  const site = siteUrl(req), part = req.query.part === undefined ? null : parseInt(req.query.part, 10);
+  const site = siteUrl(req), isBlog = req.query.part === "blog", part = req.query.part === undefined ? null : isBlog ? -1 : parseInt(req.query.part, 10);
   res.setHeader("Content-Type", "application/xml; charset=utf-8");
   res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=86400");
   try {
     if (part === null) {
       let total = 0;
       if (configured()) { try { total = (await rest("places?select=id&status=eq.published&limit=1", { count: true })).total || 0; } catch {} }
-      const files = ["/sitemap-0.xml", ...Array.from({ length: Math.ceil(total / PER) }, (_, i) => `/sitemap-${i + 1}.xml`)];
+      const files = ["/sitemap-0.xml", "/sitemap-blog.xml", ...Array.from({ length: Math.ceil(total / PER) }, (_, i) => `/sitemap-${i + 1}.xml`)];
       return res.status(200).send(`${XML}<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${files.map(f => `<sitemap><loc>${esc(site + f)}</loc></sitemap>`).join("\n")}\n</sitemapindex>`);
+    }
+    if (isBlog) {
+      const { rows } = configured() ? await rest("posts?select=slug,title,cover_url,published_at,updated_at&status=eq.published&order=published_at.desc&limit=5000") : { rows: [] };
+      const urls = [`<url><loc>${esc(site + "/blog")}</loc></url>`, ...Object.keys(BLOG_CATEGORIES).map(c => `<url><loc>${esc(site + "/blog/category/" + c)}</loc></url>`), ...rows.map(p => `<url><loc>${esc(site + "/blog/" + p.slug)}</loc><lastmod>${String(p.updated_at || p.published_at || "").slice(0, 10)}</lastmod>${p.cover_url ? `<image:image><image:loc>${esc(p.cover_url)}</image:loc><image:title>${esc(p.title)}</image:title></image:image>` : ""}</url>`)];
+      return res.status(200).send(`${XML}<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${urls.join("\n")}\n</urlset>`);
     }
     if (!Number.isInteger(part) || part < 0) return res.status(404).send(`${XML}<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`);
 

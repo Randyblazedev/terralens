@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     const name = type === "category" ? match.category : match.country;
     const filter = `${type}=eq.${encodeURIComponent(name)}`;
     const offset = (page - 1) * PAGE;
-    const { rows, total } = await rest(`places?select=slug,name,category,country,description,cover_url,created_at&status=eq.published&${filter}&order=featured.desc,created_at.desc&limit=${PAGE}&offset=${offset}`, { count: true });
+    const { rows, total } = await rest(`places?select=slug,name,category,country,description,cover_url,created_at,view_count&status=eq.published&${filter}&order=featured.desc,created_at.desc&limit=${PAGE}&offset=${offset}`, { count: true });
     if (!rows.length) return notFound(res, site, html);
     const count = total ?? match.places ?? rows.length;
     const pages = Math.max(1, Math.ceil(count / PAGE));

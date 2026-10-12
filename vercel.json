@@ -13,6 +13,10 @@
     },
     "api/ai/chat.js": {
       "maxDuration": 30
+    },
+    "api/blog.js": {
+      "includeFiles": "hub.html",
+      "maxDuration": 15
     }
   },
   "rewrites": [
@@ -31,6 +35,22 @@
     {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap"
+    },
+    {
+      "source": "/blog",
+      "destination": "/api/blog?view=list"
+    },
+    {
+      "source": "/blog/category/:category",
+      "destination": "/api/blog?view=list&category=:category"
+    },
+    {
+      "source": "/blog/:slug",
+      "destination": "/api/blog?view=post&slug=:slug"
+    },
+    {
+      "source": "/sitemap-blog.xml",
+      "destination": "/api/sitemap?part=blog"
     },
     {
       "source": "/sitemap-:part(\\d+).xml",
