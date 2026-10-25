@@ -6,3 +6,6 @@ node_modules
 .DS_Store
 src/js/runtime-config.js
 public
+
+__pycache__/
+*.pyc

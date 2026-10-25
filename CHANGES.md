@@ -1,3 +1,35 @@
+# TerraLens 8.3: 881 real places
+
+`supabase/seed-places-batch.sql` adds 881 places, all real and all sourced, not written by hand.
+
+Every row is a Wikidata item that has coordinates (P625), a country (P17) and an English
+Wikipedia article. The description is that article's opening sentences. Nothing is invented:
+no fee, season or access detail is guessed, so those three fields carry the existing honest
+"check locally" defaults and the admin fills them in where it matters.
+
+- **881 places** across Waterfall, Mountain, Lake, Beach and Forest.
+- **310 in Africa** (Cameroon, Nigeria, Ghana, Kenya, Uganda, Tanzania, Ethiopia, South Africa,
+  Rwanda, DR Congo and more), with the rest spread across the world so the site is not
+  Africa-only.
+- Rows whose "country" was not a country (Wikidata returns labels like "People" or "Earth"
+  for some items) are dropped.
+- Repeated descriptions are replaced with a short factual line, because several places can
+  share the same Wikipedia opening sentence and repeating it on every card is exactly the
+  thin content search engines penalise.
+- Safe to re-run: any slug that already exists is skipped, so your own uploads and the
+  earlier seed are untouched.
+
+**Do this:** run `supabase/seed-places-batch.sql` once in the Supabase SQL editor, then open
+`/admin.html` → Places → **Publish all drafts**. The second step is what makes them live.
+
+Regenerate at any time with:
+
+```
+python3 scripts/build-seed.py 115 > /tmp/global.sql
+python3 scripts/build-seed.py 70 --africa > /tmp/africa.sql
+python3 scripts/merge-seed.py supabase/seed-places-batch.sql /tmp/global.sql /tmp/africa.sql
+```
+
 # TerraLens 8.2: saving actually works
 
 Everything below was missing write paths, not broken queries. The tables, the policies and the read
