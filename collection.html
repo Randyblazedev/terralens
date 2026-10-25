@@ -29,7 +29,7 @@
       <a class="hover:text-white" href="explore.html">Explore</a>
       <a class="hover:text-white" href="collections.html">Collections</a>
       <a class="hover:text-white" href="/blog">Blog</a>
-      <a class="hover:text-white" href="planner.html">Trips</a>
+      <a class="hover:text-white" href="trips.html">Trips</a>
       <a class="hover:text-white" href="about.html">About</a>
     </nav>
     <div class="flex items-center gap-2">
@@ -44,7 +44,7 @@
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="explore.html">Explore</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="collections.html">Collections</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="/blog">Blog</a>
-      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="planner.html">Trips</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="trips.html">Trips</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="about.html">About</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="upload.html">Upload a place</a>
     </div>
@@ -53,18 +53,42 @@
 
 <main class="tl-section"><div class="tl-shell"><div class="mb-6"><a href="collections.html" data-back class="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-white/[.03] px-4 text-sm font-bold text-white/80 hover:bg-white/10"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Back</a></div><div id="head"></div><div id="grid" class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div></div></main>
 <script type="module">
-import {supabase} from "./src/js/supabase.js";import {card,escapeHtml} from "./src/js/app.js";
+import {supabase,getUser} from "./src/js/supabase.js";import {card,escapeHtml} from "./src/js/app.js";
+import {setCollectionVisibility,removePlaceFromCollection} from "./src/js/collections.js";
+import {confirmDialog,toast} from "./src/js/ui.js";
 const id=new URLSearchParams(location.search).get("id");const head=document.querySelector("#head"),grid=document.querySelector("#grid");
-if(!supabase){head.innerHTML='<p class="text-white/45">Supabase is required.</p>'}else{const c=await supabase.from("collections").select("*,profiles(display_name)").eq("id",id).maybeSingle();if(c.data){head.innerHTML=`<p class="tl-eyebrow">Collection</p><h1 class="mt-3 text-5xl font-extrabold">${escapeHtml(c.data.name)}</h1><p class="mt-4 max-w-2xl text-white/50">${escapeHtml(c.data.description||"")}</p><p class="mt-3 text-xs text-white/35">Curated by ${escapeHtml(c.data.profiles?.display_name||"Traveler")}</p>`;const r=await supabase.from("collection_items").select("places(*)").eq("collection_id",id);grid.innerHTML=(r.data||[]).map(x=>x.places).filter(Boolean).map(card).join("")||'<p class="text-white/45">This collection is empty.</p>'}}
+let current=null,isOwner=false;
+async function draw(){const r=await supabase.from("collection_items").select("places(*)").eq("collection_id",id);
+ const places=(r.data||[]).map(x=>x.places).filter(Boolean);
+ grid.innerHTML=places.map(card).join("")||'<p class="text-white/45">This collection is empty. Add places from any place page with “Add to collection”.</p>';
+ if(isOwner){grid.querySelectorAll("article").forEach((art,i)=>{const p=places[i];if(!p)return;
+  const b=document.createElement("button");b.type="button";b.textContent="Remove";b.className="mt-3 text-xs font-bold text-red-300 hover:underline";
+  b.onclick=async()=>{const ok=await confirmDialog(`Remove ${p.name} from this collection? The place itself stays on TerraLens.`,{title:"Remove place",confirmText:"Remove",danger:true});if(!ok)return;
+   const r=await removePlaceFromCollection(id,p.id);toast(r.error?"Couldn't remove that place. Please try again.":"Removed from the collection.",r.error?"error":"success");if(!r.error)draw()};
+  art.querySelector("div.p-5, div")?.append(b)})}}
+if(!supabase){head.innerHTML='<p class="text-white/45">Supabase is required.</p>'}else{const c=await supabase.from("collections").select("*,profiles(display_name)").eq("id",id).maybeSingle();
+ if(!c.data){head.innerHTML='<p class="text-white/45">That collection could not be found, or it is private.</p>'}else{current=c.data;
+  const me=await getUser();isOwner=!!me&&me.id===c.data.user_id;
+  const vis=isOwner?`<div class="mt-5 flex flex-wrap items-center gap-3"><span class="rounded-full border border-white/15 px-3 py-1 text-xs font-bold uppercase tracking-wider ${c.data.is_public?'text-emerald-300':'text-amber-300'}">${c.data.is_public?'Public':'Private'}</span><button type="button" id="vis" class="tl-btn tl-btn-ghost !min-h-9 !px-4">${c.data.is_public?'Make private':'Make public'}</button></div>`:"";
+  const shareable=c.data.is_public;
+  const share=shareable?`<div class="mt-5"><a id="wa-share" class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#25D366] px-5 text-sm font-bold text-[#04331a] hover:brightness-105" href="#" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.2-1.7-.9-2-1-.3-.1-.5-.2-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.5-.8-2.5-1.4-3.5-3.2-.3-.5.3-.4.8-1.4.1-.2 0-.4 0-.5 0-.2-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.3 5.2 4.5 1.9.8 2.7.8 3.6.7.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.3.2-1.4-.1-.2-.3-.2-.6-.4Z"/><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Z"/></svg>Share on WhatsApp</a></div>`:"";
+  head.innerHTML=`<p class="tl-eyebrow">Collection</p><h1 class="mt-3 text-5xl font-extrabold">${escapeHtml(c.data.name)}</h1><p class="mt-4 max-w-2xl text-white/50">${escapeHtml(c.data.description||"")}</p><p class="mt-3 text-xs text-white/35">Curated by ${escapeHtml(c.data.profiles?.display_name||"Traveler")}</p>${vis}${share}`;
+  const wa=document.querySelector("#wa-share");
+  if(wa){wa.href=`https://wa.me/?text=${encodeURIComponent(`${c.data.name} on TerraLens — places worth seeing\n${location.href}`)}`;}
+  const vb=document.querySelector("#vis");
+  if(vb)vb.onclick=async()=>{const r=await setCollectionVisibility(id,!current.is_public);
+   if(r.error){toast("Couldn't change who can see this. Please try again.","error");return}
+   toast(current.is_public?"This collection is now private.":"This collection is now public.","success");location.reload()};
+  await draw()}}
 </script>
 
 <footer class="tl-footer">
   <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
     <div><div class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-xl font-extrabold">Terra<span class="text-sky-300">Lens</span></span></div><p class="mt-4 max-w-md text-sm leading-7 text-white/45">A visual place-discovery platform connecting the photo that inspires you with the context that helps you experience it.</p></div>
-    <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="planner.html">Trips</a><a href="/blog">Blog</a><a href="write-for-us.html">Write for us</a><a href="saved.html">Saved places</a></div><p class="tl-eyebrow mt-8">Browse</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="/category/waterfall">Waterfalls</a><a href="/category/mountain">Mountains</a><a href="/category/beach">Beaches</a><a href="/category/lake">Lakes</a><a href="/category/forest">Forests</a><a href="/category/culture">Culture</a></div></div>
+    <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="trips.html">Trips</a><a href="/blog">Blog</a><a href="write-for-us.html">Write for us</a><a href="saved.html">Saved places</a></div><p class="tl-eyebrow mt-8">Browse</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="/category/waterfall">Waterfalls</a><a href="/category/mountain">Mountains</a><a href="/category/beach">Beaches</a><a href="/category/lake">Lakes</a><a href="/category/forest">Forests</a><a href="/category/culture">Culture</a></div></div>
     <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy policy</a><a href="terms.html">Terms of service</a><a href="content-policy.html">Content policy</a></div></div>
   </div>
-  <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© 2026 TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>
+  <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© <span data-year>2026</span> TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>
 </footer>
 <script type="module">import {initNav} from "./src/js/app.js"; initNav();</script>
 

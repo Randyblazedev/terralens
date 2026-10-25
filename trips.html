@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your Trips | TerraLens</title>
+<meta name="description" content="Your saved TerraLens trips, with every place grouped by day.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="src/styles/tailwind.css">
+<link rel="stylesheet" href="src/styles/app.css">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta name="theme-color" content="#020918">
+</head>
+<body>
+<header class="tl-nav sticky top-0 z-50">
+  <div class="tl-shell flex h-16 items-center justify-between gap-5">
+    <a href="index.html" class="flex items-center gap-3 shrink-0"><img src="assets/terralens-mark.png" class="tl-logo" alt="TerraLens"><span class="font-display text-lg font-extrabold tracking-tight">Terra<span class="text-sky-300">Lens</span></span></a>
+    <nav class="hidden items-center gap-6 text-sm text-white/65 lg:flex">
+      <a class="hover:text-white" href="explore.html">Explore</a>
+      <a class="hover:text-white" href="collections.html">Collections</a>
+      <a class="hover:text-white" href="/blog">Blog</a>
+      <a class="hover:text-white" href="trips.html">Trips</a>
+      <a class="hover:text-white" href="about.html">About</a>
+    </nav>
+    <div class="flex items-center gap-2">
+      <a href="upload.html" data-upload-link class="hidden rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white/80 hover:bg-white/5 sm:inline-flex">Upload</a>
+      <a data-auth-href href="login.html" class="tl-btn tl-btn-primary !min-h-10 !px-4"><span data-auth-label>Sign in</span></a>
+      <button data-menu class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 lg:hidden" aria-label="Menu">☰</button>
+    </div>
+  </div>
+  <div data-mobile-nav class="tl-shell hidden pb-4 lg:hidden">
+    <div class="grid gap-1 rounded-2xl border border-white/10 bg-black/30 p-2">
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="index.html">Home</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="explore.html">Explore</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="collections.html">Collections</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="/blog">Blog</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="trips.html">Trips</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="about.html">About</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="upload.html">Upload a place</a>
+    </div>
+  </div>
+</header>
+
+<main class="tl-section"><div class="tl-shell">
+  <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+    <div><p class="tl-eyebrow">Saved itineraries</p><h1 class="mt-3 text-5xl font-extrabold">Your trips.</h1><p class="mt-4 max-w-2xl text-white/50">Every plan you saved, with the places grouped by day. Open one to see it, or build a new plan in the planner.</p></div>
+    <a href="planner.html" class="tl-btn tl-btn-primary shrink-0">＋ Plan a new trip</a>
+  </div>
+  <div id="list" class="mt-10 grid gap-5"></div>
+  <p id="status" class="mt-6 text-sm text-white/45" role="status" aria-live="polite"></p>
+</div></main>
+
+<footer class="tl-footer">
+  <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
+    <div><div class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-xl font-extrabold">Terra<span class="text-sky-300">Lens</span></span></div><p class="mt-4 max-w-md text-sm leading-7 text-white/45">A visual place-discovery platform connecting the photo that inspires you with the context that helps you experience it.</p></div>
+    <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="trips.html">Trips</a><a href="/blog">Blog</a><a href="write-for-us.html">Write for us</a><a href="saved.html">Saved places</a></div><p class="tl-eyebrow mt-8">Browse</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="/category/waterfall">Waterfalls</a><a href="/category/mountain">Mountains</a><a href="/category/beach">Beaches</a><a href="/category/lake">Lakes</a><a href="/category/forest">Forests</a><a href="/category/culture">Culture</a></div></div>
+    <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy policy</a><a href="terms.html">Terms of service</a><a href="content-policy.html">Content policy</a></div></div>
+  </div>
+  <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© <span data-year>2026</span> TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>
+</footer>
+
+<script type="module">
+import { supabase, getUser } from "./src/js/supabase.js";
+import { escapeHtml as esc, placeUrl } from "./src/js/app.js";
+import { listTrips, tripPlaces } from "./src/js/collections.js";
+import { confirmDialog, toast } from "./src/js/ui.js";
+
+const list = document.querySelector("#list"), statusEl = document.querySelector("#status");
+
+const fmtDates = t => {
+  const a = t.start_date, b = t.end_date;
+  if (!a && !b) return "No dates set";
+  if (a && b) return `${a} to ${b}`;
+  return a ? `From ${a}` : `Until ${b}`;
+};
+
+async function run() {
+  if (!supabase) { statusEl.textContent = "Connect Supabase to use trips."; return; }
+  const user = await getUser();
+  if (!user) { list.innerHTML = `<div class="tl-card p-7"><p class="font-bold">Sign in to see your trips.</p><p class="mt-2 text-sm text-white/50">Trips are saved to your account, so they follow you between devices.</p><a class="tl-btn tl-btn-primary mt-5" href="login.html?next=trips.html">Sign in</a></div>`; return; }
+  const trips = await listTrips(user.id);
+  if (!trips.length) {
+    list.innerHTML = `<div class="tl-card p-7"><p class="font-bold">No trips saved yet.</p><p class="mt-2 text-sm text-white/50">Build a plan in the planner and tap “Save this trip” to keep it here.</p><a class="tl-btn tl-btn-primary mt-5" href="planner.html">Open the planner</a></div>`;
+    return;
+  }
+  const withPlaces = await Promise.all(trips.map(async t => ({ ...t, places: await tripPlaces(t.id) })));
+  list.innerHTML = withPlaces.map(t => {
+    const days = [...new Set(t.places.map(p => p.day_number))].sort((a, b) => a - b);
+    const body = days.length
+      ? days.map(d => `<div class="mt-4"><p class="text-xs font-bold uppercase tracking-[.16em] text-sky-300">Day ${d}</p><ul class="mt-2 grid gap-2">${t.places.filter(p => p.day_number === d).map(p => `<li><a class="font-semibold hover:underline" href="${placeUrl(p)}">${esc(p.name)}</a><span class="text-white/40"> · ${esc(p.country || "")}</span></li>`).join("")}</ul></div>`).join("")
+      : `<p class="mt-4 text-sm text-white/45">No places in this trip yet. Add them from any place page.</p>`;
+    return `<article class="tl-card p-6" data-trip="${esc(t.id)}">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div><h2 class="text-2xl font-bold">${esc(t.name)}</h2><p class="mt-1 text-xs text-white/40">${esc(fmtDates(t))} · ${t.places.length} place${t.places.length === 1 ? "" : "s"}</p></div>
+        <div class="flex shrink-0 gap-2"><a class="tl-btn tl-btn-ghost !min-h-9 !px-4" href="planner.html?trip=${encodeURIComponent(t.id)}">Open in planner</a><button type="button" data-del="${esc(t.id)}" class="tl-btn tl-btn-ghost !min-h-9 !px-4">Delete</button></div>
+      </div>${body}
+    </article>`;
+  }).join("");
+}
+
+list.addEventListener("click", async e => {
+  const btn = e.target.closest("[data-del]");
+  if (!btn) return;
+  const ok = await confirmDialog("This removes the trip and its places. The places themselves stay on TerraLens.", { title: "Delete this trip?", confirmText: "Delete", danger: true });
+  if (!ok) return;
+  const { error } = await supabase.from("trips").delete().eq("id", btn.dataset.del);
+  toast(error ? "Couldn't delete that trip. Please try again." : "Trip deleted.", error ? "error" : "success");
+  run();
+});
+
+run();
+</script>
+<script type="module">import {initNav} from "./src/js/app.js"; initNav();</script>
+
+</body></html>

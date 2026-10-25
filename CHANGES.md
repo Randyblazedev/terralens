@@ -1,3 +1,61 @@
+# TerraLens 8.2: saving actually works
+
+Everything below was missing write paths, not broken queries. The tables, the policies and the read
+paths were already correct; nothing in the site could ever put a place into a collection or a trip.
+
+## The big one: collections and trips
+
+- **`src/js/collections.js` (new)** — the write layer that did not exist: list/create collections,
+  add/remove a place, change a collection between public and private, list/create trips, add a place
+  to a trip, load a trip's places, and save a whole itinerary in one go.
+- **Place page** — a new **＋ Add to collection** button, and **＋ Add to trip** now opens a picker and
+  really saves. Both use the site's own styled dialog, and both create the collection or trip on the
+  spot if you have none yet.
+- **Collections page** — split into **Your collections** (public *and* private, with a Private badge
+  and a place count) and **From the community**. Before this, your own private collection was
+  invisible even to you, because the query filtered `is_public = true`.
+- **Collection page** — owners can now switch a collection between public and private, remove places
+  from it, and see whether it is public at all. A **Share on WhatsApp** button appears on public
+  collections.
+- **Planner** — **Save this trip** creates the trip, writes every place with its day number, and links
+  to the new trips page. Opening a trip from `/trips.html` loads it back into the planner.
+- **`trips.html` (new)** — every saved trip with its places grouped by day, plus delete and a link
+  back into the planner. The **Trips** nav item now points here instead of straight at the planner.
+
+## Homepage
+
+- **"Other" no longer leaks.** `Other` is the database default, not a real category, so it is never
+  shown on a card or a place page.
+- **Featured grid is curated, not chronological.** `queryFeatured()` drops anything with no photo or a
+  very short description, then picks one place per category before filling the rest — so the first
+  thing a visitor sees shows range instead of six waterfalls.
+- **New this week** — a strip of the last seven days of published places. It stays hidden until there
+  is something to show.
+- **Live search suggestions** on the hero search: type two characters and matching places appear with
+  keyboard support (arrow keys, Enter, Escape).
+- **Hero photo** is no longer crushed to black: the overlay is much lighter at the top, and the image
+  is fetched at high priority.
+- **Zero view counts and zero comment counts are hidden** instead of being printed as a discouraging
+  "0".
+
+## Small fixes
+
+- Save (heart) button on every place card, on the homepage, explore and the new-this-week strip, with
+  the visitor's saved state loaded in one request.
+- The footer year is written by script, so it can never be a future date again.
+- The `admin.html` Places tab has **Publish all drafts**: it publishes every draft and pending place
+  that has a photo, in one tap, so search engines can actually find them.
+- Card category is now visually distinct from the country (the two were identical before).
+- Collection and trip creation no longer depends on a raw `insert` call scattered in a page; both go
+  through `collections.js` so error handling is consistent.
+
+## Tested
+
+- `npm run build` completes: config, SEO, CSS and the public copy all generate.
+- Every module script in every page parses cleanly.
+- Every internal `.html` link resolves.
+- Every page returns 200 from a local static server.
+
 # TerraLens 8.1
 
 - **View counts on every place card and place page.** One view is counted per visitor per place per day; nobody can fake or edit the count (the database blocks it). Shown with an eye icon, for example "1.2K".
