@@ -29,7 +29,7 @@
       <a class="hover:text-white" href="explore.html">Explore</a>
       <a class="hover:text-white" href="collections.html">Collections</a>
       <a class="hover:text-white" href="/blog">Blog</a>
-      <a class="hover:text-white" href="planner.html">Trips</a>
+      <a class="hover:text-white" href="trips.html">Trips</a>
       <a class="hover:text-white" href="about.html">About</a>
     </nav>
     <div class="flex items-center gap-2">
@@ -44,7 +44,7 @@
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="explore.html">Explore</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="collections.html">Collections</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="/blog">Blog</a>
-      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="planner.html">Trips</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="trips.html">Trips</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="about.html">About</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="upload.html">Upload a place</a>
     </div>
@@ -69,6 +69,12 @@
   <div class="grid gap-3 sm:grid-cols-[1fr_180px_auto]">
    <input id="q" class="tl-input" type="search" placeholder="Search name, country, category" aria-label="Search places">
    <label class="flex min-h-[50px] items-center gap-2 text-sm text-white/70"><input id="mine" type="checkbox">My uploads</label><select id="status" class="tl-input" aria-label="Filter by status"><option value="">All statuses</option><option>pending</option><option>published</option><option>draft</option><option>hidden</option></select>
+  </div>
+  <div class="mt-4 rounded-2xl border border-white/10 bg-white/[.03] p-4">
+   <p class="text-sm font-bold">Publish everything at once</p>
+   <p class="mt-1 text-sm text-white/50">Every place still marked draft or pending becomes live, so search engines can actually find it. Places with no photo are skipped.</p>
+   <button id="publish-drafts" class="tl-btn tl-btn-primary mt-3 !min-h-10">Publish all drafts</button>
+   <p id="publish-msg" class="mt-2 text-sm text-white/55" role="status" aria-live="polite"></p>
   </div>
   <div id="places" class="mt-6 grid gap-4"></div>
   <div class="mt-6 text-center"><button id="more-places-admin" class="tl-btn tl-btn-ghost hidden">Load more</button></div>
@@ -271,6 +277,17 @@ $("#p-delete").onclick=async()=>{if(!editingPost)return;if(!await confirmDialog(
 const TABS=["places","reports","contributors","comments","posts"],loaders={reports:loadReports,contributors:loadContributors,comments:loadComments,posts:loadPosts};
 const show=t=>{TABS.forEach(n=>{$(`#${n}-panel`).classList.toggle("hidden",n!==t);$(`#tab-${n}`).className="tl-btn !min-h-10 "+(n===t?"tl-btn-primary":"tl-btn-ghost")});loaders[t]?.()};
 TABS.forEach(n=>{$(`#tab-${n}`).onclick=()=>show(n)});
+$("#publish-drafts").onclick=async()=>{
+ const btn=$("#publish-drafts"),out=$("#publish-msg");
+ const ok=await confirmDialog("Publish every draft and pending place that has a photo? They become visible to everyone immediately.",{title:"Publish all drafts",confirmText:"Publish all"});
+ if(!ok)return;
+ btn.disabled=true;out.textContent="Publishing...";
+ const {data,error}=await supabase.from("places").update({status:"published"}).in("status",["draft","pending"]).not("cover_url","is",null).select("id");
+ btn.disabled=false;
+ if(error){out.textContent="Could not publish them. Please try again.";return}
+ out.textContent=`${(data||[]).length} place${(data||[]).length===1?"":"s"} are now live.`;
+ stats();loadPlaces();
+};
 let timer;const refresh=()=>{clearTimeout(timer);timer=setTimeout(loadPlaces,250)};$("#q").oninput=refresh;$("#status").onchange=()=>loadPlaces();$("#mine").onchange=()=>loadPlaces();$("#more-places-admin").onclick=()=>loadPlaces(true);
 if(await guard()){const pend=await stats();if(pend>0)$("#status").value="pending";loadPlaces()}
 </script>
@@ -280,10 +297,10 @@ if(await guard()){const pend=await stats();if(pend>0)$("#status").value="pending
 <footer class="tl-footer">
   <div class="tl-shell grid gap-10 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
     <div><div class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-xl font-extrabold">Terra<span class="text-sky-300">Lens</span></span></div><p class="mt-4 max-w-md text-sm leading-7 text-white/45">A visual place-discovery platform connecting the photo that inspires you with the context that helps you experience it.</p></div>
-    <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="planner.html">Trips</a><a href="/blog">Blog</a><a href="write-for-us.html">Write for us</a><a href="saved.html">Saved places</a></div><p class="tl-eyebrow mt-8">Browse</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="/category/waterfall">Waterfalls</a><a href="/category/mountain">Mountains</a><a href="/category/beach">Beaches</a><a href="/category/lake">Lakes</a><a href="/category/forest">Forests</a><a href="/category/culture">Culture</a></div></div>
+    <div><p class="tl-eyebrow">Product</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="explore.html">Explore places</a><a href="upload.html">Upload a place</a><a href="collections.html">Collections</a><a href="trips.html">Trips</a><a href="/blog">Blog</a><a href="write-for-us.html">Write for us</a><a href="saved.html">Saved places</a></div><p class="tl-eyebrow mt-8">Browse</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="/category/waterfall">Waterfalls</a><a href="/category/mountain">Mountains</a><a href="/category/beach">Beaches</a><a href="/category/lake">Lakes</a><a href="/category/forest">Forests</a><a href="/category/culture">Culture</a></div></div>
     <div><p class="tl-eyebrow">Company</p><div class="mt-4 grid gap-3 text-sm text-white/55"><a href="about.html">About TerraLens</a><a href="privacy.html">Privacy policy</a><a href="terms.html">Terms of service</a><a href="content-policy.html">Content policy</a></div></div>
   </div>
-  <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© 2026 TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>
+  <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© <span data-year>2026</span> TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>
 </footer>
 <script type="module">import {initNav} from "./src/js/app.js"; initNav();</script>
 

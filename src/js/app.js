@@ -8,6 +8,16 @@ export const fallbackPlaces = [
   {id:"seed-4",slug:"banff-national-park",name:"Banff National Park",description:"Turquoise lakes, dramatic peaks, and huge wilderness landscapes in the Canadian Rockies.",country:"Canada",region:"Alberta",city:"Banff",category:"National Park",cover_url:"https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1600&q=85"}
 ];
 
+// The footer year is written by script so it can never be a future date again.
+export function stampYear(root = document) {
+  const y = String(new Date().getFullYear());
+  root.querySelectorAll("[data-year]").forEach(el => { el.textContent = y; });
+}
+if (typeof document !== "undefined") {
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => stampYear());
+  else stampYear();
+}
+
 export function escapeHtml(value="") {
   return String(value).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[c]));
 }
@@ -53,7 +63,55 @@ export function formatCount(n) {
   return String(m).replace(/\.0$/, "") + "M";
 }
 export const EYE = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>`;
-export const viewsBadge = n => `<span class="inline-flex items-center gap-1 text-xs text-white/45" aria-label="${Number(n) || 0} views" title="${Number(n) || 0} views">${EYE}${formatCount(n)}</span>`;
+// A zero count is a negative signal, so nothing is shown until a place has been viewed.
+export const viewsBadge = n => (Number(n) || 0) > 0 ? `<span class="inline-flex items-center gap-1 text-xs text-white/45" aria-label="${Number(n)} views" title="${Number(n)} views">${EYE}${formatCount(n)}</span>` : "";
+
+// "Other" is the database default, not a real category, so it is never shown to a visitor.
+const isRealCategory = c => !!c && String(c).trim() !== "" && String(c).toLowerCase() !== "other";
+export const categoryLabel = place => isRealCategory(place.category) ? String(place.category) : "";
+
+// Real places have a uuid id; the offline fallback places do not, and cannot be saved.
+const canSave = place => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(place.id || ""));
+const HEART = on => `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="${on ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
+
+const saveButton = place => canSave(place)
+  ? `<button type="button" data-save="${escapeHtml(place.id)}" aria-pressed="false" aria-label="Save ${escapeHtml(place.name)}" title="Save this place" class="tl-save-btn inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 text-white/70 transition hover:border-white/35 hover:text-white">${HEART(false)}</button>`
+  : "";
+
+// Loads the visitor's saved places once, paints every save button, and handles toggling.
+export async function initCardSaves(root = document) {
+  const buttons = [...root.querySelectorAll("[data-save]")];
+  if (!buttons.length || !supabase) return;
+  const user = await getUser();
+  if (user) {
+    const { data } = await supabase.from("saves").select("place_id").eq("user_id", user.id);
+    const saved = new Set((data || []).map(r => r.place_id));
+    buttons.forEach(b => {
+      const on = saved.has(b.dataset.save);
+      b.setAttribute("aria-pressed", String(on));
+      b.innerHTML = HEART(on);
+    });
+  }
+  buttons.forEach(btn => {
+    if (btn.dataset.wired) return;
+    btn.dataset.wired = "1";
+    btn.addEventListener("click", async e => {
+      e.preventDefault(); e.stopPropagation();
+      const current = await getUser();
+      if (!current) { location.href = `login.html?next=${encodeURIComponent(location.href)}`; return; }
+      const on = btn.getAttribute("aria-pressed") === "true";
+      btn.disabled = true;
+      const r = on
+        ? await supabase.from("saves").delete().eq("user_id", current.id).eq("place_id", btn.dataset.save)
+        : await supabase.from("saves").upsert({ user_id: current.id, place_id: btn.dataset.save });
+      btn.disabled = false;
+      if (r.error) return;
+      btn.setAttribute("aria-pressed", String(!on));
+      btn.innerHTML = HEART(!on);
+      btn.setAttribute("title", !on ? "Saved" : "Save this place");
+    });
+  });
+}
 
 export function card(place) {
   const url = placeUrl(place);
@@ -65,11 +123,11 @@ export function card(place) {
     </a>
     <div class="p-5">
       <div class="mb-2 flex items-center justify-between gap-3 text-[11px] font-bold uppercase tracking-[.16em] text-sky-300">
-        <span>${escapeHtml(place.category || "Place")}</span><span>${escapeHtml(place.country || "")}</span>
+        <span>${escapeHtml(categoryLabel(place))}</span><span class="text-white/40">${escapeHtml(place.country || "")}</span>
       </div>
       <h3 class="font-display text-xl font-bold"><a href="${url}">${escapeHtml(place.name)}</a></h3>
       <p class="mt-2 line-clamp-2 text-sm leading-6 text-white/55">${escapeHtml(place.description || "")}</p>
-      <div class="mt-4 flex items-center justify-between gap-3">${by}<div class="flex shrink-0 items-center gap-3">${viewsBadge(place.view_count)}<a href="${url}" class="tl-btn tl-btn-ghost !min-h-9 shrink-0 !px-4" aria-label="View ${escapeHtml(place.name)}">View</a></div></div>
+      <div class="mt-4 flex items-center justify-between gap-3">${by}<div class="flex shrink-0 items-center gap-3">${viewsBadge(place.view_count)}${saveButton(place)}<a href="${url}" class="tl-btn tl-btn-ghost !min-h-9 shrink-0 !px-4" aria-label="View ${escapeHtml(place.name)}">View</a></div></div>
     </div>
   </article>`;
 }
@@ -86,6 +144,40 @@ export async function queryPlaces({q="",category="",country="",limit=24,offset=0
   const {data,error} = await query;
   if (error) return fallbackPlaces.slice(offset,offset+limit);
   return attachAuthors(data || []);
+}
+
+// The homepage grid: a mix of categories instead of whatever was uploaded last, with "Other"
+// and very short descriptions kept out, so the first thing a visitor sees is always finished.
+export async function queryFeatured(limit = 8) {
+  const MIN_DESCRIPTION = 60;
+  const good = p => isRealCategory(p.category) && String(p.description || "").trim().length >= MIN_DESCRIPTION && p.cover_url;
+  if (!supabase) return fallbackPlaces.slice(0, limit);
+
+  const { data, error } = await supabase.from("places")
+    .select("*").eq("status", "published")
+    .order("featured", { ascending: false })
+    .order("view_count", { ascending: false })
+    .limit(120);
+  if (error) return fallbackPlaces.slice(0, limit);
+
+  const pool = await attachAuthors((data || []).filter(good));
+  const picked = [], perCategory = new Map();
+  // First pass: one per category, so the grid shows range.
+  for (const p of pool) {
+    if (picked.length >= limit) break;
+    if ((perCategory.get(p.category) || 0) > 0) continue;
+    perCategory.set(p.category, 1);
+    picked.push(p);
+  }
+  // Second pass: fill any remaining slots with the next best, allowing a second per category.
+  for (const p of pool) {
+    if (picked.length >= limit) break;
+    if (picked.includes(p)) continue;
+    if ((perCategory.get(p.category) || 0) >= 2) continue;
+    perCategory.set(p.category, (perCategory.get(p.category) || 0) + 1);
+    picked.push(p);
+  }
+  return picked;
 }
 
 export async function requireAuth(next = location.href) {
