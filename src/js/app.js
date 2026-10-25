@@ -18,6 +18,17 @@ if (typeof document !== "undefined") {
   else stampYear();
 }
 
+// Builds a Booking.com search link for a place's own town and country. Returns "" when no
+// affiliate id is configured, so the earning button simply does not appear.
+export function stayLink(place, aid) {
+  const id = String(aid || "").trim();
+  if (!id || !place) return "";
+  const where = [place.city, place.region, place.country].filter(Boolean).join(", ");
+  if (!where) return "";
+  const params = new URLSearchParams({ ss: where, aid: id });
+  return `https://www.booking.com/searchresults.html?${params.toString()}`;
+}
+
 export function escapeHtml(value="") {
   return String(value).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[c]));
 }

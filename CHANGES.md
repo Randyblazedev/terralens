@@ -1,3 +1,23 @@
+# TerraLens 8.4: the earning button actually earns
+
+The site already had the plumbing for money — an `affiliate_url` field per place, a `featured`
+flag, `sponsor_name`, and the blog's paid guest posts. The affiliate button rendered, but no
+place had a link, so nothing was ever earned.
+
+- **Every place now gets a booking link automatically.** If a place has no `affiliate_url`,
+  the page builds a Booking.com search for that place's own town, region and country, with
+  your affiliate id attached. That means all 881 places earn without editing a single row.
+- **One setting turns it on.** Add `AFFILIATE_BOOKING_AID` in Vercel and redeploy. Leave it
+  empty and no button appears anywhere, so nothing looks broken before you are approved.
+- **Explicit links still win.** If you set `affiliate_url` on a place in admin, that exact
+  link is used instead, and the button says "Plan your trip" rather than the generic wording.
+- **Wording is configurable** with `AFFILIATE_BOOKING_LABEL` (default "Find a place to stay").
+- The generated link is honest: it is a search for the place's location, not a fake product
+  page, and it carries `rel="sponsored nofollow"` so search engines treat it correctly.
+
+**Do this:** get approved at booking.com/affiliate-program, copy your `aid`, add it in Vercel
+as `AFFILIATE_BOOKING_AID`, redeploy.
+
 # TerraLens 8.3: 881 real places
 
 `supabase/seed-places-batch.sql` adds 881 places, all real and all sourced, not written by hand.

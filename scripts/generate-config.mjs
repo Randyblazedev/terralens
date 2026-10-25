@@ -26,7 +26,11 @@ const tidy = v => String(v || '').trim().replace(/^["'`]+|["'`]+$/g, '').trim();
 const url = tidy(process.env.SUPABASE_URL).replace(/\/+$/, '');
 const key = tidy(process.env.SUPABASE_PUBLISHABLE_KEY);
 const requireLogin = (process.env.REQUIRE_LOGIN || 'false').toLowerCase() === 'true';
+// Affiliate tracking. These are public identifiers, not secrets: they end up in the links on
+// the page. Leaving them empty simply hides the booking button everywhere.
+const affiliateAid = tidy(process.env.AFFILIATE_BOOKING_AID);
+const affiliateLabel = tidy(process.env.AFFILIATE_BOOKING_LABEL) || 'Find a place to stay';
 const output = resolve('src/js/runtime-config.js');
 mkdirSync(resolve('src/js'), { recursive: true });
-writeFileSync(output, `// Generated at build time. Do not commit secrets.\nexport const SUPABASE_URL = ${JSON.stringify(url)};\nexport const SUPABASE_KEY = ${JSON.stringify(key)};\nexport const REQUIRE_LOGIN = ${requireLogin};\n`);
-console.log(`Generated ${output} (${url ? 'Supabase URL configured' : 'Supabase URL missing'}, login ${requireLogin ? 'required' : 'optional'})`);
+writeFileSync(output, `// Generated at build time. Do not commit secrets.\nexport const SUPABASE_URL = ${JSON.stringify(url)};\nexport const SUPABASE_KEY = ${JSON.stringify(key)};\nexport const REQUIRE_LOGIN = ${requireLogin};\nexport const AFFILIATE_BOOKING_AID = ${JSON.stringify(affiliateAid)};\nexport const AFFILIATE_BOOKING_LABEL = ${JSON.stringify(affiliateLabel)};\n`);
+console.log(`Generated ${output} (${url ? 'Supabase URL configured' : 'Supabase URL missing'}, login ${requireLogin ? 'required' : 'optional'}, booking affiliate ${affiliateAid ? 'on' : 'off'})`);
