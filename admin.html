@@ -56,7 +56,7 @@
 <p id="gate" role="status" class="mt-6 text-white/55">Checking access...</p>
 <div id="app" class="hidden">
  <div id="stats" class="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-5"></div>
- <div class="mt-6"><button id="health" class="tl-btn tl-btn-ghost !min-h-10">Check setup</button> <button id="fill" class="tl-btn tl-btn-ghost !min-h-10">Add photos to new places</button><p id="fill-out" role="status" aria-live="polite" class="mt-3 text-sm text-white/55"></p><ul id="health-out" class="mt-3 grid gap-2 text-sm" aria-live="polite"></ul></div>
+ <div class="mt-6"><button id="health" class="tl-btn tl-btn-ghost !min-h-10">Check setup</button> <button id="fill" class="tl-btn tl-btn-ghost !min-h-10">Add photos to new places</button> <button id="fill-real" class="tl-btn tl-btn-primary !min-h-10">Add real photos of the place</button><p id="fill-out" role="status" aria-live="polite" class="mt-3 text-sm text-white/55"></p><ul id="health-out" class="mt-3 grid gap-2 text-sm" aria-live="polite"></ul></div>
  <div class="mt-10 flex flex-wrap gap-2" role="tablist">
   <button id="tab-places" role="tab" class="tl-btn tl-btn-primary !min-h-10">Places</button>
   <button id="tab-reports" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Reports</button>
@@ -235,6 +235,31 @@ $("#fill").onclick=async()=>{const out=$("#fill-out"),btn=$("#fill");btn.disable
   if(upd.error)skipped++;else{ok++;if(ph.links?.download_location)api("/api/unsplash/download",{download_location:ph.links.download_location})}
   await wait()}
  out.textContent=`Done: ${ok} place${ok===1?"":"s"} now ${ok===1?"has":"have"} a photo and ${ok===1?"is":"are"} live${skipped?`. ${skipped} skipped, tap again to retry`:""}.`;btn.disabled=false;stats();loadPlaces()};
+c
+$("#fill-real").onclick=async()=>{
+ // Real photos of the actual place, from Wikimedia Commons. Slower per item than a stock
+ // search, but it finds the waterfall you are writing about rather than any waterfall.
+ const out=$("#fill-out"),btn=$("#fill-real");btn.disabled=true;
+ out.textContent="Looking for places without photos...";
+ const {data,error}=await supabase.from("places").select("id,name,country,status").is("cover_url",null).limit(30);
+ if(error){out.textContent="Could not load the places. Please try again.";btn.disabled=false;return}
+ if(!data.length){out.textContent="Every place already has a photo.";btn.disabled=false;return}
+ let ok=0,skipped=0,stopped=false;
+ for(const [i,p] of data.entries()){
+  out.textContent=`Finding real photos: ${i+1} of ${data.length} (${p.name})`;
+  const r=await fetch(`/api/photos/place?${new URLSearchParams({name:p.name,country:p.country||""})}`);
+  if(r.status===429){out.textContent=`Paused after ${ok} places: too many lookups at once. Tap again in a minute.`;stopped=true;break}
+  const d=await r.json().catch(()=>({}));
+  const ph=(d.photos||[])[0];
+  if(!ph){skipped++;continue}
+  const ins=await supabase.from("place_images").insert({place_id:p.id,image_url:ph.url,alt_text:ph.alt||p.name,credit_name:ph.credit,credit_url:ph.credit_url||null,created_by:session.user.id});
+  if(ins.error){skipped++;continue}
+  const upd=await supabase.from("places").update(p.status==="draft"?{cover_url:ph.url,status:"published"}:{cover_url:ph.url}).eq("id",p.id);
+  if(upd.error)skipped++;else ok++;
+ }
+ if(!stopped)out.textContent=`Done: ${ok} place${ok===1?"":"s"} now have a real photo${skipped?`. ${skipped} had none on Commons, tap again later`:""}.`;
+ btn.disabled=false;stats();loadPlaces();
+};
 const POST_CATS={"travel-tips":"Travel Tips",destinations:"Destinations",photography:"Photography",guides:"Guides",news:"News"};
 let editingPost=null;
 const pslug=s=>s.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,90);

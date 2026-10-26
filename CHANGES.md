@@ -1,3 +1,24 @@
+# TerraLens 8.5: Wikimedia Commons instead of Unsplash, and tiles that are never empty
+
+Two problems with Unsplash: the demo key allows about 50 searches an hour, each search is a
+round trip, and the images are slow on a phone connection. Worse, a stock search returns
+"a mountain", not *the* mountain — so a page about Gullfoss could show any cliff in the world.
+
+- **`api/photos/place.js` (new)** finds a real photo of one specific place on Wikimedia
+  Commons, by the place's own name, and falls back to the name alone. Tested: Gullfoss,
+  Mount Cameroon, Kaieteur Falls and Bondi Beach all came back with a correctly titled photo.
+  No API key, no quota worth worrying about, served from a CDN, cached for a week.
+- **`api/photos/categories.js`** now uses Commons too, and returns a **colour fallback per
+  category** so a tile is never an empty box — which is exactly what the homepage looked
+  like before the seed had photos.
+- **Paintings and drawings are filtered out.** A search for "mountain" on Commons returns a
+  Bierstadt canvas; the route skips anything that is not a landscape photograph.
+- **Every photo carries its licence and author**, shown as credit, which is what Commons
+  requires and what a site using them should do anyway.
+- **Admin has a new button: "Add real photos of the place"** — it walks places with no cover
+  photo, asks the new route for a real photo of that place, attaches it with full credit, and
+  publishes drafts as it goes. The old stock-photo button is still there for generic images.
+
 # TerraLens 8.3.1: the seed file is quote-proof
 
 The first version of `supabase/seed-places-batch.sql` used one giant `values (...)` list.

@@ -113,15 +113,25 @@
 import {queryFeatured,card,initCardSaves,escapeHtml,imgSize} from "./src/js/app.js";
 import {supabase} from "./src/js/supabase.js";
 document.querySelector("#hero-search").addEventListener("submit",e=>{e.preventDefault();location.href="explore.html?q="+encodeURIComponent(document.querySelector("#hero-query").value)});
-(async()=>{const tiles=[...document.querySelectorAll("[data-cat]")],photos={};
- try{const r=await fetch("/api/unsplash/categories");if(r.ok)Object.assign(photos,(await r.json()).photos||{})}catch{}
- if(supabase){const {data}=await supabase.from("places").select("category,cover_url").eq("status","published").not("cover_url","is",null).order("featured",{ascending:false}).order("created_at",{ascending:false}).limit(60);
+(async()=>{
+ // Tiles must never be empty boxes: paint the fallback colour first, then try a photo.
+ const tiles=[...document.querySelectorAll("[data-cat]")],photos={},fallbacks={};
+ try{const r=await fetch("/api/photos/categories");if(r.ok){const d=await r.json();Object.assign(photos,d.photos||{});Object.assign(fallbacks,d.fallbacks||{})}}catch{}
+ tiles.forEach(t=>{if(fallbacks[t.dataset.cat])t.style.background=fallbacks[t.dataset.cat]});
+ // A place's own cover photo is better than a stock one, when one exists.
+ if(supabase){
+  const {data}=await supabase.from("places").select("category,cover_url").eq("status","published").not("cover_url","is",null).order("featured",{ascending:false}).order("created_at",{ascending:false}).limit(60);
   const own={};(data||[]).forEach(p=>{if(!own[p.category])own[p.category]=p.cover_url});
-  tiles.forEach(t=>{if(own[t.dataset.cat])photos[t.dataset.cat]={url:own[t.dataset.cat],own:true}})}
+  tiles.forEach(t=>{if(own[t.dataset.cat])photos[t.dataset.cat]={url:own[t.dataset.cat],own:true}})
+ }
  const credits=[];
- tiles.forEach(t=>{const p=photos[t.dataset.cat];if(!p)return;const img=t.querySelector("[data-img]");img.src=imgSize(p.url,640);img.alt=p.alt||t.textContent.trim();img.onload=()=>img.classList.remove("hidden");
+ tiles.forEach(t=>{const p=photos[t.dataset.cat];if(!p)return;
+  const img=t.querySelector("[data-img]");
+  img.src=imgSize(p.url,640);img.alt=p.alt||t.textContent.trim();
+  img.onload=()=>img.classList.remove("hidden");
+  img.onerror=()=>{img.classList.add("hidden")};
   if(!p.own&&p.credit)credits.push(p.link?`<a class="underline" target="_blank" rel="noopener" href="${escapeHtml(p.link)}">${escapeHtml(p.credit)}</a>`:escapeHtml(p.credit))});
- if(credits.length)document.querySelector("#photo-credits").innerHTML=`Photos: ${credits.join(", ")} on <a class="underline" target="_blank" rel="noopener" href="https://unsplash.com/?utm_source=terralens&utm_medium=referral">Unsplash</a>`})();
+ if(credits.length)document.querySelector("#photo-credits").innerHTML=`Photos: ${credits.join(", ")} — <a class="underline" target="_blank" rel="noopener" href="https://commons.wikimedia.org/">Wikimedia Commons</a>`})();
 document.querySelector("#featured-grid").innerHTML=(await queryFeatured(8)).map(card).join("");
 await initCardSaves(document.querySelector("#featured-grid"));
 
