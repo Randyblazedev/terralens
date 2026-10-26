@@ -127,9 +127,12 @@ document.querySelector("#hero-search").addEventListener("submit",e=>{e.preventDe
  const credits=[];
  tiles.forEach(t=>{const p=photos[t.dataset.cat];if(!p)return;
   const img=t.querySelector("[data-img]");
-  img.src=imgSize(p.url,640);img.alt=p.alt||t.textContent.trim();
-  img.onload=()=>img.classList.remove("hidden");
+  img.alt=p.alt||t.textContent.trim();
   img.onerror=()=>{img.classList.add("hidden")};
+  // Reveal it as soon as there is a source. Waiting for onload was unreliable: a cached
+  // image can settle before the handler is attached, which left the tile permanently blank.
+  img.classList.remove("hidden");
+  img.src=imgSize(p.url,640);
   if(!p.own&&p.credit)credits.push(p.link?`<a class="underline" target="_blank" rel="noopener" href="${escapeHtml(p.link)}">${escapeHtml(p.credit)}</a>`:escapeHtml(p.credit))});
  if(credits.length)document.querySelector("#photo-credits").innerHTML=`Photos: ${credits.join(", ")} — <a class="underline" target="_blank" rel="noopener" href="https://commons.wikimedia.org/">Wikimedia Commons</a>`})();
 document.querySelector("#featured-grid").innerHTML=(await queryFeatured(8)).map(card).join("");
