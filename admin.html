@@ -56,7 +56,7 @@
 <p id="gate" role="status" class="mt-6 text-white/55">Checking access...</p>
 <div id="app" class="hidden">
  <div id="stats" class="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-5"></div>
- <div class="mt-6"><button id="health" class="tl-btn tl-btn-ghost !min-h-10">Check setup</button> <button id="fill" class="tl-btn tl-btn-ghost !min-h-10">Add photos to new places</button> <button id="fill-real" class="tl-btn tl-btn-primary !min-h-10">Add real photos of the place</button> <button id="import-seed" class="tl-btn tl-btn-ghost !min-h-10">Import the 881 places</button><p id="fill-out" role="status" aria-live="polite" class="mt-3 text-sm text-white/55"></p><ul id="health-out" class="mt-3 grid gap-2 text-sm" aria-live="polite"></ul></div>
+ <div class="mt-6"><button id="health" class="tl-btn tl-btn-ghost !min-h-10">Check setup</button> <button id="fill" class="tl-btn tl-btn-ghost !min-h-10">Add photos to new places</button> <button id="fill-real" class="tl-btn tl-btn-primary !min-h-10">Add real photos of the place</button> <button id="import-seed" class="tl-btn tl-btn-ghost !min-h-10">Import the 881 places</button> <button id="clear-filler" class="tl-btn tl-btn-ghost !min-h-10">Clear placeholder text</button><p id="fill-out" role="status" aria-live="polite" class="mt-3 text-sm text-white/55"></p><ul id="health-out" class="mt-3 grid gap-2 text-sm" aria-live="polite"></ul></div>
  <div class="mt-10 flex flex-wrap gap-2" role="tablist">
   <button id="tab-places" role="tab" class="tl-btn tl-btn-primary !min-h-10">Places</button>
   <button id="tab-reports" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Reports</button>
@@ -235,6 +235,29 @@ $("#fill").onclick=async()=>{const out=$("#fill-out"),btn=$("#fill");btn.disable
   if(upd.error)skipped++;else{ok++;if(ph.links?.download_location)api("/api/unsplash/download",{download_location:ph.links.download_location})}
   await wait()}
  out.textContent=`Done: ${ok} place${ok===1?"":"s"} now ${ok===1?"has":"have"} a photo and ${ok===1?"is":"are"} live${skipped?`. ${skipped} skipped, tap again to retry`:""}.`;btn.disabled=false;stats();loadPlaces()};
+$("#clear-filler").onclick=async()=>{
+ // The seed rows carry a generic "check locally" line in four fields. It is not information,
+ // and 881 identical sentences is thin duplicate content, so it is cleared instead of shown.
+ const out=$("#fill-out"),btn=$("#clear-filler");
+ if(btn.disabled)return; btn.disabled=true;
+ out.textContent="Clearing placeholder text...";
+ const BOILER={
+  best_season:"Check the best season locally",
+  best_time:"Check opening times locally",
+  access_info:"Check access, opening times and conditions locally before travelling.",
+  entry_fee:"Varies. Check before you go."
+ };
+ let cleared=0,failed=0;
+ for(const [field,value] of Object.entries(BOILER)){
+  const {data,error}=await supabase.from("places").update({[field]:null}).eq(field,value).select("id");
+  if(error){failed++;continue}
+  cleared+=(data||[]).length;
+ }
+ out.textContent=failed
+  ? `Cleared ${cleared} placeholder values, ${failed} field${failed===1?"":"s"} failed. Try again.`
+  : `Done. ${cleared} placeholder values cleared, so those sections now stay hidden on a place page.`;
+ btn.disabled=false;stats();loadPlaces();
+};
 $("#import-seed").onclick=async()=>{
  // The seed list ships with the site, so this works from a phone with no SQL editor and no
  // 400 KB paste. 100 rows per tap, existing slugs skipped, and it says where it stopped.
