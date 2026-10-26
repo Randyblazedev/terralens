@@ -56,7 +56,7 @@
 <p id="gate" role="status" class="mt-6 text-white/55">Checking access...</p>
 <div id="app" class="hidden">
  <div id="stats" class="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-5"></div>
- <div class="mt-6"><button id="health" class="tl-btn tl-btn-ghost !min-h-10">Check setup</button> <button id="fill" class="tl-btn tl-btn-ghost !min-h-10">Add photos to new places</button> <button id="fill-real" class="tl-btn tl-btn-primary !min-h-10">Add real photos of the place</button><p id="fill-out" role="status" aria-live="polite" class="mt-3 text-sm text-white/55"></p><ul id="health-out" class="mt-3 grid gap-2 text-sm" aria-live="polite"></ul></div>
+ <div class="mt-6"><button id="health" class="tl-btn tl-btn-ghost !min-h-10">Check setup</button> <button id="fill" class="tl-btn tl-btn-ghost !min-h-10">Add photos to new places</button> <button id="fill-real" class="tl-btn tl-btn-primary !min-h-10">Add real photos of the place</button> <button id="import-seed" class="tl-btn tl-btn-ghost !min-h-10">Import the 881 places</button><p id="fill-out" role="status" aria-live="polite" class="mt-3 text-sm text-white/55"></p><ul id="health-out" class="mt-3 grid gap-2 text-sm" aria-live="polite"></ul></div>
  <div class="mt-10 flex flex-wrap gap-2" role="tablist">
   <button id="tab-places" role="tab" class="tl-btn tl-btn-primary !min-h-10">Places</button>
   <button id="tab-reports" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Reports</button>
@@ -235,6 +235,42 @@ $("#fill").onclick=async()=>{const out=$("#fill-out"),btn=$("#fill");btn.disable
   if(upd.error)skipped++;else{ok++;if(ph.links?.download_location)api("/api/unsplash/download",{download_location:ph.links.download_location})}
   await wait()}
  out.textContent=`Done: ${ok} place${ok===1?"":"s"} now ${ok===1?"has":"have"} a photo and ${ok===1?"is":"are"} live${skipped?`. ${skipped} skipped, tap again to retry`:""}.`;btn.disabled=false;stats();loadPlaces()};
+$("#import-seed").onclick=async()=>{
+ // The seed list ships with the site, so this works from a phone with no SQL editor and no
+ // 400 KB paste. 100 rows per tap, existing slugs skipped, and it says where it stopped.
+ const out=$("#fill-out"),btn=$("#import-seed");
+ if(btn.disabled)return; btn.disabled=true;
+ out.textContent="Loading the place list...";
+ let list;
+ try{const r=await fetch("/assets/seed-places.json");if(!r.ok)throw new Error("missing");list=await r.json()}
+ catch{out.textContent="Could not load the place list. Please try again.";btn.disabled=false;return}
+
+ const CHUNK=100;
+ const done=async()=>{const {count,error}=await supabase.from("places").select("id",{count:"exact",head:true}).not("created_by","is",null);
+  return error?-1:(count||0)};
+ const before=await done();
+ // find where to resume: the first seed row that is not in the database yet
+ out.textContent="Checking which places are already there...";
+ const slugs=list.map(p=>p.slug);
+ const existing=new Set();
+ for(let i=0;i<slugs.length;i+=200){
+  const {data}=await supabase.from("places").select("slug").in("slug",slugs.slice(i,i+200));
+  (data||[]).forEach(r=>existing.add(r.slug));
+ }
+ const todo=list.filter(p=>!existing.has(p.slug));
+ if(!todo.length){out.textContent=`All ${list.length} places are already in the database.`;btn.disabled=false;stats();loadPlaces();return}
+
+ const batch=todo.slice(0,CHUNK).map(p=>({...p,status:"draft",created_by:session.user.id}));
+ out.textContent=`Importing ${batch.length} places (${todo.length} left in total)...`;
+ const {error}=await supabase.from("places").insert(batch);
+ if(error){
+  out.textContent=`Stopped: ${error.message}. ${existing.size} places are already in, tap again to continue from there.`;
+  btn.disabled=false;stats();loadPlaces();return;
+ }
+ const after=await done();
+ out.textContent=`Imported ${batch.length}. ${todo.length-batch.length} left. Tap again to continue.`;
+ btn.disabled=false;stats();loadPlaces();
+};
 $("#fill-real").onclick=async()=>{
  // Real photos of the actual place, from Wikimedia Commons. Slower per item than a stock
  // search, but it finds the waterfall you are writing about rather than any waterfall.
