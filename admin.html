@@ -235,7 +235,6 @@ $("#fill").onclick=async()=>{const out=$("#fill-out"),btn=$("#fill");btn.disable
   if(upd.error)skipped++;else{ok++;if(ph.links?.download_location)api("/api/unsplash/download",{download_location:ph.links.download_location})}
   await wait()}
  out.textContent=`Done: ${ok} place${ok===1?"":"s"} now ${ok===1?"has":"have"} a photo and ${ok===1?"is":"are"} live${skipped?`. ${skipped} skipped, tap again to retry`:""}.`;btn.disabled=false;stats();loadPlaces()};
-c
 $("#fill-real").onclick=async()=>{
  // Real photos of the actual place, from Wikimedia Commons. Slower per item than a stock
  // search, but it finds the waterfall you are writing about rather than any waterfall.
