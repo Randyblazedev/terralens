@@ -1,3 +1,25 @@
+# TerraLens 8.3.1: the seed file is quote-proof
+
+The first version of `supabase/seed-places-batch.sql` used one giant `values (...)` list.
+Apostrophes in place names and Wikipedia text made that fragile, and importing it failed with
+`relation "the" does not exist` — Postgres was reading the text after an unescaped quote as SQL.
+
+Rewritten so that cannot happen:
+
+- The data is passed as **JSON inside dollar-quoting** (`$tl$ ... $tl$`), cast with
+  `jsonb_to_recordset`. Nothing inside the data can end a statement, whatever characters a
+  place name contains.
+- Split into **6 batches of ~150 places**, each in its own `do` block that reports how many
+  rows it added. A truncated paste now fails on one batch instead of the whole import, and the
+  notices tell you exactly where you got to.
+- Verified with the real Postgres parser (libpg_query): all 6 statements parse, and the inner
+  `insert ... select` parses on its own too.
+- Still safe to re-run: existing slugs are skipped.
+
+**Easiest way on a phone:** run the six files in `supabase/seed/` one at a time
+(`seed-01.sql` through `seed-06.sql`), each about 70 KB. Or run
+`supabase/seed-places-batch.sql` once if your connection can take 400 KB in one paste.
+
 # TerraLens 8.4: the earning button actually earns
 
 The site already had the plumbing for money — an `affiliate_url` field per place, a `featured`
