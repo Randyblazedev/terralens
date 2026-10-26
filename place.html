@@ -72,6 +72,14 @@ const credits=images.filter(x=>x.credit_name&&httpsUrl(x.credit_url));
 // affiliate id is configured at build time, every place gets a search link for its
 // own town and country, so the earning button exists without editing 881 rows.
 const affiliate=httpsUrl(place.affiliate_url)||stayLink(place,AFFILIATE_BOOKING_AID);
+// Real, sourced measurements (elevation, height, depth, area) for this place, from Wikidata.
+// Kept in a static file so it costs no database column and no extra request per page.
+let keyFacts = "", derivedSeason = "";
+try {
+  const [f, s] = await Promise.all([fetch("/assets/place-facts.json"), fetch("/assets/place-season.json")]);
+  if (f.ok) keyFacts = (await f.json())[place.slug] || "";
+  if (s.ok) derivedSeason = (await s.json())[place.slug] || "";
+} catch {}
 const photos=(images.length?images.map(i=>({id:i.id,url:i.image_url,likes:i.like_count})):[{url:place.cover_url}]).filter(x=>x.url);
 const likeBtn=p=>`<button data-like="${escapeHtml(p.id)}" aria-pressed="${likedIds.has(p.id)}" aria-label="Like this photo" class="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-2 text-sm font-bold backdrop-blur"><span data-heart aria-hidden="true">${likedIds.has(p.id)?"♥":"♡"}</span><span data-count>${Number(p.likes)||0}</span></button>`;
 const isReal=supabase&&!String(place.id).startsWith("seed-");
@@ -114,11 +122,12 @@ document.querySelector("#place").innerHTML=`
   "access details coming soon.","check the official/local source before visiting."
  ];
  const real = v => { const t = String(v||"").trim(); return t && !BOILER.includes(t.toLowerCase()) ? t : ""; };
- const season = real(place.best_season), time = real(place.best_time);
+ const season = real(place.best_season) || derivedSeason, time = real(place.best_time);
  const access = real(place.access_info), fee = real(place.entry_fee);
- const when = (season||time) ? `<div class="tl-card p-5"><p class="tl-eyebrow">When</p>${season?`<h3 class="mt-3 font-bold">Best season</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(season)}</p>`:""}${time?`<h3 class="mt-5 font-bold">Best time</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(time)}</p>`:""}</div>` : "";
+ const when = (season||time) ? `<div class="tl-card p-5"><p class="tl-eyebrow">When</p>${season?`<h3 class="mt-3 font-bold">Best season</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(season)}</p>${!real(place.best_season)?`<p class="mt-1 text-xs text-white/35">A general guide from the climate, not local advice. Confirm before you travel.</p>`:""}`:""}${time?`<h3 class="mt-5 font-bold">Best time</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(time)}</p>`:""}</div>` : "";
  const getting = (access||fee) ? `<div class="tl-card p-5"><p class="tl-eyebrow">Getting there</p>${access?`<h3 class="mt-3 font-bold">Access</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(access)}</p>`:""}${fee?`<h3 class="mt-5 font-bold">Entry</h3><p class="mt-2 text-sm text-white/55">${escapeHtml(fee)}</p>`:""}</div>` : "";
- return (when||getting) ? `<div class="mt-12 grid gap-4 sm:grid-cols-2">${when}${getting}</div>` : "";
+ const facts = keyFacts ? `<div class="tl-card p-5"><p class="tl-eyebrow">Key facts</p><p class="mt-3 text-sm leading-6 text-white/70">${escapeHtml(keyFacts)}</p></div>` : "";
+ return (facts||when||getting) ? `<div class="mt-12 grid gap-4 sm:grid-cols-2">${facts}${when}${getting}</div>` : "";
 })()}
    ${place.latitude!=null&&place.longitude!=null?`<div class="mt-6 overflow-hidden rounded-3xl border border-white/10"><iframe title="Map" class="h-[360px] w-full border-0" src="https://www.openstreetmap.org/export/embed.html?bbox=${place.longitude-.02}%2C${place.latitude-.02}%2C${place.longitude+.02}%2C${place.latitude+.02}&layer=mapnik&marker=${place.latitude}%2C${place.longitude}"></iframe></div>`:""}
   </div>
