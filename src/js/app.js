@@ -1,4 +1,5 @@
 import { supabase, getUser, ensureProfile } from "./supabase.js";
+import { initLang, currentLang, setLang, LANGUAGES, t } from "./i18n.js";
 import { REQUIRE_LOGIN } from "./config.js";
 
 export const fallbackPlaces = [
@@ -254,7 +255,7 @@ export async function initNav() {
   const session = supabase ? (await supabase.auth.getSession()).data.session : null;
   const user = session?.user || null;
   document.querySelectorAll("[data-auth-label]").forEach(el => {
-    el.textContent = user ? (user.user_metadata?.full_name || "Profile") : "Sign in";
+    el.textContent = user ? (user.user_metadata?.full_name || "Profile") : t("auth.signIn");
   });
   document.querySelectorAll("[data-auth-href]").forEach(el => {
     el.href = user ? "profile.html" : `login.html?next=${encodeURIComponent(location.href)}`;
@@ -267,17 +268,39 @@ export async function initNav() {
       else location.href = `login.html?next=${encodeURIComponent("upload.html")}`;
     });
   });
-  document.querySelectorAll("header nav").forEach(n => n.insertAdjacentHTML("beforeend", '<a class="hover:text-white" href="saved.html">Saved</a>'));
-  document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.insertAdjacentHTML("beforeend", '<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="saved.html">Saved places</a>'));
+  // Language switcher: injected after the nav exists, in both desktop and mobile ends.
+  const current = initLang();
+  document.addEventListener("terralens:lang", () => location.reload());
+  const picker = `<details class="tl-lang relative"><summary class="hover:text-white cursor-pointer list-none flex items-center gap-1" data-i18n-aria="nav.language" aria-label="Language">🌐 <span data-i18n="nav.language">${t("nav.language")}</span></summary><div class="tl-lang-menu absolute right-0 z-50 mt-2 min-h-11 w-44 max-h-72 overflow-auto rounded-xl border border-white/10 bg-[#0b1220] p-1 shadow-2xl">` +
+    LANGUAGES.map(l => `<button type="button" data-lang="${l.code}" class="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-white/5 ${l.code === current ? "font-bold text-sky-300" : "text-white/80"}"><span>${l.native}</span>${l.code === current ? "<span>✓</span>" : ""}</button>`).join("") +
+    `</div></details>`;
+  document.querySelectorAll("header nav").forEach(n => n.insertAdjacentHTML("beforeend", picker));
+  document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.insertAdjacentHTML("beforeend", `<div class="px-4 py-3"><p class="text-xs uppercase tracking-wider text-white/40 mb-2" data-i18n="nav.language">${t("nav.language")}</p><div class="flex flex-wrap gap-2">` +
+    LANGUAGES.map(l => `<button type="button" data-lang="${l.code}" class="rounded-lg border px-3 py-2 text-sm ${l.code === current ? "border-sky-300/60 text-sky-300 font-bold" : "border-white/10 text-white/80"}">${l.native}</button>`).join("") +
+    `</div></div>`));
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-lang]");
+    if (!b) return;
+    e.preventDefault();
+    setLang(b.getAttribute("data-lang"));
+    document.querySelectorAll("details.tl-lang").forEach(d => d.removeAttribute("open"));
+    try {
+      const u = new URL(location.href);
+      u.searchParams.set("lang", b.getAttribute("data-lang"));
+      history.replaceState(null, "", u.toString());
+    } catch (_) {}
+  });
+  document.querySelectorAll("header nav").forEach(n => n.insertAdjacentHTML("beforeend", `<a class="hover:text-white" href="saved.html" data-i18n="nav.saved">${t("nav.saved")}</a>`));
+  document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.insertAdjacentHTML("beforeend", `<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="saved.html" data-i18n="nav.saved">${t("nav.saved")}</a>`));
   if (user) {
-    document.querySelectorAll("header nav").forEach(n => n.insertAdjacentHTML("beforeend", '<a class="hover:text-white" href="logout.html">Sign out</a>'));
-    document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.insertAdjacentHTML("beforeend", '<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="logout.html">Sign out</a>'));
+    document.querySelectorAll("header nav").forEach(n => n.insertAdjacentHTML("beforeend", `<a class="hover:text-white" href="logout.html" data-i18n="auth.signOut">${t("auth.signOut")}</a>`));
+    document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.insertAdjacentHTML("beforeend", `<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="logout.html" data-i18n="auth.signOut">${t("auth.signOut")}</a>`));
   }
   if (user && supabase) {
     const { data: isAdmin } = await supabase.rpc("is_admin");
     if (isAdmin === true) {
-      document.querySelectorAll("header nav").forEach(n => n.insertAdjacentHTML("beforeend", '<a class="hover:text-white" href="admin.html">Admin</a>'));
-      document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.insertAdjacentHTML("beforeend", '<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="admin.html">Admin</a>'));
+      document.querySelectorAll("header nav").forEach(n => n.insertAdjacentHTML("beforeend", `<a class="hover:text-white" href="admin.html" data-i18n="nav.admin">${t("nav.admin")}</a>`));
+      document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.insertAdjacentHTML("beforeend", `<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="admin.html" data-i18n="nav.admin">${t("nav.admin")}</a>`));
     }
   }
   document.querySelectorAll("[data-menu]").forEach(btn => {
