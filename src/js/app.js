@@ -270,7 +270,7 @@ export async function initNav() {
   });
   // Language switcher: injected after the nav exists, in both desktop and mobile ends.
   const current = initLang();
-  document.addEventListener("terralens:lang", () => location.reload());
+
   const picker = `<details class="tl-lang relative"><summary class="hover:text-white cursor-pointer list-none flex items-center gap-1" data-i18n-aria="nav.language" aria-label="Language">🌐 <span data-i18n="nav.language">${t("nav.language")}</span></summary><div class="tl-lang-menu absolute right-0 z-50 mt-2 min-h-11 w-44 max-h-72 overflow-auto rounded-xl border border-white/10 bg-[#0b1220] p-1 shadow-2xl">` +
     LANGUAGES.map(l => `<button type="button" data-lang="${l.code}" class="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-white/5 ${l.code === current ? "font-bold text-sky-300" : "text-white/80"}"><span>${l.native}</span>${l.code === current ? "<span>✓</span>" : ""}</button>`).join("") +
     `</div></details>`;
@@ -282,7 +282,10 @@ export async function initNav() {
     const b = e.target.closest("[data-lang]");
     if (!b) return;
     e.preventDefault();
-    setLang(b.getAttribute("data-lang"));
+    const code = b.getAttribute("data-lang");
+    if (code === currentLang()) return;
+    setLang(code);
+    location.reload();
     document.querySelectorAll("details.tl-lang").forEach(d => d.removeAttribute("open"));
     try {
       const u = new URL(location.href);

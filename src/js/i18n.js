@@ -1470,7 +1470,7 @@ const LOCALE_DATA = { en, fr, es, pt, de, sw, ha, yo, ig, zh, ar, hi };
 // The remaining locales (ha, yo, ig, zh, ar, hi, ru, ko, id) reuse the English
 // strings until their own translations are supplied. English is a better fallback
 // than a machine translation of a navigation label, so this is deliberate.
-const FALLBACK_ORDER = ["en", "fr", "es", "pt", "de", "sw"];
+const FALLBACK_ORDER = LANGUAGES.map(l => l.code);
 
 let current = DEFAULT;
 let dict = en;
@@ -1494,6 +1494,7 @@ export function setLang(code) {
   try { localStorage.setItem(STORAGE_KEY, code); } catch (_) {}
   if (typeof document !== "undefined") {
     document.documentElement.lang = code;
+    document.documentElement.dir = code === "ar" ? "rtl" : "ltr";
     applyTranslations(document);
     document.dispatchEvent(new CustomEvent("terralens:lang", { detail: code }));
   }
