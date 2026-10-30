@@ -166,14 +166,14 @@ document.querySelector("#trip").onclick=async()=>{if(!isReal){location.href="pla
 const saveBtn=document.querySelector("#save");let saved=savedInit;
 const paint=()=>{saveBtn.textContent=saved?"♥ Saved":"♡ Save";saveBtn.setAttribute("aria-pressed",String(saved))};
 saveBtn.onclick=async()=>{if(!isReal){status("Connect Supabase to save places.");return}
- const {data:{user}}=await supabase.auth.getUser();if(!user){location.href="login.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);return}
+ const {data:{user}}=await supabase.auth.getUser();if(!user){status("Sign in with Google to save places.");return}
  saveBtn.disabled=true;
  const r=saved?await supabase.from("saves").delete().eq("user_id",user.id).eq("place_id",place.id):await supabase.from("saves").upsert({user_id:user.id,place_id:place.id});
  saveBtn.disabled=false;
  if(r.error){status("Couldn't update your saved places. Please try again.");return}
  saved=!saved;paint();status(saved?"Saved to your places.":"Removed from your saved places.")};
 document.querySelector("#rsend").onclick=async()=>{if(!isReal){status("Reporting needs Supabase.");return}
- const {data:{user}}=await supabase.auth.getUser();if(!user){location.href="login.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);return}
+ const {data:{user}}=await supabase.auth.getUser();if(!user){status("Sign in with Google to report this place.");return}
  const btn=document.querySelector("#rsend");btn.disabled=true;
  const {error}=await supabase.from("reports").insert({target_type:"place",target_id:place.id,reason:document.querySelector("#rreason").value,details:document.querySelector("#rdetails").value.trim().slice(0,500)||null});
  btn.disabled=false;
@@ -182,7 +182,7 @@ document.querySelector("#rsend").onclick=async()=>{if(!isReal){status("Reporting
 const likeBtns=[...document.querySelectorAll("[data-like]")];
 const paintLike=(b,on)=>{b.setAttribute("aria-pressed",String(on));b.querySelector("[data-heart]").textContent=on?"♥":"♡"};
 likeBtns.forEach(b=>b.onclick=async()=>{if(!isReal)return;
- const {data:{user}}=await supabase.auth.getUser();if(!user){location.href="login.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);return}
+ const {data:{user}}=await supabase.auth.getUser();if(!user){toast("Sign in with Google to like photos.","info");return}
  const was=b.getAttribute("aria-pressed")==="true",c=b.querySelector("[data-count]");b.disabled=true;
  const r=was?await supabase.from("image_likes").delete().eq("user_id",user.id).eq("image_id",b.dataset.like):await supabase.from("image_likes").insert({user_id:user.id,image_id:b.dataset.like});
  b.disabled=false;

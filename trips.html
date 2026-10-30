@@ -98,7 +98,7 @@ const fmtDates = t => {
 async function run() {
   if (!supabase) { statusEl.textContent = "Connect Supabase to use trips."; return; }
   const user = await getUser();
-  if (!user) { list.innerHTML = `<div class="tl-card p-7"><p class="font-bold">Sign in to see your trips.</p><p class="mt-2 text-sm text-white/50">Trips are saved to your account, so they follow you between devices.</p><a class="tl-btn tl-btn-primary mt-5" href="login.html?next=trips.html">Sign in</a></div>`; return; }
+  if (!user) { list.innerHTML = `<div class="tl-card p-7"><p class="font-bold">Sign in to see your trips.</p><p class="mt-2 text-sm text-white/50">Trips are saved to your account, so they follow you between devices.</p></div>`; return; }
   const trips = await listTrips(user.id);
   if (!trips.length) {
     list.innerHTML = `<div class="tl-card p-7"><p class="font-bold">No trips saved yet.</p><p class="mt-2 text-sm text-white/50">Build a plan in the planner and tap “Save this trip” to keep it here.</p><a class="tl-btn tl-btn-primary mt-5" href="planner.html">Open the planner</a></div>`;

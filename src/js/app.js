@@ -1,6 +1,5 @@
 import { supabase, getUser, ensureProfile } from "./supabase.js";
 import { initLang, currentLang, setLang, LANGUAGES, t } from "./i18n.js";
-import { REQUIRE_LOGIN } from "./config.js";
 
 export const fallbackPlaces = [
   {id:"seed-1",slug:"mount-cameroon",name:"Mount Cameroon",description:"A volcanic landscape rising above Buea with forest, cloud, and dramatic mountain views.",country:"Cameroon",region:"South-West",city:"Buea",category:"Mountain",cover_url:"https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=85"},
@@ -110,7 +109,7 @@ export async function initCardSaves(root = document) {
     btn.addEventListener("click", async e => {
       e.preventDefault(); e.stopPropagation();
       const current = await getUser();
-      if (!current) { location.href = `login.html?next=${encodeURIComponent(location.href)}`; return; }
+      if (!current) return;
       const on = btn.getAttribute("aria-pressed") === "true";
       btn.disabled = true;
       const r = on
@@ -195,7 +194,7 @@ export async function queryFeatured(limit = 8) {
 export async function requireAuth(next = location.href) {
   const user = await getUser();
   if (user) return user;
-  location.href = `login.html?next=${encodeURIComponent(next)}`;
+  return null;
 }
 
 // Lucide "badge-check" icon (ISC licence) filled gold, for verified contributors.
@@ -241,31 +240,24 @@ export async function initNav() {
     try { same = !!document.referrer && new URL(document.referrer).origin === location.origin; } catch {}
     if (same && history.length > 1) { e.preventDefault(); history.back(); }
   });
-  // Sign-in wall: everything except the login, terms and privacy pages needs an account.
-  const open = /\/(login|terms|privacy|content-policy)(\.html)?$/.test(location.pathname);
-  if (REQUIRE_LOGIN && supabase && !open) {
-    document.documentElement.style.visibility = "hidden";
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      location.replace("login.html?next=" + encodeURIComponent(location.pathname.replace(/^\//, "") + location.search));
-      return;
-    }
-    document.documentElement.style.visibility = "";
-  }
+  // Sign-in wall removed: public browsing, no redirects.
   const session = supabase ? (await supabase.auth.getSession()).data.session : null;
   const user = session?.user || null;
-  document.querySelectorAll("[data-auth-label]").forEach(el => {
-    el.textContent = user ? (user.user_metadata?.full_name || "Profile") : t("auth.signIn");
-  });
-  document.querySelectorAll("[data-auth-href]").forEach(el => {
-    el.href = user ? "profile.html" : `login.html?next=${encodeURIComponent(location.href)}`;
-    el.classList.add("tl-ready");
-  });
+  if (!user) {
+    document.querySelectorAll("[data-auth-href]").forEach(el => { el.style.display = "none"; });
+  } else {
+    document.querySelectorAll("[data-auth-label]").forEach(el => {
+      el.textContent = user.user_metadata?.full_name || "Profile";
+    });
+    document.querySelectorAll("[data-auth-href]").forEach(el => {
+      el.href = "profile.html";
+      el.classList.add("tl-ready");
+    });
+  }
   document.querySelectorAll("[data-upload-link]").forEach(el => {
     el.addEventListener("click", async e => {
       e.preventDefault();
-      if (user) location.href = "upload.html";
-      else location.href = `login.html?next=${encodeURIComponent("upload.html")}`;
+      location.href = "upload.html";
     });
   });
   // Language switcher: injected after the nav exists, in both desktop and mobile ends.

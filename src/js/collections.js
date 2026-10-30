@@ -8,7 +8,7 @@ import { toast } from "./ui.js";
 
 const requireUser = async () => {
   const user = await getUser();
-  if (!user) { location.href = `login.html?next=${encodeURIComponent(location.href)}`; return null; }
+  if (!user) return null;
   return user;
 };
 

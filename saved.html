@@ -73,7 +73,7 @@ import {supabase} from "./src/js/supabase.js";import {card,attachAuthors} from "
 const grid=document.querySelector("#grid"),empty=document.querySelector("#empty");
 const note=m=>{let p=document.querySelector("#note");if(!p){grid.insertAdjacentHTML("beforebegin",'<p id="note" role="status" class="mt-6 text-sm text-white/50"></p>');p=document.querySelector("#note")}p.innerHTML=m};
 const user=supabase?(await supabase.auth.getUser()).data.user:null;
-if(!user){note('<a class="tl-btn tl-btn-primary" href="login.html?next=saved.html">Sign in with Google to see your saved places</a>')}
+if(!user){note('Sign in with Google to see your saved places.')}
 else{
  const r=await supabase.from("saves").select("place_id,created_at,places(*)").eq("user_id",user.id).order("created_at",{ascending:false});
  if(r.error){note("Couldn't load your saved places. Please refresh and try again.")}

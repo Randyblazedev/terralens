@@ -120,7 +120,7 @@ async function loadImages(){const r=await supabase.from("place_images").select("
 async function refreshPlace(){const r=await supabase.from("places").select("*").eq("id",place.id).maybeSingle();if(r.data){place=r.data;stateNote()}}
 async function init(){
  user=supabase?await getUser():null;
- if(!user){location.replace("login.html?next="+encodeURIComponent("edit.html?slug="+slug));return}
+ if(!user){document.body.innerHTML='<main class="tl-section"><div class="tl-shell"><p class="text-white/50">Sign in with Google to edit this place.</p></div></main>';return}
  isAdmin=(await supabase.rpc("is_admin")).data===true;
  const r=await supabase.from("places").select("*").eq("slug",slug).maybeSingle();place=r.data;
  if(!place||(place.created_by!==user.id&&!isAdmin)){$("#note").textContent="This place was not found, or it is not yours to edit.";return}
