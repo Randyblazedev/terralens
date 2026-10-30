@@ -73,7 +73,7 @@
 <script type="module">
 import {confirmDialog} from "./src/js/ui.js";
 import {pickCollectionForPlace,pickTripForPlace} from "./src/js/collections.js";
-import {supabase} from "./src/js/supabase.js";import {fallbackPlaces,escapeHtml,placeUrl,verifiedBadge,canEdit,backLink,backFab,imgSize,formatCount,EYE,stayLink} from "./src/js/app.js";
+import {supabase} from "./src/js/supabase.js";import {fallbackPlaces,escapeHtml,placeUrl,verifiedBadge,canEdit,backLink,backFab,imgSize,formatCount,EYE,stayLink,initFollowButtons} from "./src/js/app.js";
 import {AFFILIATE_BOOKING_AID,AFFILIATE_BOOKING_LABEL} from "./src/js/config.js";
 const slug=new URLSearchParams(location.search).get("slug")||decodeURIComponent(location.pathname.match(/^\/place\/([^/]+)/)?.[1]||"");
 let place=null,images=[];
@@ -110,7 +110,7 @@ if(isReal){
   me?supabase.rpc("is_admin"):null]);
  likedIds=new Set((lk?.data||[]).map(x=>x.image_id));savedInit=!!sv?.data;isOwner=!!me&&me.id===place.created_by;isAdmin=ad?.data===true;
  const nm=ow?.data?(ow.data.display_name||ow.data.username||""):"";
- contribHtml=place.status==="pending"?"This place is awaiting review and is only visible to you.":nm?"By "+escapeHtml(nm)+(ow.data.verified?" "+verifiedBadge(18):""):"";
+ contribHtml=place.status==="pending"?"This place is awaiting review and is only visible to you.":nm?`By <a href="profile.html?id=${encodeURIComponent(place.created_by)}" class="text-sky-300 hover:underline">${escapeHtml(nm)}</a>${ow.data.verified?" "+verifiedBadge(18):""}${me&&me.id!==place.created_by?` <button type="button" data-follow="${escapeHtml(place.created_by)}" data-state="not-following" class="tl-btn tl-btn-ghost !min-h-8 !px-3 !py-1 !text-xs">Follow</button>`:""}`:"";
 }
 document.title=`${place.name} — TerraLens`;
 document.querySelector("#place").innerHTML=`
@@ -165,6 +165,7 @@ document.querySelector("#collect").onclick=async()=>{if(!isReal){status("Connect
 document.querySelector("#trip").onclick=async()=>{if(!isReal){location.href="planner.html?place="+encodeURIComponent(place.slug);return}await pickTripForPlace(place)};
 const saveBtn=document.querySelector("#save");let saved=savedInit;
 const paint=()=>{saveBtn.textContent=saved?"♥ Saved":"♡ Save";saveBtn.setAttribute("aria-pressed",String(saved))};
+await initFollowButtons(document).catch(()=>{});
 saveBtn.onclick=async()=>{if(!isReal){status("Connect Supabase to save places.");return}
  const {data:{user}}=await supabase.auth.getUser();if(!user){location.href="login.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);return}
  saveBtn.disabled=true;

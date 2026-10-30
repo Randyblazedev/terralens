@@ -67,14 +67,85 @@
   </div>
 </header>
 
-<main class="tl-section"><div class="tl-shell max-w-6xl"><div id="profile" class="tl-card p-7 sm:p-10"></div><div class="mt-10 grid gap-6 lg:grid-cols-[.7fr_1.3fr]"><aside class="tl-card p-6"><p class="tl-eyebrow">Creator stats</p><div id="stats" class="mt-6 grid grid-cols-2 gap-4"></div></aside><section><p class="tl-eyebrow">Your places</p><div id="places" class="mt-5 grid gap-5 sm:grid-cols-2"></div><div class="mt-6"><button id="more-places" type="button" class="tl-btn tl-btn-ghost hidden">Load more</button></div></section></div></div></main>
+<main class="tl-section"><div class="tl-shell max-w-6xl"><div id="profile" class="tl-card p-7 sm:p-10"></div><div id="edit-wrap" class="mt-6 hidden tl-card p-7 sm:p-10"><h2 class="text-2xl font-extrabold">Edit profile</h2><form id="edit-form" class="mt-5 grid gap-4"><label class="grid gap-2 text-sm text-white/60">Display name<input name="display_name" maxlength="60" class="tl-input" autocomplete="name"></label><label class="grid gap-2 text-sm text-white/60">Username (lowercase letters, numbers and underscores, max 24)<input name="username" maxlength="24" pattern="[a-z0-9_]+" class="tl-input" autocomplete="username"></label><label class="grid gap-2 text-sm text-white/60">Bio (max 300 characters)<textarea name="bio" maxlength="300" rows="3" class="tl-input"></textarea></label><label class="grid gap-2 text-sm text-white/60">Avatar URL (https link)<input name="avatar_url" type="url" inputmode="url" placeholder="https://" class="tl-input"></label><label class="grid gap-2 text-sm text-white/60">Website URL (https link)<input name="website_url" type="url" inputmode="url" placeholder="https://" class="tl-input"></label><p id="edit-msg" role="status" aria-live="polite" class="min-h-5 text-sm text-white/55"></p><div class="flex flex-wrap gap-3"><button type="submit" class="tl-btn tl-btn-primary">Save changes</button><button type="button" id="edit-cancel" class="tl-btn tl-btn-ghost">Cancel</button></div></form></div><div class="mt-10 grid gap-6 lg:grid-cols-[.7fr_1.3fr]"><aside class="tl-card p-6"><p class="tl-eyebrow">Stats</p><div id="stats" class="mt-6 grid grid-cols-2 gap-4"></div></aside><section><p class="tl-eyebrow" id="places-label">Places</p><div id="places" class="mt-5 grid gap-5 sm:grid-cols-2"></div><div class="mt-6"><button id="more-places" type="button" class="tl-btn tl-btn-ghost hidden">Load more</button></div></section></div></div></main>
 <script type="module">
-import {supabase,getUser} from "./src/js/supabase.js";import {card,escapeHtml,verifiedBadge,canEdit,editMinutesLeft,attachAuthors} from "./src/js/app.js";
-const p=document.querySelector("#profile");if(!supabase){p.innerHTML='<p class="text-white/45">Supabase is not configured.</p>'}else{const u=await getUser();if(!u){location.href="login.html?next=profile.html"}else{const pr=await supabase.from("profiles").select("*").eq("id",u.id).maybeSingle();const PAGE=12;const places=await supabase.from("places").select("*",{count:"exact"}).eq("created_by",u.id).order("created_at",{ascending:false}).range(0,PAGE-1);const saved=await supabase.from("saves").select("place_id",{count:"exact"}).eq("user_id",u.id);p.innerHTML=`<div class="flex flex-col gap-6 sm:flex-row sm:items-center"><img src="${escapeHtml(pr.data?.avatar_url||"assets/terralens-mark.png")}" class="h-20 w-20 rounded-full object-cover ring-1 ring-white/10"><div><p class="tl-eyebrow">Creator</p><h1 class="mt-2 text-4xl font-extrabold">${escapeHtml(pr.data?.display_name||u.email||"Traveler")}${pr.data?.verified?" "+verifiedBadge(28):""}</h1><p class="mt-2 text-white/45">@${escapeHtml(pr.data?.username||"traveler")}</p><p class="mt-4 max-w-2xl text-white/55">${escapeHtml(pr.data?.bio||"Building a collection of places worth seeing.")}</p><a href="logout.html" class="tl-btn tl-btn-ghost mt-5" data-i18n="nav.signOut">Sign out</a></div></div>`;const rowHtml=p=>`<div>${card(p)}<div class="mt-2 flex items-center justify-between text-sm"><span class="rounded-full border border-white/10 px-3 py-1 text-white/55">${escapeHtml(({pending:"Awaiting review",published:"Live",hidden:"Hidden",draft:"Draft"})[p.status]||p.status)}</span>${canEdit(p)?`<a class="tl-btn tl-btn-ghost !min-h-9 !px-4" href="edit.html?slug=${encodeURIComponent(p.slug)}">Edit · ${editMinutesLeft(p)} min left</a>`:`<span class="text-xs text-white/35">Edit window closed</span>`}</div></div>`;
-const listEl=document.querySelector("#places"),moreBtn=document.querySelector("#more-places");let loaded=places.data?.length||0;
-listEl.innerHTML=(await attachAuthors(places.data||[])).map(rowHtml).join("")||'<p class="text-white/45">You have not uploaded a place yet.</p>';
-moreBtn.classList.toggle("hidden",loaded>=(places.count||0));
-moreBtn.onclick=async()=>{moreBtn.disabled=true;const r=await supabase.from("places").select("*").eq("created_by",u.id).order("created_at",{ascending:false}).range(loaded,loaded+PAGE-1);listEl.insertAdjacentHTML("beforeend",(await attachAuthors(r.data||[])).map(rowHtml).join(""));loaded+=r.data?.length||0;moreBtn.disabled=false;moreBtn.classList.toggle("hidden",loaded>=(places.count||0))};document.querySelector("#stats").innerHTML=`<div class="tl-card p-4"><strong class="text-2xl">${places.count||0}</strong><span class="mt-1 block text-xs text-white/40">Places</span></div><a href="saved.html" class="tl-card block p-4 hover:bg-white/5"><strong class="text-2xl">${saved.count||0}</strong><span class="mt-1 block text-xs text-white/40">Saved · view all</span></a>`}}
+import {supabase,getUser} from "./src/js/supabase.js";import {card,escapeHtml,verifiedBadge,canEdit,editMinutesLeft,attachAuthors,initFollowButtons} from "./src/js/app.js";
+const p=document.querySelector("#profile");
+const httpsUrl=u=>{try{const x=new URL(String(u||"").trim());return x.protocol==="https:"?x.href:""}catch{return ""}};
+const isUuid=v=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v||""));
+if(!supabase){p.innerHTML='<p class="text-white/45">Supabase is not configured.</p>'}else{
+const qs=new URLSearchParams(location.search);
+const qId=qs.get("id"),qUser=qs.get("u");
+const me=await getUser();
+let targetId=qId&&isUuid(qId)?qId:null;
+let target=null;
+if(!targetId&&qUser){
+  const r=await supabase.from("profiles").select("*").eq("username",String(qUser).toLowerCase()).maybeSingle();
+  target=r.data||null;targetId=target?.id||null;
+}else if(targetId){
+  const r=await supabase.from("profiles").select("*").eq("id",targetId).maybeSingle();
+  target=r.data||null;
+  if(!target)targetId=null;
+}
+if(!targetId){
+  if(!me){location.href="login.html?next="+encodeURIComponent("profile.html")}
+  else{
+    const r=await supabase.from("profiles").select("*").eq("id",me.id).maybeSingle();
+    target=r.data||null;targetId=me.id;
+  }
+}
+if(!targetId){p.innerHTML='<h1 class="text-4xl font-extrabold">Profile not found</h1><p class="mt-4 text-white/55">This user does not exist or the link is wrong.</p><a href="explore.html" class="tl-btn tl-btn-primary mt-8">Explore places</a>'}
+else{
+const isSelf=!!me&&me.id===targetId;
+const PAGE=12;
+const [placesRes,savedRes,followersRes,followingRes]=await Promise.all([
+  supabase.from("places").select("*",{count:"exact"}).eq("created_by",targetId).eq("status","published").order("created_at",{ascending:false}).range(0,PAGE-1),
+  isSelf?supabase.from("saves").select("place_id",{count:"exact"}).eq("user_id",me.id):Promise.resolve({count:0}),
+  supabase.from("follows").select("follower_id",{count:"exact",head:true}).eq("following_id",targetId),
+  supabase.from("follows").select("following_id",{count:"exact",head:true}).eq("follower_id",targetId)
+]);
+const places=placesRes.data||[];
+const displayName=target?.display_name||target?.username||"Traveler";
+const avatar=target?.avatar_url||"assets/terralens-mark.png";
+p.innerHTML=`<div class="flex flex-col gap-6 sm:flex-row sm:items-start"><img src="${escapeHtml(avatar)}" alt="" class="h-20 w-20 rounded-full object-cover ring-1 ring-white/10"><div class="min-w-0 flex-1"><p class="tl-eyebrow">Creator</p><h1 class="mt-2 text-4xl font-extrabold">${escapeHtml(displayName)}${target?.verified?" "+verifiedBadge(28):""}</h1><p class="mt-2 text-white/45">@${escapeHtml(target?.username||"traveler")}</p>${target?.website_url?`<p class="mt-2"><a href="${escapeHtml(target.website_url)}" target="_blank" rel="noopener" class="text-sm text-sky-300 hover:underline">${escapeHtml(target.website_url)}</a></p>`:""}<p class="mt-4 max-w-2xl text-white/55">${escapeHtml(target?.bio||"Building a collection of places worth seeing.")}</p><div class="mt-5 flex flex-wrap items-center gap-3">${isSelf?`<button type="button" id="edit-toggle" class="tl-btn tl-btn-ghost">Edit profile</button><a href="logout.html" class="tl-btn tl-btn-ghost">Sign out</a>`:(me?`<button type="button" data-follow="${escapeHtml(targetId)}" data-state="not-following" class="tl-btn tl-btn-primary">Follow</button>`:`<a href="login.html?next=${encodeURIComponent(location.pathname+location.search)}" class="tl-btn tl-btn-primary">Sign in to follow</a>`)}</div></div></div>`;
+await initFollowButtons(p);
+if(isSelf){
+  const wrap=document.querySelector("#edit-wrap"),form=document.querySelector("#edit-form"),msg=document.querySelector("#edit-msg");
+  const toggle=document.querySelector("#edit-toggle");
+  form.display_name.value=target?.display_name||"";
+  form.username.value=target?.username||"";
+  form.bio.value=target?.bio||"";
+  form.avatar_url.value=target?.avatar_url||"";
+  form.website_url.value=target?.website_url||"";
+  toggle.onclick=()=>{wrap.classList.toggle("hidden");wrap.scrollIntoView({behavior:"smooth",block:"start"})};
+  document.querySelector("#edit-cancel").onclick=()=>wrap.classList.add("hidden");
+  form.onsubmit=async e=>{
+    e.preventDefault();msg.textContent="Saving...";
+    const display_name=String(form.display_name.value||"").trim().slice(0,60);
+    const username=String(form.username.value||"").trim().toLowerCase();
+    const bio=String(form.bio.value||"").trim().slice(0,300);
+    const avatarRaw=String(form.avatar_url.value||"").trim(),siteRaw=String(form.website_url.value||"").trim();
+    if(username&&!/^[a-z0-9_]{1,24}$/.test(username)){msg.textContent="Username must be lowercase letters, numbers or underscores, max 24.";return}
+    if(avatarRaw&&!httpsUrl(avatarRaw)){msg.textContent="Avatar URL must start with https://";return}
+    if(siteRaw&&!httpsUrl(siteRaw)){msg.textContent="Website URL must start with https://";return}
+    if(username&&username!==target?.username){
+      const dup=await supabase.from("profiles").select("id").eq("username",username).neq("id",me.id).maybeSingle();
+      if(dup.data){msg.textContent="That username is taken. Try another.";return}
+    }
+    const r=await supabase.from("profiles").update({display_name:display_name||null,username:username||null,bio:bio||null,avatar_url:avatarRaw?httpsUrl(avatarRaw):null,website_url:siteRaw?httpsUrl(siteRaw):null}).eq("id",me.id).select().maybeSingle();
+    if(r.error){msg.textContent=r.error.message||"Could not save. Try again.";return}
+    target=r.data||target;msg.textContent="Saved.";location.reload();
+  };
+}
+const rowHtml=pl=>`<div>${card(pl)}<div class="mt-2 flex items-center justify-between text-sm">${isSelf?`<span class="rounded-full border border-white/10 px-3 py-1 text-white/55">${escapeHtml(({pending:"Awaiting review",published:"Live",hidden:"Hidden",draft:"Draft"})[pl.status]||pl.status||"Live")}</span>${canEdit(pl)?`<a class="tl-btn tl-btn-ghost !min-h-9 !px-4" href="edit.html?slug=${encodeURIComponent(pl.slug)}">Edit · ${editMinutesLeft(pl)} min left</a>`:`<span class="text-xs text-white/35">Edit window closed</span>`:""}</div></div>`;
+const listEl=document.querySelector("#places"),moreBtn=document.querySelector("#more-places");
+document.querySelector("#places-label").textContent=isSelf?"Your places":("Places by "+displayName);
+let loaded=places.length;
+listEl.innerHTML=(await attachAuthors(places)).map(rowHtml).join("")||(isSelf?'<p class="text-white/45">You have not uploaded a place yet.</p>':'<p class="text-white/45">No published places yet.</p>');
+moreBtn.classList.toggle("hidden",loaded>=((placesRes.count)||0));
+moreBtn.onclick=async()=>{moreBtn.disabled=true;const r=await supabase.from("places").select("*").eq("created_by",targetId).eq("status","published").order("created_at",{ascending:false}).range(loaded,loaded+PAGE-1);listEl.insertAdjacentHTML("beforeend",(await attachAuthors(r.data||[])).map(rowHtml).join(""));loaded+=r.data?.length||0;moreBtn.disabled=false;moreBtn.classList.toggle("hidden",loaded>=((placesRes.count)||0))};
+document.querySelector("#stats").innerHTML=`<div class="tl-card p-4"><strong class="text-2xl">${placesRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Places</span></div>${isSelf?`<a href="saved.html" class="tl-card block p-4 hover:bg-white/5"><strong class="text-2xl">${savedRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Saved · view all</span></a>`:""}<div class="tl-card p-4"><strong class="text-2xl">${followersRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Followers</span></div><div class="tl-card p-4"><strong class="text-2xl">${followingRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Following</span></div>`;
+}}
 </script>
 
 <footer class="tl-footer">

@@ -809,3 +809,22 @@ grant execute on function public.record_place_view(uuid, text) to anon, authenti
 alter table public.posts add column if not exists is_guest boolean not null default false;
 alter table public.posts add column if not exists guest_name text check (guest_name is null or char_length(guest_name) <= 80);
 alter table public.posts add column if not exists guest_link text check (guest_link is null or guest_link ~ '^https://');
+
+-- ===== Follows: users follow other users (social graph for profiles) =====
+create table if not exists public.follows (
+  follower_id uuid not null references public.profiles(id) on delete cascade,
+  following_id uuid not null references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (follower_id, following_id),
+  check (follower_id <> following_id)
+);
+
+create index if not exists follows_follower_idx on public.follows (follower_id);
+create index if not exists follows_following_idx on public.follows (following_id);
+
+alter table public.follows enable row level security;
+
+drop policy if exists "follows readable" on public.follows;
+create policy "follows readable" on public.follows for select using (true);
+drop policy if exists "users manage own follows" on public.follows;
+create policy "users manage own follows" on public.follows for all using (auth.uid() = follower_id) with check (auth.uid() = follower_id);
