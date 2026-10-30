@@ -11,12 +11,14 @@ export default async function handler(req, res) {
 
   if (!(await rateLimit(`chat-ip:${clientIp(req)}`, 30, 60_000))) return res.status(429).json({ error: "Too many requests. Try again soon." });
 
-  const admin = await verifyAdmin(req);
-  if (!admin) return res.status(403).json({ error: "Admins only. Sign in with your admin account." });
   const user = await verifyUser(req);
-  const uid = user?.id || "admin";
-  if (!(await rateLimit(`chat-min:${uid}`, 8, 60_000)) || !(await rateLimit(`chat-day:${uid}`, 60, 86_400_000))) {
-    return res.status(429).json({ error: "Message limit reached. Try again later." });
+  if (!user) return res.status(401).json({ error: "Sign in to use the assistant." });
+  const admin = await verifyAdmin(req);
+  const uid = user.id;
+  // brr for everyone: admins get room, normal users capped daily
+  const MIN_LIM = admin ? 20 : 5, DAY_LIM = admin ? 200 : 10;
+  if (!(await rateLimit(`chat-min:${uid}`, MIN_LIM, 60_000)) || !(await rateLimit(`chat-day:${uid}`, DAY_LIM, 86_400_000))) {
+    return res.status(429).json({ error: admin ? "Message limit reached. Try again later." : "Daily free chats used up (10/day). Come back tomorrow." });
   }
 
   const key = clean("OPENROUTER_API_KEY");
@@ -26,6 +28,7 @@ export default async function handler(req, res) {
   if (!message) return res.status(400).json({ error: "message is required" });
 
   try {
+    const isAdmin = !!admin;
     const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -37,11 +40,11 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: clean("OPENROUTER_MODEL") || DEFAULT_MODEL,
         temperature: 0.4,
-        max_tokens: 700,
+        max_tokens: isAdmin ? 900 : 500,
         messages: [
           {
             role: "system",
-            content: `You are TerraLens ADMIN AI. The user is a confirmed site admin. You know everything about this TerraLens website and can instruct admin actions step-by-step. Be concise, give exact clicks/queries, never invent live prices/hours/visa/weather - label estimates and point to official sources. Never reveal secrets or tokens. Refuse non-admin users politely (but the route already enforces admin - see below).
+            content: isAdmin ? `You are TerraLens ADMIN AI. The user is a confirmed site admin. You know everything about this TerraLens website and can instruct admin actions step-by-step. Be concise, give exact clicks/queries, never invent live prices/hours/visa/weather - label estimates and point to official sources. Never reveal secrets or tokens. Refuse non-admin users politely (but the route already enforces admin - see below).
 SITE KNOWLEDGE:
 TerraLens admin knowledge (generated from repo).
 
@@ -87,7 +90,7 @@ HOW TO DO ADMIN STUFF (via site, no SQL needed unless noted):
 - moderate comment: comments -> delete; reports -> action/dismiss
 - make yourself admin (SQL once): insert into public.admins (email) values ('you@email') on conflict do nothing (need confirmed sign-in first)
 - blog: posts section create/edit/delete, status published
-`
+` : `You are TerraLens AI, a fast brr-style travel chat. Short punchy replies, no essays. Help with places, trips, nature, photo spots. Never invent live prices, hours, visa, weather - label estimates. If asked to do admin stuff (approve/hide/delete/feature, verify users, edit places), refuse: admins only.`
           },
           { role: "user", content: message }
         ]
