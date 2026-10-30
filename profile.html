@@ -137,7 +137,8 @@ if(isSelf){
     target=r.data||target;msg.textContent="Saved.";location.reload();
   };
 }
-const rowHtml=pl=>`<div>${card(pl)}<div class="mt-2 flex items-center justify-between text-sm">${isSelf?`<span class="rounded-full border border-white/10 px-3 py-1 text-white/55">${escapeHtml(({pending:"Awaiting review",published:"Live",hidden:"Hidden",draft:"Draft"})[pl.status]||pl.status||"Live")}</span>${canEdit(pl)?`<a class="tl-btn tl-btn-ghost !min-h-9 !px-4" href="edit.html?slug=${encodeURIComponent(pl.slug)}">Edit · ${editMinutesLeft(pl)} min left</a>`:`<span class="text-xs text-white/35">Edit window closed</span>`:""}</div></div>`;
+const statusLabel={pending:"Awaiting review",published:"Live",hidden:"Hidden",draft:"Draft"};
+const rowHtml=pl=>{const badge=isSelf?"<span class=\"rounded-full border border-white/10 px-3 py-1 text-white/55\">"+escapeHtml(statusLabel[pl.status]||pl.status||"Live")+"</span>":"";const edit=isSelf?(canEdit(pl)?"<a class=\"tl-btn tl-btn-ghost !min-h-9 !px-4\" href=\"edit.html?slug="+encodeURIComponent(pl.slug)+"\">Edit \u00B7 "+editMinutesLeft(pl)+" min left</a>":"<span class=\"text-xs text-white/35\">Edit window closed</span>"):"";return "<div>"+card(pl)+"<div class=\"mt-2 flex items-center justify-between text-sm\">"+badge+edit+"</div></div>"};
 const listEl=document.querySelector("#places"),moreBtn=document.querySelector("#more-places");
 document.querySelector("#places-label").textContent=isSelf?"Your places":("Places by "+displayName);
 let loaded=places.length;
