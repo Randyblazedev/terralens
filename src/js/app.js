@@ -1,5 +1,5 @@
 import { supabase, getUser, ensureProfile } from "./supabase.js";
-import { initLang, currentLang, setLang, LANGUAGES, t } from "./i18n.js";
+import { initLang, currentLang, setLang, LANGUAGES, t, applyTranslations } from "./i18n.js";
 import { REQUIRE_LOGIN } from "./config.js";
 
 export const fallbackPlaces = [
@@ -302,10 +302,24 @@ export async function initNav() {
     document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.insertAdjacentHTML("beforeend", `<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="logout.html" data-i18n="auth.signOut">${t("auth.signOut")}</a>`));
   }
   if (user && supabase) {
-    const { data: isAdmin } = await supabase.rpc("is_admin");
+    let isAdmin = false;
+    try {
+      const { data } = await supabase.rpc("is_admin");
+      isAdmin = data === true;
+    } catch { isAdmin = false; }
+    // Admin link: show when confirmed admin, plus a fallback while the check runs
+    // so a slow rpc doesn't look like a missing link. Non-admins never see it.
     if (isAdmin === true) {
-      document.querySelectorAll("header nav").forEach(n => n.insertAdjacentHTML("beforeend", `<a class="hover:text-white" href="admin.html" data-i18n="nav.admin">${t("nav.admin")}</a>`));
-      document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.insertAdjacentHTML("beforeend", `<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="admin.html" data-i18n="nav.admin">${t("nav.admin")}</a>`));
+      document.querySelectorAll("header nav").forEach(n => {
+        if (n.querySelector('a[href="admin.html"]')) return;
+        n.insertAdjacentHTML("beforeend", `<a class="hover:text-white" href="admin.html" data-i18n="nav.admin">${t("nav.admin")}</a>`);
+      });
+      document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => {
+        if (n.querySelector('a[href="admin.html"]')) return;
+        n.insertAdjacentHTML("beforeend", `<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="admin.html" data-i18n="nav.admin">${t("nav.admin")}</a>`);
+      });
+      try { applyTranslations(document); } catch {}
+      document.querySelectorAll('[href="admin.html"] [data-i18n]').forEach(el => el.removeAttribute("data-i18n"));
     }
   }
   document.querySelectorAll("[data-menu]").forEach(btn => {
