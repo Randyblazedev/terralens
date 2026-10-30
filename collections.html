@@ -84,7 +84,7 @@ async function run(){if(!supabase){grid.innerHTML='<div class="tl-card p-7 text-
   document.querySelector("#mine").innerHTML=rows.map(c=>cardFor(c,true)).join("")||'<p class="text-white/45">You have no collections yet. Create one and add places to it from any place page.</p>'}
  const r=await supabase.from("collections").select("*,profiles(display_name,username),collection_items(place_id)").eq("is_public",true).order("created_at",{ascending:false}).limit(30);
  grid.innerHTML=(r.data||[]).map(c=>cardFor({...c,place_count:(c.collection_items||[]).length},false)).join("")||'<p class="text-white/45">No public collections yet.</p>'}
-document.querySelector("#new").onclick=async()=>{const u=await getUser();if(!u){toast("Sign in with Google to create collections.","info");return}const name=await promptDialog("Collection name",{title:"New collection",placeholder:"e.g. Weekend waterfalls",confirmText:"Create"});if(!name)return;const ins=await createCollection(u.id,name,true);toast(ins.error?"Couldn't create the collection. Please try again.":"Collection created.",ins.error?"error":"success");run()};run();
+document.querySelector("#new").onclick=async()=>{const u=await getUser();if(!u){location.href="login.html?next=collections.html";return}const name=await promptDialog("Collection name",{title:"New collection",placeholder:"e.g. Weekend waterfalls",confirmText:"Create"});if(!name)return;const ins=await createCollection(u.id,name,true);toast(ins.error?"Couldn't create the collection. Please try again.":"Collection created.",ins.error?"error":"success");run()};run();
 </script>
 
 <footer class="tl-footer">

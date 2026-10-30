@@ -100,7 +100,7 @@ function render(plan,name){
  const saveBtn=document.querySelector("#save-trip");
  if(saveBtn) saveBtn.onclick=async()=>{
   const user=supabase?await getUser():null;
-  if(!user){document.querySelector("#plan").innerHTML='<p class="text-white/50">Sign in with Google to build a trip plan.</p>';return}
+  if(!user){location.href="login.html?next="+encodeURIComponent(location.href);return}
   const tripName=$("#name").value.trim()||"My trip";
   const made=await createTrip(user.id,{name:tripName,start:$("#start").value||null,end:$("#end").value||null,budget:$("#budget").value||null,description:$("#notes").value||null});
   if(made.error){document.querySelector("#save-msg").textContent="Couldn't save this trip. Please try again.";return}
@@ -117,7 +117,7 @@ $("#trip-form").onsubmit=e=>{e.preventDefault();
  lastPlan=buildPlan({places:[...chosen.values()],start:$("#start").value,end:$("#end").value,budget:$("#budget").value,notes:$("#notes").value});
  render(lastPlan,$("#name").value.trim());aiOut.innerHTML="";out.scrollIntoView({behavior:"smooth",block:"start"})};
 $("#ai").onclick=async()=>{
- const sess=supabase?(await supabase.auth.getSession()).data.session:null;if(!sess){document.querySelector("#plan").innerHTML='<p class="text-white/50">Sign in with Google to build a trip plan.</p>';return}
+ const sess=supabase?(await supabase.auth.getSession()).data.session:null;if(!sess){location.href="login.html?next=planner.html";return}
  const name=$("#name").value.trim()||"My trip",start=$("#start").value,end=$("#end").value;
  const places=lastPlan?planToText(name,lastPlan):[...chosen.values()].map(p=>p.name).join(", ");
  const prompt=`Improve this travel itinerary and add practical tips (timing, food, packing, safety). Trip: ${name}. Dates: ${start||"not set"} to ${end||"not set"}. Budget: ${$("#budget").value||"flexible"}. Preferences: ${$("#notes").value||"none"}.\nPlaces by day:\n${places||"No places chosen yet. Suggest a plan from the preferences."}`.slice(0,1900);

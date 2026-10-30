@@ -118,7 +118,7 @@ files.onchange=()=>{previews.innerHTML=[...files.files].slice(0,6).map(f=>`<img 
 drop.addEventListener("drop",e=>{files.files=e.dataTransfer.files;files.dispatchEvent(new Event("change"))});
 document.querySelector("#upload-form").onsubmit=async e=>{
  e.preventDefault();const msg=document.querySelector("#message");msg.textContent="Checking your account...";
- const user=await getUser();if(!user){msg.textContent="Sign in with Google to publish a place.";return}
+ const user=await getUser();if(!user){location.href="login.html?next=upload.html";return}
  if(!user.email_confirmed_at){msg.textContent="Your account email is not verified. Please sign in with Google to upload.";return}
  if(!supabase){msg.textContent="Supabase is not configured. Add your environment variables first.";return}
  if(!files.files.length){msg.textContent="Add at least one photo.";return}

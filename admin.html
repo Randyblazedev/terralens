@@ -129,7 +129,7 @@ let session=null;
 async function guard(){
  if(!supabase){gate.textContent="Configure Supabase first.";return false}
  session=(await supabase.auth.getSession()).data.session;
- if(!session){gate.textContent="Sign in with Google to open the admin page.";return false}
+ if(!session){location.href="login.html?next=admin.html";return false}
  const {data}=await supabase.rpc("is_admin");
  if(data!==true){gate.textContent="You don't have access to this page.";return false}
  gate.classList.add("hidden");$("#app").classList.remove("hidden");return true}

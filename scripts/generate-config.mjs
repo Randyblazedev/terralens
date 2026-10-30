@@ -25,7 +25,7 @@ loadLocalEnv();
 const tidy = v => String(v || '').trim().replace(/^["'`]+|["'`]+$/g, '').trim();
 const url = tidy(process.env.SUPABASE_URL).replace(/\/+$/, '');
 const key = tidy(process.env.SUPABASE_PUBLISHABLE_KEY);
-const requireLogin = (process.env.REQUIRE_LOGIN || 'false').toLowerCase() === 'true';
+const requireLogin = (process.env.REQUIRE_LOGIN || 'true').toLowerCase() !== 'false';
 // Affiliate tracking. These are public identifiers, not secrets: they end up in the links on
 // the page. Leaving them empty simply hides the booking button everywhere.
 const affiliateAid = tidy(process.env.AFFILIATE_BOOKING_AID);
