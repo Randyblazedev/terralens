@@ -233,6 +233,7 @@ export function injectBack(doc = document, path = location.pathname) {
 }
 
 export async function initNav() {
+  initLang();
   injectBack();
   document.addEventListener("click", e => {
     const b = e.target.closest("[data-back]");
@@ -256,6 +257,7 @@ export async function initNav() {
   const user = session?.user || null;
   document.querySelectorAll("[data-auth-label]").forEach(el => {
     el.textContent = user ? (user.user_metadata?.full_name || "Profile") : t("auth.signIn");
+    el.removeAttribute("data-i18n");
   });
   document.querySelectorAll("[data-auth-href]").forEach(el => {
     el.href = user ? "profile.html" : `login.html?next=${encodeURIComponent(location.href)}`;
@@ -269,7 +271,7 @@ export async function initNav() {
     });
   });
   // Language switcher: injected after the nav exists, in both desktop and mobile ends.
-  const current = initLang();
+  const current = currentLang();
 
   const picker = `<details class="tl-lang relative"><summary class="hover:text-white cursor-pointer list-none flex items-center gap-1" data-i18n-aria="nav.language" aria-label="Language">🌐 <span data-i18n="nav.language">${t("nav.language")}</span></summary><div class="tl-lang-menu absolute right-0 z-50 mt-2 min-h-11 w-44 max-h-72 overflow-auto rounded-xl border border-white/10 bg-[#0b1220] p-1 shadow-2xl">` +
     LANGUAGES.map(l => `<button type="button" data-lang="${l.code}" class="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-white/5 ${l.code === current ? "font-bold text-sky-300" : "text-white/80"}"><span>${l.native}</span>${l.code === current ? "<span>✓</span>" : ""}</button>`).join("") +
@@ -313,6 +315,15 @@ export async function initNav() {
 
 if (supabase) {
   supabase.auth.onAuthStateChange(async (_event, session) => {
-    if (session?.user) await ensureProfile(session.user);
+    if (session?.user) {
+      await ensureProfile(session.user);
+      document.querySelectorAll("[data-auth-label]").forEach(el => {
+        el.textContent = session.user.user_metadata?.full_name || "Profile";
+        el.removeAttribute("data-i18n");
+      });
+      document.querySelectorAll("[data-auth-href]").forEach(el => {
+        el.href = "profile.html";
+      });
+    }
   });
 }
