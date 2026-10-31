@@ -200,6 +200,63 @@ export async function requireAuth(next = location.href) {
   location.href = `login.html?next=${encodeURIComponent(next)}`;
 }
 
+// Notifications: unread count, mark-all-read, best-effort insert, and header bell.
+export async function getUnreadCount() {
+  if (!supabase) return 0;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const uid = session?.user?.id;
+    if (!uid) return 0;
+    const { count } = await supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", uid).eq("is_read", false);
+    return Number(count) || 0;
+  } catch { return 0; }
+}
+
+export async function markAllRead() {
+  if (!supabase) return { error: new Error("Not connected") };
+  const { data: { session } } = await supabase.auth.getSession();
+  const uid = session?.user?.id;
+  if (!uid) return { error: new Error("Not signed in") };
+  return supabase.from("notifications").update({ is_read: true }).eq("user_id", uid).eq("is_read", false);
+}
+
+// Best-effort insert: never throws, so a notification failure can't break follows/comments/verifies.
+export function notifyUser({ userId, kind, title, body = null, link = null }) {
+  (async () => {
+    try {
+      if (!supabase || !userId || !title) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      const actorId = session?.user?.id || null;
+      if (actorId && actorId === userId && (kind === "follow" || kind === "comment" || kind === "like")) return;
+      const { error } = await supabase.from("notifications").insert({ user_id: userId, actor_id: actorId, kind, title, body, link });
+      if (error) console.warn("notify failed:", error.message);
+    } catch (err) { console.warn("notify failed:", err?.message || err); }
+  })();
+}
+
+export async function initNotifBell(root = document) {
+  if (!supabase) return 0;
+  let me = null;
+  try { me = (await supabase.auth.getSession()).data.session?.user || null; } catch {}
+  if (!me) return 0;
+  root.querySelectorAll("header nav").forEach(n => {
+    if (n.querySelector('a[href="notifications.html"]')) return;
+    n.insertAdjacentHTML("beforeend", `<a class="hover:text-white" href="notifications.html" aria-label="Notifications" title="Notifications">🔔<span data-notif-badge class="hidden"></span></a>`);
+  });
+  root.querySelectorAll("[data-mobile-nav] .grid").forEach(n => {
+    if (n.querySelector('a[href="notifications.html"]')) return;
+    n.insertAdjacentHTML("beforeend", `<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="notifications.html">Notifications<span data-notif-badge class="hidden"></span></a>`);
+  });
+  const paint = n => root.querySelectorAll("[data-notif-badge]").forEach(b => {
+    if (!n) { b.className = "hidden"; b.textContent = ""; return; }
+    b.className = "ml-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-sky-500 px-1.5 text-[11px] font-bold text-white";
+    b.textContent = n > 99 ? "99+" : String(n);
+  });
+  const count = await getUnreadCount();
+  paint(count);
+  return count;
+}
+
 // Follow helpers: one-row follow state per viewer, wired to any [data-follow] button.
 export async function getFollowState(viewerId, targetId) {
   if (!supabase || !viewerId || !targetId || viewerId === targetId) return false;
@@ -210,7 +267,18 @@ export async function getFollowState(viewerId, targetId) {
 export async function toggleFollow(viewerId, targetId, following) {
   if (!supabase || !viewerId || !targetId || viewerId === targetId) return { error: new Error("Cannot follow yourself") };
   if (following) return supabase.from("follows").delete().eq("follower_id", viewerId).eq("following_id", targetId);
-  return supabase.from("follows").upsert({ follower_id: viewerId, following_id: targetId });
+  const res = await supabase.from("follows").upsert({ follower_id: viewerId, following_id: targetId });
+  if (!res.error) {
+    try {
+      let name = "Someone";
+      try {
+        const { data: prof } = await supabase.from("profiles").select("display_name,username").eq("id", viewerId).maybeSingle();
+        name = prof?.display_name || prof?.username || "Someone";
+      } catch {}
+      notifyUser({ userId: targetId, kind: "follow", title: `${name} started following you`, body: null, link: `profile.html?id=${viewerId}` });
+    } catch {}
+  }
+  return res;
 }
 
 // Paints every [data-follow="<user id>"] button for the signed-in viewer and handles clicks.
@@ -333,6 +401,9 @@ export async function initNav() {
   if (user) {
     document.querySelectorAll("header nav").forEach(n => n.insertAdjacentHTML("beforeend", `<a class="hover:text-white" href="logout.html">Sign out</a>`));
     document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.insertAdjacentHTML("beforeend", `<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="logout.html">Sign out</a>`));
+  }
+  if (user && supabase) {
+    try { await initNotifBell(document); } catch {}
   }
   if (user && supabase) {
     let isAdmin = false;

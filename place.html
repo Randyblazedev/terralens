@@ -77,7 +77,7 @@
 <script type="module">
 import {confirmDialog} from "./src/js/ui.js";
 import {pickCollectionForPlace,pickTripForPlace} from "./src/js/collections.js";
-import {supabase} from "./src/js/supabase.js";import {fallbackPlaces,escapeHtml,placeUrl,verifiedBadge,canEdit,backLink,backFab,imgSize,formatCount,EYE,stayLink,initFollowButtons} from "./src/js/app.js";
+import {supabase} from "./src/js/supabase.js";import {fallbackPlaces,escapeHtml,placeUrl,verifiedBadge,canEdit,backLink,backFab,imgSize,formatCount,EYE,stayLink,initFollowButtons,notifyUser} from "./src/js/app.js";
 import {AFFILIATE_BOOKING_AID,AFFILIATE_BOOKING_LABEL} from "./src/js/config.js";
 const slug=new URLSearchParams(location.search).get("slug")||decodeURIComponent(location.pathname.match(/^\/place\/([^/]+)/)?.[1]||"");
 let place=null,images=[];
@@ -217,7 +217,8 @@ if(isReal&&place.status==="published"){
   const btn=e.target.querySelector("button");btn.disabled=true;
   const ins=await supabase.from("comments").insert({place_id:place.id,user_id:cu.id,body}).select(SEL).single();btn.disabled=false;
   if(ins.error){cmsg(/row-level security/i.test(ins.error.message)?"Please sign in again to comment.":ins.error.message);return}
-  document.querySelector("#clist p")?.remove();document.querySelector("#clist").insertAdjacentHTML("afterbegin",row(ins.data));t.value="";cmsg("Comment posted.");count()});
+  document.querySelector("#clist p")?.remove();document.querySelector("#clist").insertAdjacentHTML("afterbegin",row(ins.data));t.value="";cmsg("Comment posted.");count();
+  try{if(place.created_by&&place.created_by!==cu.id){let nm=cu.user_metadata?.full_name||cu.email?.split("@")[0]||"Someone";try{const {data:pr}=await supabase.from("profiles").select("display_name,username").eq("id",cu.id).maybeSingle();nm=pr?.display_name||pr?.username||nm}catch{}notifyUser({userId:place.created_by,kind:"comment",title:`${nm} commented on ${place.name||"your place"}`,body:String(body).slice(0,140),link:`place/${encodeURIComponent(place.slug||place.id)}`})}}catch{}});
  document.querySelector("#clist").addEventListener("click",async e=>{const art=e.target.closest("[data-cid]");if(!art)return;const id=art.dataset.cid;
   if(e.target.hasAttribute("data-cdel")){if(!await confirmDialog("Delete your comment?",{danger:true,confirmText:"Delete"}))return;const d=await supabase.from("comments").delete().eq("id",id);if(d.error){cmsg("Couldn't delete it. Please try again.");return}art.remove();count();cmsg("Comment deleted.")}
   if(e.target.hasAttribute("data-crep")){if(!await confirmDialog("Report this comment to the moderators?",{danger:false,confirmText:"Confirm"}))return;const rr=await supabase.from("reports").insert({target_type:"comment",target_id:id,reason:"inappropriate"});

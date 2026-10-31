@@ -125,7 +125,7 @@
 <script type="module">
 import {confirmDialog} from "./src/js/ui.js";
 import {supabase} from "./src/js/supabase.js";
-import {escapeHtml,verifiedBadge} from "./src/js/app.js";
+import {escapeHtml,verifiedBadge,notifyUser} from "./src/js/app.js";
 import {renderMarkdown} from "./src/js/markdown.js";
 const $=s=>document.querySelector(s),gate=$("#gate"),flash=m=>{$("#flash").textContent=m};
 const httpsUrl=u=>{try{const x=new URL(u);return x.protocol==="https:"?x.href:""}catch{return ""}};
@@ -200,7 +200,7 @@ document.querySelector("[data-ai-act]").parentElement.addEventListener("click",a
  if(act==="approve"){const {error}=await supabase.from("places").update({status:"published"}).eq("id",row.id);out.textContent=error?error.message:"Approved and published.";if(!error){loadPlaces();stats()}}
  if(act==="hide"){const {error}=await supabase.from("places").update({status:"hidden"}).eq("id",row.id);out.textContent=error?error.message:"Place hidden.";if(!error){loadPlaces();stats()}}
  if(act==="delete"){if(!await confirmDialog("Delete this place and its photos? This cannot be undone.",{danger:true,confirmText:"Delete"}))return;const {error}=await supabase.from("places").delete().eq("id",row.id);out.textContent=error?error.message:"Place deleted.";if(!error){loadPlaces();stats()}}
- if(act==="verify"){if(!row.created_by){out.textContent="This place has no contributor to verify.";return}const {error}=await supabase.from("profiles").update({verified:true,verified_at:new Date().toISOString()}).eq("id",row.created_by);out.textContent=error?error.message:"Contributor verified."}});
+ if(act==="verify"){if(!row.created_by){out.textContent="This place has no contributor to verify.";return}const {error}=await supabase.from("profiles").update({verified:true,verified_at:new Date().toISOString()}).eq("id",row.created_by);out.textContent=error?error.message:"Contributor verified.";if(!error)try{notifyUser({userId:row.created_by,kind:"verify",title:"You are now a verified contributor",body:"Your new places will publish without review.",link:"profile.html?id="+row.created_by})}catch{}}});
 $("#places").addEventListener("change",async e=>{
  const card=e.target.closest("[data-id]"),act=e.target.dataset.act;if(!card||!["status","featured","sponsored"].includes(act))return;
  const value=act==="status"?e.target.value:e.target.checked;
@@ -255,7 +255,7 @@ async function loadContributors(){
 $("#contributors").addEventListener("click",async e=>{const btn=e.target.closest('[data-act="verify"]'),row=e.target.closest("[data-uid]");if(!btn||!row)return;const on=btn.dataset.v==="1";
  if(!await confirmDialog(on?"Verify this contributor? Their new places will publish without review.":"Remove verification?",{danger:true,confirmText:"Confirm"}))return;
  const {error}=await supabase.from("profiles").update({verified:on,verified_at:on?new Date().toISOString():null}).eq("id",row.dataset.uid);
- flash(error?error.message:on?"Contributor verified.":"Verification removed.");if(!error)loadContributors()});
+ flash(error?error.message:on?"Contributor verified.":"Verification removed.");if(!error){if(on)try{notifyUser({userId:row.dataset.uid,kind:"verify",title:"You are now a verified contributor",body:"Your new places will publish without review.",link:"profile.html?id="+row.dataset.uid})}catch{}loadContributors()}});
 $("#health").onclick=async()=>{const out=$("#health-out");out.innerHTML='<li class="text-white/50">Checking...</li>';
  const d=await api("/api/health",{});if(!d.checks){out.innerHTML=`<li class="text-red-300">${escapeHtml(d.error||"Check failed.")}</li>`;return}
  out.innerHTML=d.checks.map(c=>`<li class="tl-card flex items-start gap-3 p-3"><span aria-hidden="true">${c.ok?"✅":"❌"}</span><span><b>${escapeHtml(c.name)}</b><br><span class="text-white/55">${escapeHtml(c.detail)}</span></span></li>`).join("")};
