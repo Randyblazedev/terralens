@@ -359,6 +359,35 @@ export function injectBack(doc = document, path = location.pathname) {
   return name;
 }
 
+// PWA install prompt (English only, no i18n attrs). Stashes the browser's
+// install event and shows one subtle Install button in the navs.
+let deferredInstall = null;
+function makeInstallBtn(cls) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.textContent = "Install app";
+  btn.className = cls;
+  btn.addEventListener("click", async () => {
+    try {
+      if (deferredInstall) {
+        deferredInstall.prompt();
+        await deferredInstall.userChoice;
+      }
+    } catch {}
+    deferredInstall = null;
+    document.querySelectorAll("[data-install-app]").forEach(b => b.remove());
+  });
+  btn.setAttribute("data-install-app", "");
+  return btn;
+}
+function showInstallButtons() {
+  if (!deferredInstall || document.querySelector("[data-install-app]")) return;
+  try {
+    if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) return;
+  } catch {}
+  document.querySelectorAll("header nav").forEach(n => n.appendChild(makeInstallBtn("hover:text-white")));
+  document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.appendChild(makeInstallBtn("rounded-xl px-4 py-3 text-left hover:bg-white/5")));
+}
 export async function initNav() {
   injectBack();
   document.addEventListener("click", e => {
@@ -389,6 +418,16 @@ export async function initNav() {
     el.href = user ? "profile.html" : `login.html?next=${encodeURIComponent(location.href)}`;
     el.classList.add("tl-ready");
   });
+  window.addEventListener("beforeinstallprompt", e => {
+    e.preventDefault();
+    deferredInstall = e;
+    showInstallButtons();
+  });
+  window.addEventListener("appinstalled", () => {
+    deferredInstall = null;
+    document.querySelectorAll("[data-install-app]").forEach(b => b.remove());
+  });
+  showInstallButtons();
   document.querySelectorAll("[data-upload-link]").forEach(el => {
     el.addEventListener("click", async e => {
       e.preventDefault();

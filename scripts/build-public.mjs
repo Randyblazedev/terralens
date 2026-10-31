@@ -8,4 +8,6 @@ mkdirSync("public");
 for (const file of readdirSync(".").filter(name => name.endsWith(".html") && name !== "hub.html")) cpSync(file, `public/${file}`);
 cpSync("assets", "public/assets", { recursive: true });
 cpSync("src", "public/src", { recursive: true });
+cpSync("sw.js", "public/sw.js");
+cpSync("manifest.webmanifest", "public/manifest.webmanifest");
 console.log("public/ ready");

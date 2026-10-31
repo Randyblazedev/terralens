@@ -21,6 +21,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta name="theme-color" content="#020918">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="TerraLens">
 <link rel="alternate" hreflang="en" href="https://terralenss.vercel.app/">
   <link rel="alternate" hreflang="fr" href="https://terralenss.vercel.app/?lang=fr">
   <link rel="alternate" hreflang="es" href="https://terralenss.vercel.app/?lang=es">
@@ -84,4 +85,5 @@
 </footer>
 <script type="module">import {initNav} from "./src/js/app.js"; initNav();</script>
 
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});}</script>
 </body></html>

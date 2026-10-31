@@ -2,11 +2,13 @@
   "name": "TerraLens",
   "short_name": "TerraLens",
   "description": "Discover beautiful places through real photos.",
-  "start_url": "/",
+  "id": "/",
+  "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",
   "background_color": "#020918",
   "theme_color": "#020918",
+  "categories": ["travel", "social", "photo"],
   "icons": [
     {
       "src": "/assets/icon-192.png",
@@ -18,6 +20,12 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
