@@ -77,6 +77,9 @@ import {supabase,getUser} from "./src/js/supabase.js";import {card,escapeHtml} f
 import {setCollectionVisibility,removePlaceFromCollection} from "./src/js/collections.js";
 import {confirmDialog,toast} from "./src/js/ui.js";
 const id=new URLSearchParams(location.search).get("id");const head=document.querySelector("#head"),grid=document.querySelector("#grid");
+const skel='<div class="tl-card p-5 animate-pulse"><div class="h-4 rounded bg-white/10"></div><div class="mt-3 h-3 w-2/3 rounded bg-white/5"></div></div>';
+head.innerHTML='<div class="animate-pulse"><div class="h-8 w-2/3 rounded bg-white/10"></div><div class="mt-3 h-4 w-1/2 rounded bg-white/5"></div></div>';
+grid.innerHTML=skel.repeat(6);
 let current=null,isOwner=false;
 async function draw(){const r=await supabase.from("collection_items").select("places(*)").eq("collection_id",id);
  const places=(r.data||[]).map(x=>x.places).filter(Boolean);
@@ -86,9 +89,9 @@ async function draw(){const r=await supabase.from("collection_items").select("pl
   b.onclick=async()=>{const ok=await confirmDialog(`Remove ${p.name} from this collection? The place itself stays on TerraLens.`,{title:"Remove place",confirmText:"Remove",danger:true});if(!ok)return;
    const r=await removePlaceFromCollection(id,p.id);toast(r.error?"Couldn't remove that place. Please try again.":"Removed from the collection.",r.error?"error":"success");if(!r.error)draw()};
   art.querySelector("div.p-5, div")?.append(b)})}}
-if(!supabase){head.innerHTML='<p class="text-white/45">Supabase is required.</p>'}else{const c=await supabase.from("collections").select("*,profiles(display_name)").eq("id",id).maybeSingle();
+if(!supabase){head.innerHTML='<p class="text-white/45">Supabase is required.</p>'}else{const [c,me]=await Promise.all([supabase.from("collections").select("*,profiles(display_name)").eq("id",id).maybeSingle(),getUser()]);
  if(!c.data){head.innerHTML='<p class="text-white/45">That collection could not be found, or it is private.</p>'}else{current=c.data;
-  const me=await getUser();isOwner=!!me&&me.id===c.data.user_id;
+  isOwner=!!me&&me.id===c.data.user_id;
   const vis=isOwner?`<div class="mt-5 flex flex-wrap items-center gap-3"><span class="rounded-full border border-white/15 px-3 py-1 text-xs font-bold uppercase tracking-wider ${c.data.is_public?'text-emerald-300':'text-amber-300'}">${c.data.is_public?'Public':'Private'}</span><button type="button" id="vis" class="tl-btn tl-btn-ghost !min-h-9 !px-4">${c.data.is_public?'Make private':'Make public'}</button></div>`:"";
   const shareable=c.data.is_public;
   const share=shareable?`<div class="mt-5"><a id="wa-share" class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#25D366] px-5 text-sm font-bold text-[#04331a] hover:brightness-105" href="#" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.2-1.7-.9-2-1-.3-.1-.5-.2-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.5-.8-2.5-1.4-3.5-3.2-.3-.5.3-.4.8-1.4.1-.2 0-.4 0-.5 0-.2-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.3 5.2 4.5 1.9.8 2.7.8 3.6.7.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.3.2-1.4-.1-.2-.3-.2-.6-.4Z"/><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Z"/></svg>Share on WhatsApp</a></div>`:"";

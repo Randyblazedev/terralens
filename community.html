@@ -65,10 +65,10 @@
 <div id="users" class="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-3"></div></div></main>
 <script type="module">
 import {supabase} from "./src/js/supabase.js";
-import {card,escapeHtml,attachAuthors} from "./src/js/app.js";
+import {card,escapeHtml,verifiedBadge,attachAuthors} from "./src/js/app.js";
 const gridC=document.querySelector("#collections"),gridP=document.querySelector("#places"),gridT=document.querySelector("#people"),gridU=document.querySelector("#users");
 const colCard=c=>`<a href="collection.html?id=${c.id}" class="tl-card block p-6 hover:bg-white/5"><p class="tl-eyebrow">Collection</p><h2 class="mt-3 text-2xl font-bold">${escapeHtml(c.name)}</h2><p class="mt-2 text-sm text-white/50">${escapeHtml(c.description||"A collection of places.")}</p><p class="mt-6 text-xs text-white/35">${c.place_count?`${c.place_count} place${c.place_count===1?"":"s"} · `:""}by ${escapeHtml(c.profiles?.display_name||"Traveler")}</p></a>`;
-const userCard=(u,sub)=>`<a href="profile.html?id=${u.id}" class="tl-card flex items-center gap-4 p-5 hover:bg-white/5"><img src="${escapeHtml(u.avatar_url||"")}" alt="" class="h-12 w-12 rounded-full bg-white/5 object-cover"><div class="min-w-0"><p class="truncate font-bold">${escapeHtml(u.display_name||u.username||"Traveler")}${u.verified?' <span style="display:inline-block;width:12px;height:12px;border-radius:9999px;background:#F97316;vertical-align:-1px"></span>':""}</p><p class="truncate text-xs text-white/45">@${escapeHtml(u.username||"traveler")}</p>${sub?`<p class="mt-1 text-xs text-white/35">${sub}</p>`:""}</div></a>`;
+const userCard=(u,sub)=>`<a href="profile.html?id=${u.id}" class="tl-card flex items-center gap-4 p-5 hover:bg-white/5"><img src="${escapeHtml(u.avatar_url||"")}" alt="" class="h-12 w-12 rounded-full bg-white/5 object-cover"><div class="min-w-0"><p class="truncate font-bold">${escapeHtml(u.display_name||u.username||"Traveler")}${u.verified?" "+verifiedBadge(12):""}</p><p class="truncate text-xs text-white/45">@${escapeHtml(u.username||"traveler")}</p>${sub?`<p class="mt-1 text-xs text-white/35">${sub}</p>`:""}</div></a>`;
 const skel='<div class="tl-card p-5 animate-pulse"><div class="h-4 rounded bg-white/10"></div><div class="mt-3 h-3 w-2/3 rounded bg-white/5"></div></div>';
 gridC.innerHTML=skel.repeat(6);
 gridP.innerHTML=skel.repeat(6);

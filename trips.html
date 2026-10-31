@@ -91,6 +91,8 @@ import { listTrips, tripPlaces } from "./src/js/collections.js";
 import { confirmDialog, toast } from "./src/js/ui.js";
 
 const list = document.querySelector("#list"), statusEl = document.querySelector("#status");
+const skel='<div class="tl-card p-5 animate-pulse"><div class="h-4 rounded bg-white/10"></div><div class="mt-3 h-3 w-2/3 rounded bg-white/5"></div></div>';
+list.innerHTML=skel.repeat(4);
 
 const fmtDates = t => {
   const a = t.start_date, b = t.end_date;
@@ -100,7 +102,7 @@ const fmtDates = t => {
 };
 
 async function run() {
-  if (!supabase) { statusEl.textContent = "Connect Supabase to use trips."; return; }
+  if (!supabase) { statusEl.textContent = "Connect Supabase to use trips."; list.innerHTML=""; return; }
   const user = await getUser();
   if (!user) { list.innerHTML = `<div class="tl-card p-7"><p class="font-bold">Sign in to see your trips.</p><p class="mt-2 text-sm text-white/50">Trips are saved to your account, so they follow you between devices.</p><a class="tl-btn tl-btn-primary mt-5" href="login.html?next=trips.html">Sign in</a></div>`; return; }
   const trips = await listTrips(user.id);

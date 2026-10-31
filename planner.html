@@ -87,6 +87,7 @@ import {buildPlan,planToText} from "./src/js/planner.js";
 import {createTrip,saveTripPlaces,tripPlaces} from "./src/js/collections.js";
 const $=s=>document.querySelector(s),out=$("#output"),aiOut=$("#ai-out"),msg=$("#msg");
 const chosen=new Map();let lastPlan=null,found=[],savedRows=[];
+const skel='<div class="tl-card p-5 animate-pulse"><div class="h-4 rounded bg-white/10"></div><div class="mt-3 h-3 w-2/3 rounded bg-white/5"></div></div>';
 const drawChosen=()=>{$("#chosen").innerHTML=[...chosen.values()].map(p=>`<span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[.05] py-1 pl-3 pr-1 text-xs">${esc(p.name)}<button type="button" data-rm="${esc(p.id)}" class="grid h-6 w-6 place-items-center rounded-full hover:bg-white/10" aria-label="Remove ${esc(p.name)}">✕</button></span>`).join("")||'<span class="text-xs text-white/40">No places yet.</span>'};
 const add=p=>{if(p&&!chosen.has(p.id)){chosen.set(p.id,p);drawChosen();msg.textContent=""}};
 let timer;$("#find").oninput=()=>{clearTimeout(timer);timer=setTimeout(async()=>{const q=$("#find").value.trim();if(q.length<2){$("#found").innerHTML="";return}
@@ -133,14 +134,14 @@ $("#ai").onclick=async()=>{
 drawChosen();
 const params=new URLSearchParams(location.search);
 const slug=params.get("place");
-if(slug&&supabase){const r=await supabase.from("places").select("*").eq("slug",slug).maybeSingle();add(r.data)}
 const tripId=params.get("trip");
-if(tripId&&supabase){const t=await supabase.from("trips").select("*").eq("id",tripId).maybeSingle();
- if(t.data){$("#name").value=t.data.name||"";$("#start").value=t.data.start_date||"";$("#end").value=t.data.end_date||"";$("#budget").value=t.data.budget||"";$("#notes").value=t.data.description||"";
+const [placeR,tripR,meR]=await Promise.allSettled([slug&&supabase?supabase.from("places").select("*").eq("slug",slug).maybeSingle():Promise.resolve(null),tripId&&supabase?supabase.from("trips").select("*").eq("id",tripId).maybeSingle():Promise.resolve(null),supabase?getUser():Promise.resolve(null)]);
+if(placeR.value?.data)add(placeR.value.data);
+if(tripR.value?.data){const t=tripR.value;{$("#name").value=t.data.name||"";$("#start").value=t.data.start_date||"";$("#end").value=t.data.end_date||"";$("#budget").value=t.data.budget||"";$("#notes").value=t.data.description||"";
   const tp=await tripPlaces(tripId);tp.forEach(p=>add(p));
   if(chosen.size){lastPlan=buildPlan({places:[...chosen.values()],start:$("#start").value,end:$("#end").value,budget:$("#budget").value,notes:$("#notes").value});render(lastPlan,$("#name").value.trim())}}}
-const me=supabase?await getUser():null;
-if(me){const r=await supabase.from("saves").select("places(*)").eq("user_id",me.id).order("created_at",{ascending:false}).limit(30);
+const me=meR.status==="fulfilled"?meR.value:null;
+if(me){document.querySelector("#saved-box").classList.remove("hidden");document.querySelector("#saved-list").innerHTML=skel.repeat(3);const r=await supabase.from("saves").select("places(*)").eq("user_id",me.id).order("created_at",{ascending:false}).limit(30);
  savedRows=(r.data||[]).map(x=>x.places).filter(Boolean);
  if(savedRows.length){$("#saved-box").classList.remove("hidden");$("#saved-list").innerHTML=savedRows.map((p,i)=>`<button type="button" data-sv="${i}" class="rounded-full border border-white/15 px-3 py-1.5 text-xs hover:bg-white/10">＋ ${esc(p.name)}</button>`).join("")}}
 </script>

@@ -79,14 +79,17 @@ import {promptDialog,toast} from "./src/js/ui.js";
 import {supabase, getUser} from "./src/js/supabase.js";import {escapeHtml} from "./src/js/app.js";
 import {createCollection} from "./src/js/collections.js";
 const grid=document.querySelector("#grid");
+const skel='<div class="tl-card p-5 animate-pulse"><div class="h-4 rounded bg-white/10"></div><div class="mt-3 h-3 w-2/3 rounded bg-white/5"></div></div>';
+grid.innerHTML=skel.repeat(6);
 const cardFor=(c,own)=>`<a href="collection.html?id=${c.id}" class="tl-card block p-6 hover:bg-white/5"><div class="flex items-center justify-between gap-3"><p class="tl-eyebrow">Collection</p>${own?`<span class="rounded-full border border-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${c.is_public?'text-emerald-300':'text-amber-300'}">${c.is_public?'Public':'Private'}</span>`:""}</div><h2 class="mt-3 text-2xl font-bold">${escapeHtml(c.name)}</h2><p class="mt-2 text-sm text-white/50">${escapeHtml(c.description||"A collection of places.")}</p><p class="mt-6 text-xs text-white/35">${c.place_count?`${c.place_count} place${c.place_count===1?"":"s"} · `:""}by ${escapeHtml(c.profiles?.display_name||"Traveler")}</p></a>`;
 async function run(){if(!supabase){grid.innerHTML='<div class="tl-card p-7 text-white/50">Connect Supabase to create collections.</div>';return}
  const me=await getUser();
- if(me){const m=await supabase.from("collections").select("*,collection_items(place_id)").eq("user_id",me.id).order("created_at",{ascending:false});
-  const rows=(m.data||[]).map(c=>({...c,place_count:(c.collection_items||[]).length}));
-  document.querySelector("#mine-wrap").classList.remove("hidden");
+ if(me){document.querySelector("#mine-wrap").classList.remove("hidden");document.querySelector("#mine").innerHTML=skel.repeat(3)}
+ const mineP=me?supabase.from("collections").select("*,collection_items(place_id)").eq("user_id",me.id).order("created_at",{ascending:false}):Promise.resolve({data:[]});
+ const pubP=supabase.from("collections").select("*,profiles(display_name,username),collection_items(place_id)").eq("is_public",true).order("created_at",{ascending:false}).limit(30);
+ const [m,r]=await Promise.all([mineP,pubP]);
+ if(me){const rows=(m.data||[]).map(c=>({...c,place_count:(c.collection_items||[]).length}));
   document.querySelector("#mine").innerHTML=rows.map(c=>cardFor(c,true)).join("")||'<p class="text-white/45">You have no collections yet. Create one and add places to it from any place page.</p>'}
- const r=await supabase.from("collections").select("*,profiles(display_name,username),collection_items(place_id)").eq("is_public",true).order("created_at",{ascending:false}).limit(30);
  grid.innerHTML=(r.data||[]).map(c=>cardFor({...c,place_count:(c.collection_items||[]).length},false)).join("")||'<p class="text-white/45">No public collections yet.</p>'}
 document.querySelector("#new").onclick=async()=>{const u=await getUser();if(!u){location.href="login.html?next=collections.html";return}const name=await promptDialog("Collection name",{title:"New collection",placeholder:"e.g. Weekend waterfalls",confirmText:"Create"});if(!name)return;const ins=await createCollection(u.id,name,true);toast(ins.error?"Couldn't create the collection. Please try again.":"Collection created.",ins.error?"error":"success");run()};run();
 </script>

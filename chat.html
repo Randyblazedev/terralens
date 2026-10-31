@@ -73,6 +73,8 @@ import {card,escapeHtml,attachAuthors,initNav} from "./src/js/app.js";
 import {toast} from "./src/js/ui.js";
 initNav();
 const list=document.querySelector("#messages"),form=document.querySelector("#chat-form"),input=document.querySelector("#chat-input"),note=document.querySelector("#signin-note"),flash=document.querySelector("#chat-msg");
+const skel='<div class="tl-card p-5 animate-pulse"><div class="h-4 rounded bg-white/10"></div><div class="mt-3 h-3 w-2/3 rounded bg-white/5"></div></div>';
+let firstLoad=true;
 const me=await getUser();
 let admin=false;
 if (me) { try { admin=(await supabase.rpc("is_admin")).data===true; } catch {} }
@@ -88,11 +90,12 @@ async function paintAuthor(m){
   return m;
 }
 async function load(){
+  if(firstLoad){firstLoad=false;list.innerHTML=skel.repeat(5)}
   if(!supabase){ list.innerHTML='<p class="text-white/45">Supabase is not configured.</p>'; return; }
   const r=await supabase.from("community_messages").select("*").order("created_at",{ascending:false}).limit(50);
   if(r.error){ list.innerHTML='<p class="text-white/45">Could not load messages.</p>'; return; }
   const rows=(r.data||[]).reverse();
-  for(const m of rows) await paintAuthor(m);
+  await Promise.allSettled(rows.map(m=>paintAuthor(m)));
   list.innerHTML=rows.map(rowHtml).join("")||'<p class="text-white/45">No messages yet. Say hello.</p>';
   wireDelete();
 }
