@@ -44,6 +44,7 @@
     <nav class="hidden items-center gap-6 text-sm text-white/65 lg:flex">
       <a class="hover:text-white" href="explore.html" data-i18n="nav.explore">Explore</a>
       <a class="hover:text-white" href="collections.html" data-i18n="nav.collections">Collections</a>
+      <a class="hover:text-white" href="community.html">Community</a>
       <a class="hover:text-white" href="/blog" data-i18n="nav.blog">Blog</a>
       <a class="hover:text-white" href="trips.html" data-i18n="nav.trips">Trips</a>
       <a class="hover:text-white" href="about.html" data-i18n="nav.about">About</a>
@@ -59,6 +60,7 @@
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="index.html" data-i18n="nav.home">Home</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="explore.html" data-i18n="nav.explore">Explore</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="collections.html" data-i18n="nav.collections">Collections</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="community.html">Community</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="/blog" data-i18n="nav.blog">Blog</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="trips.html" data-i18n="nav.trips">Trips</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="about.html" data-i18n="nav.about">About</a>
@@ -67,7 +69,7 @@
   </div>
 </header>
 
-<main class="tl-section"><div class="tl-shell max-w-4xl"><p class="tl-eyebrow">TerraLens intelligence</p><h1 class="mt-3 text-5xl font-extrabold sm:text-7xl">Ask TerraLens.</h1><p class="mt-5 text-white/50">Fast travel chat. 10 free chats a day. Time-sensitive facts should always be verified with official sources.</p><div id="chat" class="tl-card mt-10 min-h-[500px] p-5 sm:p-8"><div class="rounded-2xl bg-white/[.03] p-5 text-sm leading-7 text-white/55">Try: “I have two days and want nature, photography and quiet places. How should I organize my trip?”</div></div><form id="form" class="tl-glass mt-4 flex gap-2 rounded-2xl p-2"><input id="input" class="tl-input !border-0 !bg-transparent" placeholder="Ask TerraLens..."><button class="tl-btn tl-btn-primary">Send</button></form></div></main>
+<main class="tl-section"><div class="tl-shell max-w-4xl"><p class="tl-eyebrow">TerraLens intelligence</p><h1 class="mt-3 text-5xl font-extrabold sm:text-7xl">Ask TerraLens.</h1><p class="mt-5 text-white/50">Fast travel chat. 30 free chats a week. Time-sensitive facts should always be verified with official sources.</p><div id="chat" class="tl-card mt-10 min-h-[500px] p-5 sm:p-8"><div class="rounded-2xl bg-white/[.03] p-5 text-sm leading-7 text-white/55">Try: “I have two days and want nature, photography and quiet places. How should I organize my trip?”</div></div><form id="form" class="tl-glass mt-4 flex gap-2 rounded-2xl p-2"><input id="input" class="tl-input !border-0 !bg-transparent" placeholder="Ask TerraLens..."><button class="tl-btn tl-btn-primary">Send</button></form></div></main>
 <script type="module">
 import {supabase} from "./src/js/supabase.js";
 const chat=document.querySelector("#chat"),form=document.querySelector("#form"),input=document.querySelector("#input");

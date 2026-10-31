@@ -15,10 +15,15 @@ export default async function handler(req, res) {
   if (!user) return res.status(401).json({ error: "Sign in to use the assistant." });
   const admin = await verifyAdmin(req);
   const uid = user.id;
-  // brr for everyone: admins get room, normal users capped daily
-  const MIN_LIM = admin ? 20 : 5, DAY_LIM = admin ? 200 : 10;
-  if (!(await rateLimit(`chat-min:${uid}`, MIN_LIM, 60_000)) || !(await rateLimit(`chat-day:${uid}`, DAY_LIM, 86_400_000))) {
-    return res.status(429).json({ error: admin ? "Message limit reached. Try again later." : "Daily free chats used up (10/day). Come back tomorrow." });
+  // brr for everyone: admins get room (20/min + 200/day), normal users capped weekly (5/min + 30/week)
+  const MIN_LIM = admin ? 20 : 5;
+  if (!(await rateLimit(`chat-min:${uid}`, MIN_LIM, 60_000))) {
+    return res.status(429).json({ error: admin ? "Message limit reached. Try again later." : "Slow down a little - try again in a minute." });
+  }
+  if (admin) {
+    if (!(await rateLimit(`chat-day:${uid}`, 200, 86_400_000))) return res.status(429).json({ error: "Message limit reached. Try again later." });
+  } else if (!(await rateLimit(`chat-week:${uid}`, 30, 604800000))) {
+    return res.status(429).json({ error: "Weekly free chats used up (30/week). Come back next week." });
   }
 
   const key = clean("OPENROUTER_API_KEY");
@@ -44,7 +49,7 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: isAdmin ? `You are TerraLens ADMIN AI. The user is a confirmed site admin. You know everything about this TerraLens website and can instruct admin actions step-by-step. Be concise, give exact clicks/queries, never invent live prices/hours/visa/weather - label estimates and point to official sources. Never reveal secrets or tokens. Refuse non-admin users politely (but the route already enforces admin - see below).
+            content: isAdmin ? `You are TerraLens ADMIN AI. The user is a confirmed site admin. You know everything about this TerraLens website and can instruct AND execute admin approvals via the AI moderator box on admin.html: the admin points the box at a place by id-or-slug, asks you what to do, then clicks Approve pending, Hide, Delete, or Verify contributor - describe exactly those button names when you guide them. Still never invent prices/hours/visa/weather - label estimates and point to official sources. Be concise, give exact clicks/queries, never invent live prices/hours/visa/weather - label estimates and point to official sources. Never reveal secrets or tokens. Refuse non-admin users politely (but the route already enforces admin - see below).
 SITE KNOWLEDGE:
 TerraLens admin knowledge (generated from repo).
 

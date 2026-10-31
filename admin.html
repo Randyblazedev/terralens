@@ -44,6 +44,7 @@
     <nav class="hidden items-center gap-6 text-sm text-white/65 lg:flex">
       <a class="hover:text-white" href="explore.html" data-i18n="nav.explore">Explore</a>
       <a class="hover:text-white" href="collections.html" data-i18n="nav.collections">Collections</a>
+      <a class="hover:text-white" href="community.html">Community</a>
       <a class="hover:text-white" href="/blog" data-i18n="nav.blog">Blog</a>
       <a class="hover:text-white" href="trips.html" data-i18n="nav.trips">Trips</a>
       <a class="hover:text-white" href="about.html" data-i18n="nav.about">About</a>
@@ -59,6 +60,7 @@
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="index.html" data-i18n="nav.home">Home</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="explore.html" data-i18n="nav.explore">Explore</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="collections.html" data-i18n="nav.collections">Collections</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="community.html">Community</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="/blog" data-i18n="nav.blog">Blog</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="trips.html" data-i18n="nav.trips">Trips</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="about.html" data-i18n="nav.about">About</a>
@@ -72,6 +74,7 @@
 <p id="gate" role="status" class="mt-6 text-white/55">Checking access...</p>
 <div id="app" class="hidden">
  <div id="stats" class="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-5"></div>
+ <section class="mt-8 rounded-2xl border border-white/10 bg-white/[.03] p-5"><p class="tl-eyebrow">AI moderator</p><h2 class="mt-2 text-xl font-bold">Ask the AI, then act</h2><p class="mt-1 text-sm text-white/50">Point at a place by id or web-address slug, ask what to do, then use the action buttons.</p><div class="mt-4 grid gap-3 sm:grid-cols-[220px_1fr]"><input id="ai-place" class="tl-input" placeholder="Place id or slug" aria-label="Place id or slug"><input id="ai-cmd" class="tl-input" placeholder="e.g. is this place ready to publish?" aria-label="Ask the AI moderator"></div><div class="mt-3 flex flex-wrap gap-2"><button id="ai-send" class="tl-btn tl-btn-primary !min-h-10">Ask AI</button><button data-ai-act="approve" class="tl-btn tl-btn-ghost !min-h-10">Approve pending</button><button data-ai-act="hide" class="tl-btn tl-btn-ghost !min-h-10">Hide</button><button data-ai-act="delete" class="tl-btn tl-btn-ghost !min-h-10 text-red-300">Delete place</button><button data-ai-act="verify" class="tl-btn tl-btn-ghost !min-h-10">Verify contributor</button></div><p id="ai-out" role="status" aria-live="polite" class="mt-3 whitespace-pre-wrap text-sm text-white/60">The AI reads the same rules as the assistant and answers as an admin.</p></section>
  <div class="mt-6"><button id="health" class="tl-btn tl-btn-ghost !min-h-10">Check setup</button> <button id="fill" class="tl-btn tl-btn-ghost !min-h-10">Add photos to new places</button> <button id="fill-real" class="tl-btn tl-btn-primary !min-h-10">Add real photos of the place</button> <button id="import-seed" class="tl-btn tl-btn-ghost !min-h-10">Import the 881 places</button> <button id="clear-filler" class="tl-btn tl-btn-ghost !min-h-10">Clear placeholder text</button><p id="fill-out" role="status" aria-live="polite" class="mt-3 text-sm text-white/55"></p><ul id="health-out" class="mt-3 grid gap-2 text-sm" aria-live="polite"></ul></div>
  <div class="mt-10 flex flex-wrap gap-2" role="tablist">
   <button id="tab-places" role="tab" class="tl-btn tl-btn-primary !min-h-10">Places</button>
@@ -177,6 +180,25 @@ async function loadComments(){
  if(error){flash(error.message);return}
  $("#comments").innerHTML=(data||[]).map(c=>`<div class="tl-card flex items-start justify-between gap-4 p-4" data-cid="${escapeHtml(c.id)}"><div><p class="text-sm">${escapeHtml(c.body)}</p><p class="mt-1 text-xs text-white/40">${escapeHtml(c.places?.name||"Unknown place")} · ${escapeHtml(new Date(c.created_at).toLocaleString())}</p></div><button data-act="delcomment" class="tl-btn tl-btn-ghost !min-h-10 text-red-300">Delete</button></div>`).join("")||'<p class="text-white/50">No comments yet.</p>'}
 async function api(path,body){const r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify(body)});return r.json().catch(()=>({}))}
+async function aiPlaceId(ref){ref=String(ref||"").trim();if(!ref)return "";
+ let r=await supabase.from("places").select("id,created_by").eq("id",ref).maybeSingle();
+ if(r.data)return r.data;
+ r=await supabase.from("places").select("id,created_by").eq("slug",ref).maybeSingle();
+ return r.data||""}
+$("#ai-send").onclick=async()=>{const out=$("#ai-out"),ref=$("#ai-place").value.trim(),cmd=$("#ai-cmd").value.trim()||"What should I do with this place?";
+ out.textContent="Thinking...";
+ const d=await api("/api/ai/chat",{message:ref?`About place "${ref}": ${cmd}`:cmd});
+ out.textContent=d.reply||d.error||"The AI service is not configured yet."};
+document.querySelector("[data-ai-act]").parentElement.addEventListener("click",async e=>{
+ const btn=e.target.closest("[data-ai-act]");if(!btn)return;
+ const act=btn.dataset.aiAct,out=$("#ai-out"),ref=$("#ai-place").value.trim();
+ if(!ref){out.textContent="Enter a place id or slug first.";return}
+ const row=await aiPlaceId(ref);
+ if(!row){out.textContent=`No place found for "${ref}".`;return}
+ if(act==="approve"){const {error}=await supabase.from("places").update({status:"published"}).eq("id",row.id);out.textContent=error?error.message:"Approved and published.";if(!error){loadPlaces();stats()}}
+ if(act==="hide"){const {error}=await supabase.from("places").update({status:"hidden"}).eq("id",row.id);out.textContent=error?error.message:"Place hidden.";if(!error){loadPlaces();stats()}}
+ if(act==="delete"){if(!await confirmDialog("Delete this place and its photos? This cannot be undone.",{danger:true,confirmText:"Delete"}))return;const {error}=await supabase.from("places").delete().eq("id",row.id);out.textContent=error?error.message:"Place deleted.";if(!error){loadPlaces();stats()}}
+ if(act==="verify"){if(!row.created_by){out.textContent="This place has no contributor to verify.";return}const {error}=await supabase.from("profiles").update({verified:true,verified_at:new Date().toISOString()}).eq("id",row.created_by);out.textContent=error?error.message:"Contributor verified."}});
 $("#places").addEventListener("change",async e=>{
  const card=e.target.closest("[data-id]"),act=e.target.dataset.act;if(!card||!["status","featured","sponsored"].includes(act))return;
  const value=act==="status"?e.target.value:e.target.checked;
