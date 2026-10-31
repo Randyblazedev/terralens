@@ -106,7 +106,7 @@
 </main>
 <script type="module">
 import {supabase,getUser,ensureProfile} from "./src/js/supabase.js";
-import {slugify} from "./src/js/app.js";
+import {slugify,notifyFollowers} from "./src/js/app.js";
 const files=document.querySelector("#files"),drop=document.querySelector("#drop"),previews=document.querySelector("#previews");
 (async()=>{const u=supabase?await getUser():null;if(u)return;const f=document.querySelector("#upload-form");
  f.insertAdjacentHTML("beforebegin",'<div class="mt-8 rounded-2xl border border-white/10 bg-white/[.03] p-5"><p class="font-bold">Sign in to upload a place</p><p class="mt-1 text-sm text-white/55">You can browse everything without an account. Uploading needs a Google sign-in.</p><a class="tl-btn tl-btn-primary mt-4" href="login.html?next=upload.html">Sign in with Google</a></div>');
@@ -137,6 +137,7 @@ document.querySelector("#upload-form").onsubmit=async e=>{
  for(const original of picked){let file;try{file=await shrink(original)}catch{continue}const ext="jpg";const path=`${user.id}/${data.id}/${crypto.randomUUID()}.${ext}`;const up=await supabase.storage.from("place-images").upload(path,file,{upsert:false,contentType:"image/jpeg"});if(up.error)continue;const {data:pub}=supabase.storage.from("place-images").getPublicUrl(path);if(!firstUrl)firstUrl=pub.publicUrl;await supabase.from("place_images").insert({place_id:data.id,storage_path:path,image_url:pub.publicUrl,alt_text:name,created_by:user.id})}
  if(!firstUrl){await supabase.from("places").delete().eq("id",data.id);msg.textContent="Photo upload failed, so the place was not created. Please try again.";return}
  await supabase.from("places").update({cover_url:firstUrl}).eq("id",data.id);
+ try{let nm=user.email?.split("@")[0]||"Someone";try{const {data:pr}=await supabase.from("profiles").select("display_name,username").eq("id",user.id).maybeSingle();nm=pr?.display_name||pr?.username||nm}catch{}notifyFollowers({creatorId:user.id,creatorName:nm,placeName:name||"a new place",link:`place/${encodeURIComponent(data.slug)}`})}catch{}
  if(data.status==="pending"){msg.textContent="Thanks! Your place was submitted and will appear after review.";setTimeout(()=>location.href="profile.html",2500);return}
  location.href=`place/${encodeURIComponent(data.slug)}`;
 };

@@ -889,3 +889,43 @@ create policy "recipients delete own notifications" on public.notifications for 
 
 grant select, insert, update, delete on public.notifications to authenticated;
 
+-- 016_notifications_updates.sql
+-- Update-style notification kinds (new places + new blog posts).
+-- Idempotent: drops any kind check mentioning the old kinds, then ensures the
+-- expanded check exists. Safe to run more than once.
+
+do $$
+declare r record;
+begin
+  for r in
+    select c.conname
+    from pg_constraint c
+    join pg_class t on t.oid = c.conrelid
+    where t.relname = 'notifications'
+      and c.contype = 'c'
+      and pg_get_constraintdef(c.oid) like '%follow%'
+  loop
+    execute 'alter table public.notifications drop constraint if exists ' || quote_ident(r.conname);
+  end loop;
+end $$;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'notifications_kind_check') then
+    alter table public.notifications
+      add constraint notifications_kind_check
+      check (kind in ('follow','comment','like','place','verify','report','system','new_place','new_post','chat_reply','chat_mention'));
+  end if;
+end $$;
+-- 017_chat_reply_tag.sql
+-- Community chat replies + @mentions. Idempotent: safe to run more than once.
+
+alter table public.community_messages
+  add column if not exists reply_to uuid references public.community_messages(id) on delete set null;
+
+alter table public.community_messages
+  add column if not exists mentions text[] not null default '{}';
+
+create index if not exists community_messages_reply_to_idx
+  on public.community_messages (reply_to);
+

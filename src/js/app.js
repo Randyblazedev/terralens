@@ -227,10 +227,44 @@ export function notifyUser({ userId, kind, title, body = null, link = null }) {
       if (!supabase || !userId || !title) return;
       const { data: { session } } = await supabase.auth.getSession();
       const actorId = session?.user?.id || null;
-      if (actorId && actorId === userId && (kind === "follow" || kind === "comment" || kind === "like")) return;
+      if (actorId && actorId === userId && (kind === "follow" || kind === "comment" || kind === "like" || kind === "chat_reply" || kind === "chat_mention")) return;
       const { error } = await supabase.from("notifications").insert({ user_id: userId, actor_id: actorId, kind, title, body, link });
       if (error) console.warn("notify failed:", error.message);
     } catch (err) { console.warn("notify failed:", err?.message || err); }
+  })();
+}
+
+// Fan-out: tell the followers of `creatorId` that they published a new place.
+// Best-effort fire-and-forget; capped at 200 so one insert burst can't blow up.
+export function notifyFollowers({ creatorId, creatorName = "Someone", placeName = "a new place", link }) {
+  (async () => {
+    try {
+      if (!supabase || !creatorId || !link) return;
+      const { data, error } = await supabase.from("follows").select("follower_id").eq("following_id", creatorId).order("created_at", { ascending: false }).limit(200);
+      if (error || !data?.length) return;
+      const rows = [...new Set(data.map(r => r.follower_id).filter(id => id && id !== creatorId))]
+        .map(userId => ({ user_id: userId, actor_id: creatorId, kind: "new_place", title: `${creatorName} added ${placeName}`, body: "Tap to see the new place.", link }));
+      if (!rows.length) return;
+      const { error: insErr } = await supabase.from("notifications").insert(rows);
+      if (insErr) console.warn("notifyFollowers failed:", insErr.message);
+    } catch (err) { console.warn("notifyFollowers failed:", err?.message || err); }
+  })();
+}
+
+// Broadcast: tell up to 200 of the newest profiles about a fresh blog post.
+// Best-effort fire-and-forget; skips the publisher when they have a matching profile id.
+export function notifyNewPost({ title, slug, actorId = null }) {
+  (async () => {
+    try {
+      if (!supabase || !title || !slug) return;
+      const { data, error } = await supabase.from("profiles").select("id").order("created_at", { ascending: false }).limit(200);
+      if (error || !data?.length) return;
+      const rows = [...new Set(data.map(r => r.id).filter(id => id && id !== actorId))]
+        .map(userId => ({ user_id: userId, actor_id: actorId, kind: "new_post", title: `New post: ${title}`, body: "Fresh on the TerraLens blog.", link: `/blog/${slug}` }));
+      if (!rows.length) return;
+      const { error: insErr } = await supabase.from("notifications").insert(rows);
+      if (insErr) console.warn("notifyNewPost failed:", insErr.message);
+    } catch (err) { console.warn("notifyNewPost failed:", err?.message || err); }
   })();
 }
 

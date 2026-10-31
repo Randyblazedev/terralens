@@ -126,7 +126,8 @@
 <script type="module">
 import {confirmDialog} from "./src/js/ui.js";
 import {supabase} from "./src/js/supabase.js";
-import {escapeHtml,verifiedBadge,notifyUser} from "./src/js/app.js";
+import {escapeHtml,verifiedBadge,notifyUser,notifyFollowers,notifyNewPost} from "./src/js/app.js";
+async function announcePlace(id){try{const {data:p}=await supabase.from("places").select("id,slug,name,created_by").eq("id",id).maybeSingle();if(!p||!p.created_by)return;let nm="Someone";try{const {data:pr}=await supabase.from("profiles").select("display_name,username").eq("id",p.created_by).maybeSingle();nm=pr?.display_name||pr?.username||"Someone"}catch{}notifyFollowers({creatorId:p.created_by,creatorName:nm,placeName:p.name||"a new place",link:`place/${encodeURIComponent(p.slug||p.id)}`})}catch{}}
 import {renderMarkdown} from "./src/js/markdown.js";
 const $=s=>document.querySelector(s),gate=$("#gate"),flash=m=>{$("#flash").textContent=m};
 const httpsUrl=u=>{try{const x=new URL(u);return x.protocol==="https:"?x.href:""}catch{return ""}};
@@ -198,7 +199,7 @@ document.querySelector("[data-ai-act]").parentElement.addEventListener("click",a
  if(!ref){out.textContent="Enter a place id or slug first.";return}
  const row=await aiPlaceId(ref);
  if(!row){out.textContent=`No place found for "${ref}".`;return}
- if(act==="approve"){const {error}=await supabase.from("places").update({status:"published"}).eq("id",row.id);out.textContent=error?error.message:"Approved and published.";if(!error){loadPlaces();stats()}}
+ if(act==="approve"){const {error}=await supabase.from("places").update({status:"published"}).eq("id",row.id);out.textContent=error?error.message:"Approved and published.";if(!error){loadPlaces();stats();announcePlace(row.id)}}
  if(act==="hide"){const {error}=await supabase.from("places").update({status:"hidden"}).eq("id",row.id);out.textContent=error?error.message:"Place hidden.";if(!error){loadPlaces();stats()}}
  if(act==="delete"){if(!await confirmDialog("Delete this place and its photos? This cannot be undone.",{danger:true,confirmText:"Delete"}))return;const {error}=await supabase.from("places").delete().eq("id",row.id);out.textContent=error?error.message:"Place deleted.";if(!error){loadPlaces();stats()}}
  if(act==="verify"){if(!row.created_by){out.textContent="This place has no contributor to verify.";return}const {error}=await supabase.from("profiles").update({verified:true,verified_at:new Date().toISOString()}).eq("id",row.created_by);out.textContent=error?error.message:"Contributor verified.";if(!error)try{notifyUser({userId:row.created_by,kind:"verify",title:"You are now a verified contributor",body:"Your new places will publish without review.",link:"profile.html?id="+row.created_by})}catch{}}});
@@ -206,10 +207,10 @@ $("#places").addEventListener("change",async e=>{
  const card=e.target.closest("[data-id]"),act=e.target.dataset.act;if(!card||!["status","featured","sponsored"].includes(act))return;
  const value=act==="status"?e.target.value:e.target.checked;
  const {error}=await supabase.from("places").update({[act]:value}).eq("id",card.dataset.id);
- flash(error?error.message:"Updated.");if(!error)stats()});
+ flash(error?error.message:"Updated.");if(!error){stats();if(act==="status"&&value==="published")announcePlace(card.dataset.id)}});
 $("#places").addEventListener("click",async e=>{
  const btn=e.target.closest("[data-act]"),card=e.target.closest("[data-id]");if(!btn||!card)return;const id=card.dataset.id,act=btn.dataset.act;
- if(act==="approve"){const {error}=await supabase.from("places").update({status:"published"}).eq("id",id);flash(error?error.message:"Approved and published.");if(!error){loadPlaces();stats()}}
+ if(act==="approve"){const {error}=await supabase.from("places").update({status:"published"}).eq("id",id);flash(error?error.message:"Approved and published.");if(!error){loadPlaces();stats();announcePlace(id)}}
  if(act==="more"){const m=card.querySelector("[data-more]");m.classList.toggle("hidden");const box=card.querySelector("[data-photos]");
   if(!m.classList.contains("hidden")&&!box.dataset.loaded){box.dataset.loaded="1";const {data}=await supabase.from("place_images").select("id,image_url").eq("place_id",id);
    box.innerHTML=(data||[]).map(i=>`<div class="relative"><img src="${escapeHtml(i.image_url)}" alt="" class="aspect-[4/3] w-full rounded-xl object-cover"><button data-act="rmimg" data-iid="${escapeHtml(i.id)}" class="absolute right-1 top-1 rounded-lg bg-black/70 px-2 py-1 text-xs text-red-300">Remove</button></div>`).join("")||'<p class="col-span-full text-sm text-white/45">No photos.</p>'}}
@@ -406,7 +407,7 @@ $("#post-form").onsubmit=async e=>{e.preventDefault();
  const row={title,slug,excerpt,content,category:$("#p-category").value,cover_url:cover||null,status:$("#p-status").value,is_guest:guest,guest_name:guest?$("#p-guest-name").value.trim():null,guest_link:guest&&link?link:null};
  const r=editingPost?await supabase.from("posts").update(row).eq("id",editingPost).select("id,slug,status").single():await supabase.from("posts").insert(row).select("id,slug,status").single();
  if(r.error){flash(r.error.code==="23505"?"That slug is already used by another post.":r.error.message);return}
- flash(row.status==="published"?"Saved and published.":"Saved as a draft.");editingPost=r.data.id;$("#p-delete").classList.remove("hidden");
+ const wasNew=!editingPost;flash(row.status==="published"?"Saved and published.":"Saved as a draft.");editingPost=r.data.id;$("#p-delete").classList.remove("hidden");if(row.status==="published"&&wasNew)notifyNewPost({title:row.title,slug:r.data.slug||row.slug,actorId:session?.user?.id||null})
  const v=$("#p-view");v.href="/blog/"+r.data.slug;v.classList.toggle("hidden",r.data.status!=="published");loadPosts()};
 $("#p-delete").onclick=async()=>{if(!editingPost)return;if(!await confirmDialog("Delete this post? This cannot be undone.",{danger:true,confirmText:"Delete"}))return;
  const {error}=await supabase.from("posts").delete().eq("id",editingPost);flash(error?error.message:"Post deleted.");if(!error){$("#p-cancel").click();loadPosts()}};
@@ -422,7 +423,7 @@ $("#publish-drafts").onclick=async()=>{
  btn.disabled=false;
  if(error){out.textContent="Could not publish them. Please try again.";return}
  out.textContent=`${(data||[]).length} place${(data||[]).length===1?"":"s"} are now live.`;
- stats();loadPlaces();
+ stats();loadPlaces();(data||[]).forEach(p=>announcePlace(p.id));
 };
 let timer;const refresh=()=>{clearTimeout(timer);timer=setTimeout(loadPlaces,250)};$("#q").oninput=refresh;$("#status").onchange=()=>loadPlaces();$("#mine").onchange=()=>loadPlaces();$("#more-places-admin").onclick=()=>loadPlaces(true);
 if(await guard()){const pend=await stats();if(pend>0)$("#status").value="pending";loadPlaces()}

@@ -62,7 +62,7 @@
 <h1 class="text-4xl font-extrabold sm:text-5xl">Notifications.</h1>
 <button id="mark-read" class="tl-btn tl-btn-ghost !min-h-10">Mark all read</button>
 </div>
-<p class="mt-4 text-white/50">Follows, comments and verification updates.</p>
+<p class="mt-4 text-white/50">Follows, comments, new places, new posts, chat replies and verification updates.</p>
 <p id="note" role="status" class="mt-4 text-sm text-white/50"></p>
 <div id="list" class="mt-6 grid gap-3"></div>
 </div></main>
@@ -77,10 +77,11 @@ const {data:{session}}=await supabase.auth.getSession();
 if(!session){location.href="login.html?next="+encodeURIComponent("notifications.html");throw new Error("redirect");}
 const me=session.user;
 const when=t=>new Date(t).toLocaleString(undefined,{year:"numeric",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
-const row=n=>`<a href="${escapeHtml(n.link||"profile.html")}" data-nid="${escapeHtml(n.id)}" data-read="${n.is_read?"1":"0"}" class="tl-card block p-4 hover:bg-white/5${n.is_read?" opacity-70":""}"><p class="font-bold">${escapeHtml(n.title)}</p>${n.body?`<p class="mt-1 text-sm text-white/60">${escapeHtml(n.body)}</p>`:""}<p class="mt-2 text-xs text-white/40">${escapeHtml(when(n.created_at))}${n.is_read?"":" · New"}</p></a>`;
+const KIND_LABEL={follow:"Follow",comment:"Comment",like:"Like",place:"Place",new_place:"New place",new_post:"New post",chat_reply:"Reply",chat_mention:"Mention",verify:"Verified",report:"Report",system:"Update"};
+const row=n=>{const k=n.kind?`<span class="mr-2 inline-flex rounded-full border border-white/15 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-sky-300">${escapeHtml(KIND_LABEL[n.kind]||n.kind)}</span>`:"";return `<a href="${escapeHtml(n.link||"profile.html")}" data-nid="${escapeHtml(n.id)}" data-read="${n.is_read?"1":"0"}" class="tl-card block p-4 hover:bg-white/5${n.is_read?" opacity-70":""}"><p class="font-bold">${k}${escapeHtml(n.title)}</p>${n.body?`<p class="mt-1 text-sm text-white/60">${escapeHtml(n.body)}</p>`:""}<p class="mt-2 text-xs text-white/40">${escapeHtml(when(n.created_at))}${n.is_read?"":" · New"}</p></a>`};
 async function load(){
  list.innerHTML=skel.repeat(4);note.textContent="";
- const {data,error}=await supabase.from("notifications").select("id,title,body,link,is_read,created_at").eq("user_id",me.id).order("created_at",{ascending:false}).limit(100);
+ const {data,error}=await supabase.from("notifications").select("id,kind,title,body,link,is_read,created_at").eq("user_id",me.id).order("created_at",{ascending:false}).limit(100);
  if(error){list.innerHTML="";note.textContent="Couldn't load notifications. Please refresh and try again.";return}
  list.innerHTML=(data||[]).map(row).join("")||'<p class="text-sm text-white/45">No notifications yet.</p>';
 }
