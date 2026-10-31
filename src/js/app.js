@@ -122,6 +122,20 @@ export async function initCardSaves(root = document) {
       btn.setAttribute("aria-pressed", String(!on));
       btn.innerHTML = HEART(!on);
       btn.setAttribute("title", !on ? "Saved" : "Save this place");
+      if (!on) {
+        try {
+          const placeId = btn.dataset.save;
+          const { data: pl } = await supabase.from("places").select("created_by,name,slug").eq("id", placeId).maybeSingle();
+          if (pl?.created_by && pl.created_by !== current.id) {
+            let likerName = "Someone";
+            try {
+              const { data: prof } = await supabase.from("profiles").select("display_name,username").eq("id", current.id).maybeSingle();
+              likerName = prof?.display_name || prof?.username || "Someone";
+            } catch {}
+            notifyUser({ userId: pl.created_by, kind: "like", title: `${likerName} saved ${pl.name || "your place"}`, body: null, link: `place/${encodeURIComponent(pl.slug || placeId)}` });
+          }
+        } catch {}
+      }
     });
   });
 }

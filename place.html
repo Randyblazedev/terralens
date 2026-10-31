@@ -177,7 +177,8 @@ saveBtn.onclick=async()=>{if(!isReal){status("Connect Supabase to save places.")
  const r=saved?await supabase.from("saves").delete().eq("user_id",user.id).eq("place_id",place.id):await supabase.from("saves").upsert({user_id:user.id,place_id:place.id});
  saveBtn.disabled=false;
  if(r.error){status("Couldn't update your saved places. Please try again.");return}
- saved=!saved;paint();status(saved?"Saved to your places.":"Removed from your saved places.")};
+ saved=!saved;paint();status(saved?"Saved to your places.":"Removed from your saved places.");
+ try{if(saved&&place.created_by&&place.created_by!==user.id){let nm=user.user_metadata?.full_name||user.email?.split("@")[0]||"Someone";try{const {data:pr}=await supabase.from("profiles").select("display_name,username").eq("id",user.id).maybeSingle();nm=pr?.display_name||pr?.username||nm}catch{}notifyUser({userId:place.created_by,kind:"like",title:`${nm} saved ${place.name||"your place"}`,body:null,link:`place/${encodeURIComponent(place.slug||place.id)}`})}}catch{}};
 document.querySelector("#rsend").onclick=async()=>{if(!isReal){status("Reporting needs Supabase.");return}
  const {data:{user}}=await supabase.auth.getUser();if(!user){location.href="login.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);return}
  const btn=document.querySelector("#rsend");btn.disabled=true;
@@ -193,7 +194,8 @@ likeBtns.forEach(b=>b.onclick=async()=>{if(!isReal)return;
  const r=was?await supabase.from("image_likes").delete().eq("user_id",user.id).eq("image_id",b.dataset.like):await supabase.from("image_likes").insert({user_id:user.id,image_id:b.dataset.like});
  b.disabled=false;
  if(r.error){if(r.error.code==="23505")paintLike(b,true);else status("Couldn't update your like. Please try again.");return}
- paintLike(b,!was);c.textContent=Math.max(0,Number(c.textContent)+(was?-1:1))});
+ paintLike(b,!was);c.textContent=Math.max(0,Number(c.textContent)+(was?-1:1));
+ try{if(!was&&place.created_by&&place.created_by!==user.id){let nm=user.user_metadata?.full_name||user.email?.split("@")[0]||"Someone";try{const {data:pr}=await supabase.from("profiles").select("display_name,username").eq("id",user.id).maybeSingle();nm=pr?.display_name||pr?.username||nm}catch{}notifyUser({userId:place.created_by,kind:"like",title:`${nm} liked a photo on ${place.name||"your place"}`,body:null,link:`place/${encodeURIComponent(place.slug||place.id)}`})}}catch{}});
 if(isReal&&place.status==="published"){
  const seen="tl_viewed_"+place.id;
  if(!sessionStorage.getItem(seen)){sessionStorage.setItem(seen,"1");
