@@ -68,23 +68,55 @@ import {supabase} from "./src/js/supabase.js";
 import {card,escapeHtml,attachAuthors} from "./src/js/app.js";
 const gridC=document.querySelector("#collections"),gridP=document.querySelector("#places"),gridT=document.querySelector("#people"),gridU=document.querySelector("#users");
 const colCard=c=>`<a href="collection.html?id=${c.id}" class="tl-card block p-6 hover:bg-white/5"><p class="tl-eyebrow">Collection</p><h2 class="mt-3 text-2xl font-bold">${escapeHtml(c.name)}</h2><p class="mt-2 text-sm text-white/50">${escapeHtml(c.description||"A collection of places.")}</p><p class="mt-6 text-xs text-white/35">${c.place_count?`${c.place_count} place${c.place_count===1?"":"s"} · `:""}by ${escapeHtml(c.profiles?.display_name||"Traveler")}</p></a>`;
+const userCard=(u,sub)=>`<a href="profile.html?id=${u.id}" class="tl-card flex items-center gap-4 p-5 hover:bg-white/5"><img src="${escapeHtml(u.avatar_url||"")}" alt="" class="h-12 w-12 rounded-full bg-white/5 object-cover"><div class="min-w-0"><p class="truncate font-bold">${escapeHtml(u.display_name||u.username||"Traveler")}${u.verified?' <span style="display:inline-block;width:12px;height:12px;border-radius:9999px;background:#F97316;vertical-align:-1px"></span>':""}</p><p class="truncate text-xs text-white/45">@${escapeHtml(u.username||"traveler")}</p>${sub?`<p class="mt-1 text-xs text-white/35">${sub}</p>`:""}</div></a>`;
+const skel='<div class="tl-card p-5 animate-pulse"><div class="h-4 rounded bg-white/10"></div><div class="mt-3 h-3 w-2/3 rounded bg-white/5"></div></div>';
+gridC.innerHTML=skel.repeat(6);
+gridP.innerHTML=skel.repeat(6);
+gridT.innerHTML=skel.repeat(6);
+gridU.innerHTML=skel.repeat(6);
+async function loadCollections(){
+ try{
+  const c=await supabase.from("collections").select("id,name,description,profiles(display_name)").eq("is_public",true).order("created_at",{ascending:false}).limit(6);
+  const rows=c.data||[];
+  const counts={};
+  const ids=rows.map(r=>r.id).filter(Boolean);
+  if(ids.length){
+   const ci=await supabase.from("collection_items").select("collection_id").in("collection_id",ids).limit(500);
+   (ci.data||[]).forEach(r=>{ if(r.collection_id) counts[r.collection_id]=(counts[r.collection_id]||0)+1; });
+  }
+  gridC.innerHTML=rows.map(x=>({...x,place_count:counts[x.id]||0})).map(colCard).join("")||'<p class="text-white/45">No public collections yet.</p>';
+ }catch{ gridC.innerHTML='<p class="text-white/45">No public collections yet.</p>'; }
+}
+async function loadPlaces(){
+ try{
+  const p=await supabase.from("places").select("id,slug,name,description,country,category,cover_url,view_count,created_by").eq("status","published").order("created_at",{ascending:false}).limit(6);
+  gridP.innerHTML=(await attachAuthors(p.data||[])).map(card).join("")||'<p class="text-white/45">No places yet.</p>';
+ }catch{ gridP.innerHTML='<p class="text-white/45">No places yet.</p>'; }
+}
+async function loadPeople(){
+ try{
+  const [profs,plc,fol]=await Promise.all([
+   supabase.from("profiles").select("id,display_name,username,verified,avatar_url").order("created_at",{ascending:false}).limit(30),
+   supabase.from("places").select("created_by").eq("status","published").limit(500),
+   supabase.from("follows").select("following_id").limit(500).then(r=>r).catch(()=>({data:[]}))
+  ]);
+  const counts={};
+  ((plc&&plc.data)||[]).forEach(r=>{ if(r.created_by) counts[r.created_by]=(counts[r.created_by]||0)+1; });
+  const fcounts={};
+  ((fol&&fol.data)||[]).forEach(r=>{ if(r.following_id) fcounts[r.following_id]=(fcounts[r.following_id]||0)+1; });
+  const list=profs.data||[];
+  const ranked=list.filter(u=>counts[u.id]>0).sort((a,b)=>(counts[b.id]||0)-(counts[a.id]||0)).slice(0,6).map(u=>({...u,place_count:counts[u.id]||0,follower_count:fcounts[u.id]||0}));
+  gridT.innerHTML=ranked.map(u=>userCard(u,`${u.place_count||0} place${(u.place_count||0)===1?"":"s"} · ${u.follower_count||0} follower${(u.follower_count||0)===1?"":"s"}`)).join("")||'<p class="text-white/45">No contributors yet.</p>';
+  gridU.innerHTML=list.slice(0,6).map(u=>userCard(u)).join("")||'<p class="text-white/45">No users yet.</p>';
+ }catch{
+  gridT.innerHTML='<p class="text-white/45">No contributors yet.</p>';
+  gridU.innerHTML='<p class="text-white/45">No users yet.</p>';
+ }
+}
 async function run(){
- if(!supabase){gridC.innerHTML=gridP.innerHTML=gridT.innerHTML=gridU.innerHTML='<div class="tl-card p-7 text-white/50">Connect Supabase to see the community.</div>';return}
- const c=await supabase.from("collections").select("*,profiles(display_name,username),collection_items(place_id)").eq("is_public",true).order("created_at",{ascending:false}).limit(9);
- gridC.innerHTML=((c.data||[]).map(x=>({...x,place_count:(x.collection_items||[]).length})).map(colCard).join(""))||'<p class="text-white/45">No public collections yet.</p>';
- const p=await supabase.from("places").select("*").eq("status","published").order("created_at",{ascending:false}).limit(9);
- gridP.innerHTML=(await attachAuthors(p.data||[])).map(card).join("")||'<p class="text-white/45">No places yet.</p>';
- const profs=await supabase.from("profiles").select("id,display_name,username,verified,avatar_url,bio").limit(200);
-const plc=await supabase.from("places").select("created_by").eq("status","published").limit(2000);
-const counts={};
-(plc.data||[]).forEach(r=>{ if(r.created_by) counts[r.created_by]=(counts[r.created_by]||0)+1; });
-const fol=await supabase.from("follows").select("following_id").limit(2000);
-const fcounts={};
-(fol.data||[]).forEach(r=>{ if(r.following_id) fcounts[r.following_id]=(fcounts[r.following_id]||0)+1; });
-const ranked=(profs.data||[]).filter(u=>counts[u.id]>0).sort((a,b)=>(counts[b.id]||0)-(counts[a.id]||0)).slice(0,9);
-const t={data:ranked.map(u=>({...u,place_count:counts[u.id]||0,follower_count:fcounts[u.id]||0}))};
- gridT.innerHTML=(t.data||[]).map(u=>`<a href="profile.html?id=${u.id}" class="tl-card flex items-center gap-4 p-5 hover:bg-white/5"><img src="${escapeHtml(u.avatar_url||"")}" alt="" class="h-12 w-12 rounded-full bg-white/5 object-cover"><div class="min-w-0"><p class="truncate font-bold">${escapeHtml(u.display_name||u.username||"Traveler")}${u.verified?' <span role="img" aria-label="Verified" title="Verified" style="display:inline-block;width:12px;height:12px;border-radius:9999px;background:#F97316;vertical-align:-1px"></span>':""}</p><p class="truncate text-xs text-white/45">@${escapeHtml(u.username||"traveler")}</p><p class="mt-1 text-xs text-white/35">${u.place_count||0} place${(u.place_count||0)===1?"":"s"} · ${u.follower_count||0} follower${(u.follower_count||0)===1?"":"s"}</p></div></a>`).join("")||'<p class="text-white/45">No contributors yet.</p>'}
-gridU.innerHTML=(profs.data||[]).slice(0,9).map(u=>`<a href="profile.html?id=${u.id}" class="tl-card flex items-center gap-4 p-5 hover:bg-white/5"><img src="${escapeHtml(u.avatar_url||"")}" alt="" class="h-12 w-12 rounded-full bg-white/5 object-cover"><div class="min-w-0"><p class="truncate font-bold">${escapeHtml(u.display_name||u.username||"Traveler")}${u.verified?' <span role="img" aria-label="Verified" title="Verified" style="display:inline-block;width:12px;height:12px;border-radius:9999px;background:#F97316;vertical-align:-1px"></span>':""}</p><p class="truncate text-xs text-white/45">@${escapeHtml(u.username||"traveler")}</p></div></a>`).join("")||'<p class="text-white/45">No users yet.</p>';
+ if(!supabase){gridC.innerHTML=gridP.innerHTML=gridT.innerHTML=gridU.innerHTML='<div class="tl-card p-7 text-white/50">Connect Supabase to see the community.</div>';return;}
+ await Promise.allSettled([loadCollections(),loadPlaces(),loadPeople()]);
+}
 run();
 </script>
 
