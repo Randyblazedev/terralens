@@ -45,6 +45,7 @@
       <a class="hover:text-white" href="explore.html" data-i18n="nav.explore">Explore</a>
       <a class="hover:text-white" href="collections.html" data-i18n="nav.collections">Collections</a>
       <a class="hover:text-white" href="community.html">Community</a>
+      <a class="hover:text-white" href="chat.html">Chat</a>
       <a class="hover:text-white" href="/blog" data-i18n="nav.blog">Blog</a>
       <a class="hover:text-white" href="trips.html" data-i18n="nav.trips">Trips</a>
       <a class="hover:text-white" href="about.html" data-i18n="nav.about">About</a>
@@ -61,6 +62,7 @@
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="explore.html" data-i18n="nav.explore">Explore</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="collections.html" data-i18n="nav.collections">Collections</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="community.html">Community</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="chat.html">Chat</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="/blog" data-i18n="nav.blog">Blog</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="trips.html" data-i18n="nav.trips">Trips</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="about.html" data-i18n="nav.about">About</a>
@@ -71,7 +73,7 @@
 
 <main class="tl-section"><div class="tl-shell max-w-6xl"><div id="profile" class="tl-card p-7 sm:p-10"></div><div id="edit-wrap" class="mt-6 hidden tl-card p-7 sm:p-10"><h2 class="text-2xl font-extrabold">Edit profile</h2><form id="edit-form" class="mt-5 grid gap-4"><label class="grid gap-2 text-sm text-white/60">Display name<input name="display_name" maxlength="60" class="tl-input" autocomplete="name"></label><label class="grid gap-2 text-sm text-white/60">Username (lowercase letters, numbers and underscores, max 24)<input name="username" maxlength="24" pattern="[a-z0-9_]+" class="tl-input" autocomplete="username"></label><label class="grid gap-2 text-sm text-white/60">Bio (max 300 characters)<textarea name="bio" maxlength="300" rows="3" class="tl-input"></textarea></label><label class="grid gap-2 text-sm text-white/60">Avatar URL (https link)<input name="avatar_url" type="url" inputmode="url" placeholder="https://" class="tl-input"></label><label class="grid gap-2 text-sm text-white/60">Website URL (https link)<input name="website_url" type="url" inputmode="url" placeholder="https://" class="tl-input"></label><p id="edit-msg" role="status" aria-live="polite" class="min-h-5 text-sm text-white/55"></p><div class="flex flex-wrap gap-3"><button type="submit" class="tl-btn tl-btn-primary">Save changes</button><button type="button" id="edit-cancel" class="tl-btn tl-btn-ghost">Cancel</button></div></form></div><div class="mt-10 grid gap-6 lg:grid-cols-[.7fr_1.3fr]"><aside class="tl-card p-6"><p class="tl-eyebrow">Stats</p><div id="stats" class="mt-6 grid grid-cols-2 gap-4"></div></aside><section><p class="tl-eyebrow" id="places-label">Places</p><div id="places" class="mt-5 grid gap-5 sm:grid-cols-2"></div><div class="mt-6"><button id="more-places" type="button" class="tl-btn tl-btn-ghost hidden">Load more</button></div></section></div></div></main>
 <script type="module">
-import {supabase,getUser} from "./src/js/supabase.js";import {card,escapeHtml,verifiedBadge,canEdit,editMinutesLeft,attachAuthors,initFollowButtons} from "./src/js/app.js";
+import {supabase,getUser} from "./src/js/supabase.js";import {supabase,getUser} from "./src/js/supabase.js";import {card,escapeHtml,verifiedBadge,canEdit,editMinutesLeft,attachAuthors,initFollowButtons,toggleFollow} from "./src/js/app.js";import {toast,alertDialog} from "./src/js/ui.js";
 const p=document.querySelector("#profile");
 const httpsUrl=u=>{try{const x=new URL(String(u||"").trim());return x.protocol==="https:"?x.href:""}catch{return ""}};
 const isUuid=v=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v||""));
@@ -111,6 +113,41 @@ const displayName=target?.display_name||target?.username||"Traveler";
 const avatar=target?.avatar_url||"assets/terralens-mark.png";
 p.innerHTML=`<div class="flex flex-col gap-6 sm:flex-row sm:items-start"><img src="${escapeHtml(avatar)}" alt="" class="h-20 w-20 rounded-full object-cover ring-1 ring-white/10"><div class="min-w-0 flex-1"><p class="tl-eyebrow">Creator</p><h1 class="mt-2 text-4xl font-extrabold">${escapeHtml(displayName)}${target?.verified?" "+verifiedBadge(28):""}</h1><p class="mt-2 text-white/45">@${escapeHtml(target?.username||"traveler")}</p>${target?.website_url?`<p class="mt-2"><a href="${escapeHtml(target.website_url)}" target="_blank" rel="noopener" class="text-sm text-sky-300 hover:underline">${escapeHtml(target.website_url)}</a></p>`:""}<p class="mt-4 max-w-2xl text-white/55">${escapeHtml(target?.bio||"Building a collection of places worth seeing.")}</p><div class="mt-5 flex flex-wrap items-center gap-3">${isSelf?`<button type="button" id="edit-toggle" class="tl-btn tl-btn-ghost">Edit profile</button><a href="logout.html" class="tl-btn tl-btn-ghost">Sign out</a>`:(me?`<button type="button" data-follow="${escapeHtml(targetId)}" data-state="not-following" class="tl-btn tl-btn-primary">Follow</button>`:`<a href="login.html?next=${encodeURIComponent(location.pathname+location.search)}" class="tl-btn tl-btn-primary">Sign in to follow</a>`)}</div></div></div>`;
 await initFollowButtons(p);
+try {
+  const fbBtn = p.querySelector("[data-follow]");
+  if (fbBtn && !fbBtn.dataset.wired && me && targetId && me.id !== targetId) {
+    fbBtn.addEventListener("click", async e => {
+      e.preventDefault();
+      const on = fbBtn.getAttribute("aria-pressed") === "true";
+      fbBtn.disabled = true;
+      try {
+        const r = await toggleFollow(me.id, targetId, on);
+        if (r.error) { console.error("Follow failed:", r.error); try { await alertDialog(r.error.message || "Could not update follow. Try again."); } catch { toast(r.error.message || "Could not update follow. Try again.", "error"); } return; }
+        const nowOn = !on;
+        fbBtn.textContent = nowOn ? "Following" : "Follow";
+        fbBtn.setAttribute("aria-pressed", String(nowOn));
+        fbBtn.dataset.state = nowOn ? "following" : "not-following";
+        try { document.dispatchEvent(new CustomEvent("follow-changed", { detail: { target: targetId, following: nowOn } })); } catch {}
+      } catch (err) { console.error("Follow failed:", err); try { await alertDialog("Could not update follow. Try again."); } catch { toast("Could not update follow. Try again.", "error"); } }
+      finally { fbBtn.disabled = false; }
+    });
+    fbBtn.dataset.wired = "fallback";
+  }
+  document.addEventListener("follow-changed", async () => {
+    try {
+      const f1 = await supabase.from("follows").select("follower_id", { count: "exact", head: true }).eq("following_id", targetId);
+      const f2 = await supabase.from("follows").select("following_id", { count: "exact", head: true }).eq("follower_id", targetId);
+      const stats = document.querySelector("#stats");
+      if (stats) {
+        const cells = stats.querySelectorAll(":scope > *");
+        const t = cells.length >= 2;
+        const fi = t ? cells.length - 2 : -1, gi = t ? cells.length - 1 : -1;
+        if (fi >= 0 && cells[fi].querySelector("strong")) cells[fi].querySelector("strong").textContent = String(f1.count || 0);
+        if (gi >= 0 && cells[gi].querySelector("strong")) cells[gi].querySelector("strong").textContent = String(f2.count || 0);
+      }
+    } catch (err) { console.error("Follow count refresh failed:", err); }
+  });
+} catch (err) { console.error("Follow fallback failed:", err); }
 if(isSelf){
   const wrap=document.querySelector("#edit-wrap"),form=document.querySelector("#edit-form"),msg=document.querySelector("#edit-msg");
   const toggle=document.querySelector("#edit-toggle");

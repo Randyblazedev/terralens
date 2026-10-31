@@ -1,6 +1,7 @@
 import { supabase, getUser, ensureProfile } from "./supabase.js";
 // i18n removed: English only. Admin + username paint directly, no translation pass.
 import { REQUIRE_LOGIN } from "./config.js";
+import { toast } from "./ui.js";
 
 export const fallbackPlaces = [
   {id:"seed-1",slug:"mount-cameroon",name:"Mount Cameroon",description:"A volcanic landscape rising above Buea with forest, cloud, and dramatic mountain views.",country:"Cameroon",region:"South-West",city:"Buea",category:"Mountain",cover_url:"https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=85"},
@@ -230,13 +231,17 @@ export async function initFollowButtons(root = document) {
     btn.dataset.wired = "1";
     btn.addEventListener("click", async e => {
       e.preventDefault(); e.stopPropagation();
+      if (!me || me.id === target) return;
       const following = btn.getAttribute("aria-pressed") === "true";
       btn.disabled = true;
-      const r = await toggleFollow(me.id, target, following);
-      btn.disabled = false;
-      if (r.error) return;
-      paint(btn, !following);
-      btn.dataset.state = !following ? "following" : "not-following";
+      try {
+        const r = await toggleFollow(me.id, target, following);
+        if (r.error) { console.error("Follow failed:", r.error); toast(r.error.message || "Could not update follow. Try again.", "error"); return; }
+        paint(btn, !following);
+        btn.dataset.state = !following ? "following" : "not-following";
+        try { document.dispatchEvent(new CustomEvent("follow-changed", { detail: { target, following: !following } })); } catch {}
+      } catch (err) { console.error("Follow failed:", err); toast("Could not update follow. Try again.", "error"); }
+      finally { btn.disabled = false; }
     });
   });
   if (!me) return;
