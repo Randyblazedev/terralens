@@ -257,9 +257,9 @@ export async function initFollowButtons(root = document) {
   });
 }
 
-// Lucide "badge-check" icon (ISC licence) filled gold, for verified contributors.
-export function verifiedBadge(size = 18) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" role="img" aria-label="Verified contributor" class="inline-block shrink-0 align-[-0.2em]" fill="#F5B301" stroke="#F5B301" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Verified contributor</title><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m16 9-5.5 5.5L8 12" stroke="#fff"/></svg>`;
+// Original orange dot badge — solid orange circle, the TerraLens verified mark.
+export function verifiedBadge(size = 15) {
+  return `<span role="img" aria-label="Verified contributor" title="Verified contributor" class="inline-block shrink-0 align-[-0.15em] rounded-full" style="width:${size}px;height:${size}px;background:#F97316;display:inline-block"></span>`;
 }
 
 // Uploaders can edit a place for one hour after uploading it (the database enforces this too).
