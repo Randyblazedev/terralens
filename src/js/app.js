@@ -212,6 +212,26 @@ export async function getUnreadCount() {
   } catch { return 0; }
 }
 
+export async function getUnreadByKind() {
+  if (!supabase) return { total: 0, byKind: {} };
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const uid = session?.user?.id;
+    if (!uid) return { total: 0, byKind: {} };
+    const { data, error } = await supabase.from("notifications").select("kind").eq("user_id", uid).eq("is_read", false).limit(1000);
+    if (error) return { total: 0, byKind: {} };
+    const byKind = {};
+    for (const r of (data || [])) {
+      const k = String(r?.kind || "system");
+      byKind[k] = (byKind[k] || 0) + 1;
+    }
+    return { total: (data || []).length, byKind };
+  } catch { return { total: 0, byKind: {} }; }
+}
+
+const NOTIF_KIND_PLURAL = { follow: "follows", comment: "comments", like: "likes", place: "places", new_place: "new places", new_post: "new posts", chat_reply: "replies", chat_mention: "mentions", verify: "verifications", report: "reports", system: "updates" };
+const notifBreakdown = (byKind, max = Infinity) => Object.entries(byKind || {}).filter(([, n]) => (Number(n) || 0) > 0).sort((a, b) => b[1] - a[1]).slice(0, max === Infinity ? undefined : max).map(([k, n]) => `${n} ${NOTIF_KIND_PLURAL[k] || k}`).join(", ");
+
 export async function markAllRead() {
   if (!supabase) return { error: new Error("Not connected") };
   const { data: { session } } = await supabase.auth.getSession();
@@ -279,16 +299,68 @@ export async function initNotifBell(root = document) {
   });
   root.querySelectorAll("[data-mobile-nav] .grid").forEach(n => {
     if (n.querySelector('a[href="notifications.html"]')) return;
-    n.insertAdjacentHTML("beforeend", `<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="notifications.html">Notifications<span data-notif-badge class="hidden"></span></a>`);
+    n.insertAdjacentHTML("beforeend", `<a class="rounded-xl px-4 py-3 hover:bg-white/5" href="notifications.html">Notifications<span data-notif-badge class="hidden"></span><span data-notif-kinds class="hidden"></span></a>`);
   });
-  const paint = n => root.querySelectorAll("[data-notif-badge]").forEach(b => {
-    if (!n) { b.className = "hidden"; b.textContent = ""; return; }
-    b.className = "ml-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-sky-500 px-1.5 text-[11px] font-bold text-white";
-    b.textContent = n > 99 ? "99+" : String(n);
+  const badgeClass = "ml-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-sky-500 px-1.5 text-[11px] font-bold text-white";
+  const bucketFor = href => {
+    if (href === "notifications.html") return null;
+    if (href === "/blog" || href === "blog.html") return ["new_post"];
+    if (href === "chat.html") return ["chat_reply", "chat_mention"];
+    if (href === "community.html") return ["new_place", "follow"];
+    if (href === "collections.html") return ["comment"];
+    return false;
+  };
+  const bucketCount = (byKind, keys) => keys.reduce((t, k) => t + (Number(byKind?.[k]) || 0), 0);
+  const paintLinkBadges = (total, byKind) => {
+    root.querySelectorAll('header nav a[href], [data-mobile-nav] a[href]').forEach(a => {
+      const href = a.getAttribute("href");
+      const keys = bucketFor(href);
+      if (keys === false) return;
+      let b = a.querySelector("[data-notif-badge]");
+      const n = keys === null ? total : bucketCount(byKind, keys);
+      if (!n) {
+        if (keys === null && b) { b.className = "hidden"; b.textContent = ""; }
+        else b?.remove();
+        return;
+      }
+      if (!b) { a.insertAdjacentHTML("beforeend", `<span data-notif-badge class="hidden"></span>`); b = a.querySelector("[data-notif-badge]"); }
+      b.className = badgeClass;
+      b.textContent = n > 99 ? "99+" : String(n);
+    });
+  };
+  const paintMenuBadge = total => root.querySelectorAll("[data-menu]").forEach(btn => {
+    let dot = btn.querySelector("[data-notif-menu-badge]");
+    if (!total) { dot?.remove(); btn.removeAttribute("aria-label"); btn.setAttribute("aria-label", "Menu"); return; }
+    if (!dot) {
+      btn.classList.add("relative");
+      btn.insertAdjacentHTML("beforeend", `<span data-notif-menu-badge class="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold text-white"></span>`);
+      dot = btn.querySelector("[data-notif-menu-badge]");
+    }
+    dot.textContent = total > 99 ? "99+" : String(total);
+    btn.setAttribute("aria-label", `${total > 99 ? "99+" : total} unread notifications`);
   });
-  const count = await getUnreadCount();
-  paint(count);
-  return count;
+  const paintKinds = byKind => {
+    const short = notifBreakdown(byKind, 3);
+    const full = notifBreakdown(byKind);
+    root.querySelectorAll('[data-mobile-nav] a[href="notifications.html"]').forEach(a => {
+      let s = a.querySelector("[data-notif-kinds]");
+      if (!s) { a.insertAdjacentHTML("beforeend", `<span data-notif-kinds class="hidden"></span>`); s = a.querySelector("[data-notif-kinds]"); }
+      if (!short) { s.className = "hidden"; s.textContent = ""; }
+      else { s.className = "text-white/50"; s.textContent = ` · ${short}`; }
+      const total = Object.values(byKind || {}).reduce((t, v) => t + (Number(v) || 0), 0);
+      a.title = full ? `${total} unread: ${full}` : "Notifications";
+    });
+    root.querySelectorAll('header nav a[href="notifications.html"]').forEach(a => {
+      const total = Object.values(byKind || {}).reduce((t, v) => t + (Number(v) || 0), 0);
+      a.title = full ? `${total} unread: ${full}` : "Notifications";
+      a.setAttribute("aria-label", full ? `Notifications, ${total} unread: ${full}` : "Notifications");
+    });
+  };
+  const { total, byKind } = await getUnreadByKind();
+  paintLinkBadges(total, byKind);
+  paintMenuBadge(total);
+  paintKinds(byKind);
+  return total;
 }
 
 // Follow helpers: one-row follow state per viewer, wired to any [data-follow] button.

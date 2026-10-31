@@ -63,7 +63,8 @@
 <button id="mark-read" class="tl-btn tl-btn-ghost !min-h-10">Mark all read</button>
 </div>
 <p class="mt-4 text-white/50">Follows, comments, new places, new posts, chat replies and verification updates.</p>
-<p id="note" role="status" class="mt-4 text-sm text-white/50"></p>
+<p id="summary" class="mt-4 text-sm font-bold text-white/80"></p>
+<p id="note" role="status" class="mt-2 text-sm text-white/50"></p>
 <div id="list" class="mt-6 grid gap-3"></div>
 </div></main>
 <script type="module">
@@ -83,6 +84,7 @@ async function load(){
  list.innerHTML=skel.repeat(4);note.textContent="";
  const {data,error}=await supabase.from("notifications").select("id,kind,title,body,link,is_read,created_at").eq("user_id",me.id).order("created_at",{ascending:false}).limit(100);
  if(error){list.innerHTML="";note.textContent="Couldn't load notifications. Please refresh and try again.";return}
+ const summary=document.querySelector("#summary");const unread=(data||[]).filter(n=>!n.is_read);const tally={};unread.forEach(n=>{const k=String(n.kind||"system");tally[k]=(tally[k]||0)+1});const PLURAL={follow:"follows",comment:"comments",like:"likes",place:"places",new_place:"new places",new_post:"new posts",chat_reply:"replies",chat_mention:"mentions",verify:"verifications",report:"reports",system:"updates"};const parts=Object.entries(tally).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`${n} ${PLURAL[k]||k}`);summary.textContent=unread.length?`${unread.length} unread \u2014 ${parts.join(", ")}`:"You\u0027re all caught up.";
  list.innerHTML=(data||[]).map(row).join("")||'<p class="text-sm text-white/45">No notifications yet.</p>';
 }
 await load();
