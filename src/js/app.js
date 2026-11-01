@@ -302,6 +302,52 @@ export function notifyNewPost({ title, slug, actorId = null }) {
   })();
 }
 
+// WhatsApp-style notification ping: tiny two-tone (880Hz then 1320Hz, 0.12s each), no asset file.
+let _pingCtx = null;
+export function notifSoundEnabled() {
+  try { return localStorage.getItem("tl_notif_sound") !== "off"; } catch { return true; }
+}
+export function setNotifSoundEnabled(on) {
+  try { localStorage.setItem("tl_notif_sound", on ? "on" : "off"); } catch {}
+}
+function _resumePingCtx() {
+  try { if (_pingCtx && _pingCtx.state === "suspended") _pingCtx.resume().catch(() => {}); } catch {}
+}
+if (typeof document !== "undefined" && !globalThis.__tlPingWired) {
+  globalThis.__tlPingWired = true;
+  document.addEventListener("pointerdown", _resumePingCtx, { passive: true });
+  document.addEventListener("keydown", _resumePingCtx);
+}
+export function playNotifPing() {
+  try {
+    if (!notifSoundEnabled()) return false;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return false;
+    _pingCtx = _pingCtx || new AC();
+    _resumePingCtx();
+    const t0 = _pingCtx.currentTime;
+    [[880, 0], [1320, 0.12]].forEach(([freq, dt]) => {
+      const osc = _pingCtx.createOscillator();
+      const gain = _pingCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, t0 + dt);
+      gain.gain.exponentialRampToValueAtTime(0.25, t0 + dt + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.12);
+      osc.connect(gain).connect(_pingCtx.destination);
+      osc.start(t0 + dt);
+      osc.stop(t0 + dt + 0.13);
+    });
+    return true;
+  } catch { return false; }
+}
+export function maybeBrowserNotify(title) {
+  try {
+    if (!("Notification" in window) || Notification.permission !== "granted" || !title) return;
+    new Notification(title);
+  } catch {}
+}
+
 export async function initNotifBell(root = document) {
   if (!supabase) return 0;
   let me = null;
@@ -374,6 +420,42 @@ export async function initNotifBell(root = document) {
   paintLinkBadges(total, byKind);
   paintMenuBadge(total);
   paintKinds(byKind);
+  let lastUnread = total;
+  const bump = (nextTotal, title) => {
+    if (nextTotal > lastUnread) {
+      playNotifPing();
+      if (title) maybeBrowserNotify(`TerraLens: ${title}`);
+    }
+    lastUnread = nextTotal;
+  };
+  try {
+    supabase.channel(`bell-${me.id}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${me.id}` }, async (payload) => {
+      bump(lastUnread + 1, payload?.new?.title);
+      try {
+        const cur = await getUnreadByKind();
+        lastUnread = cur.total;
+        paintLinkBadges(cur.total, cur.byKind);
+        paintMenuBadge(cur.total);
+        paintKinds(cur.byKind);
+      } catch {}
+    }).subscribe();
+  } catch {}
+  const poll = setInterval(async () => {
+    try {
+      const cur = await getUnreadByKind();
+      if (cur.total > lastUnread) {
+        playNotifPing();
+        const over = cur.total - lastUnread;
+        const top = notifBreakdown(cur.byKind, 3);
+        maybeBrowserNotify(`TerraLens: ${over} new notification${over > 1 ? "s" : ""}${top ? ` (${top})` : ""}`);
+      }
+      lastUnread = cur.total;
+      paintLinkBadges(cur.total, cur.byKind);
+      paintMenuBadge(cur.total);
+      paintKinds(cur.byKind);
+    } catch {}
+  }, 10000);
+  try { poll?.unref?.(); } catch {}
   return total;
 }
 

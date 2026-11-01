@@ -60,7 +60,10 @@
 <p class="tl-eyebrow">Activity</p>
 <div class="mt-3 flex items-center justify-between gap-4">
 <h1 class="text-4xl font-extrabold sm:text-5xl">Notifications.</h1>
+<div class="flex items-center gap-2">
+<button id="sound-toggle" class="tl-btn tl-btn-ghost !min-h-10" aria-pressed="true">Sound: On</button>
 <button id="mark-read" class="tl-btn tl-btn-ghost !min-h-10">Mark all read</button>
+</div>
 </div>
 <p class="mt-4 text-white/50">Follows, comments, new places, new posts, chat replies and verification updates.</p>
 <p id="summary" class="mt-4 text-sm font-bold text-white/80"></p>
@@ -69,10 +72,14 @@
 </div></main>
 <script type="module">
 import {supabase} from "./src/js/supabase.js";
-import {initNav,escapeHtml,getUnreadCount,markAllRead,notifyUser} from "./src/js/app.js";
+import {initNav,escapeHtml,getUnreadCount,markAllRead,notifyUser,playNotifPing,maybeBrowserNotify,notifSoundEnabled,setNotifSoundEnabled} from "./src/js/app.js";
 void notifyUser; void getUnreadCount;
 await initNav();
-const list=document.querySelector("#list"),note=document.querySelector("#note"),btn=document.querySelector("#mark-read");
+const list=document.querySelector("#list"),note=document.querySelector("#note"),btn=document.querySelector("#mark-read"),soundBtn=document.querySelector("#sound-toggle");
+const paintSound=()=>{const on=notifSoundEnabled();soundBtn.textContent=on?"Sound: On":"Sound: Off";soundBtn.setAttribute("aria-pressed",on?"true":"false")};
+paintSound();
+soundBtn.onclick=()=>{setNotifSoundEnabled(!notifSoundEnabled());paintSound()};
+let lastUnread=-1;
 const skel='<div class="tl-card animate-pulse p-5"><div class="h-4 rounded bg-white/10"></div><div class="mt-3 h-3 w-2/3 rounded bg-white/5"></div></div>';
 const {data:{session}}=await supabase.auth.getSession();
 if(!session){location.href="login.html?next="+encodeURIComponent("notifications.html");throw new Error("redirect");}
@@ -86,6 +93,9 @@ async function load(){
  if(error){list.innerHTML="";note.textContent="Couldn't load notifications. Please refresh and try again.";return}
  const summary=document.querySelector("#summary");const unread=(data||[]).filter(n=>!n.is_read);const tally={};unread.forEach(n=>{const k=String(n.kind||"system");tally[k]=(tally[k]||0)+1});const PLURAL={follow:"follows",comment:"comments",like:"likes",place:"places",new_place:"new places",new_post:"new posts",chat_reply:"replies",chat_mention:"mentions",verify:"verifications",report:"reports",system:"updates"};const parts=Object.entries(tally).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`${n} ${PLURAL[k]||k}`);summary.textContent=unread.length?`${unread.length} unread \u2014 ${parts.join(", ")}`:"You\u0027re all caught up.";
  list.innerHTML=(data||[]).map(row).join("")||'<p class="text-sm text-white/45">No notifications yet.</p>';
+ const unreadCount=unread.length;
+ if(lastUnread>=0&&unreadCount>lastUnread){playNotifPing();const newest=(data||[]).find(n=>!n.is_read);maybeBrowserNotify(newest?.title?`TerraLens: ${newest.title}`:"TerraLens: new notification");}
+ lastUnread=unreadCount;
 }
 await load();
 btn.onclick=async()=>{btn.disabled=true;const r=await markAllRead();btn.disabled=false;if(r.error){note.textContent="Couldn't mark as read. Please try again.";return}await load()};
@@ -94,7 +104,7 @@ list.addEventListener("click",async e=>{
  try{await supabase.from("notifications").update({is_read:true}).eq("id",a.dataset.nid).eq("user_id",me.id)}catch{}
 });
 try{
- supabase.channel("notif-"+me.id).on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications",filter:`user_id=eq.${me.id}`},()=>load()).subscribe();
+ supabase.channel("notif-"+me.id).on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications",filter:`user_id=eq.${me.id}`},(payload)=>{playNotifPing();maybeBrowserNotify(payload?.new?.title?`TerraLens: ${payload.new.title}`:"TerraLens: new notification");load()}).subscribe();
 }catch{}
 setInterval(load,10000);
 </script>
