@@ -1,5 +1,5 @@
 // TerraLens service worker. Bump CACHE_VERSION to force clients to update.
-const CACHE_VERSION = "terralens-v1";
+const CACHE_VERSION = "terralens-v2";
 const CORE = [
   "/index.html",
   "/manifest.webmanifest",
@@ -42,14 +42,19 @@ self.addEventListener("fetch", (event) => {
   }
   if (url.origin !== self.location.origin) return;
   // Navigations: network first, fall back to cache, then the offline page.
+  // admin.html is never served stale: always try the network first and never
+  // store it, so a fixed guard ships the moment it is deployed.
   if (req.mode === "navigate") {
     event.respondWith((async () => {
       try {
         const fresh = await fetch(req);
-        const copy = fresh.clone();
-        caches.open(CACHE_VERSION).then((c) => c.put(req, copy)).catch(() => {});
+        if (!url.pathname.endsWith("/admin.html") && url.pathname !== "/admin.html") {
+          const copy = fresh.clone();
+          caches.open(CACHE_VERSION).then((c) => c.put(req, copy)).catch(() => {});
+        }
         return fresh;
       } catch {
+        if (url.pathname.endsWith("admin.html")) throw new Error("offline admin");
         return (await caches.match(req)) || (await caches.match("/index.html"));
       }
     })());

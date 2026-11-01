@@ -85,6 +85,7 @@
   <button id="tab-contributors" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Contributors</button>
   <button id="tab-comments" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Comments</button>
   <button id="tab-posts" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Blog</button>
+  <button id="tab-dms" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Blog DMs</button>
  </div>
  <p id="flash" role="status" aria-live="polite" class="mt-4 min-h-5 text-sm text-sky-300"></p>
  <section id="places-panel" class="mt-4">
@@ -120,9 +121,17 @@
   </form>
   <div id="posts" class="mt-6 grid gap-3"></div>
  </section>
+ <section id="dms-panel" class="mt-4 hidden">
+  <div class="flex flex-wrap items-center justify-between gap-3"><p class="max-w-xl text-sm text-white/50">Guest-post ideas sent from the Write for Us page. Mark read, reply via notification, then close.</p><button id="dms-refresh" type="button" class="tl-btn tl-btn-ghost !min-h-10">Refresh</button></div>
+  <p id="dms-note" class="mt-3 text-sm text-white/50" role="status" aria-live="polite"></p>
+  <div id="dms" class="mt-4 grid gap-3"></div>
+ </section>
  <section id="comments-panel" class="mt-4 hidden"><div id="comments" class="grid gap-3"></div></section>
 </div>
 </div></main>
+<script>
+(function(){var done=false;function open(){var a=document.getElementById("app");return a&&!a.classList.contains("hidden")}function show(what){if(done||open())return;done=true;try{console.error("[admin-guard] "+what)}catch(e){}var g=document.getElementById("gate");if(g)g.innerHTML='Something is taking too long. <a href="admin.html" class="underline text-sky-300">Retry</a> or <a href="login.html?next=admin.html" class="underline text-sky-300">sign in again</a>.'}window.addEventListener("error",function(e){show("page script failed to load: "+((e&&e.message)||"script error"))},true);window.addEventListener("unhandledrejection",function(e){show("request failed: "+((e&&e.reason&&e.reason.message)||"unknown error"))});setTimeout(function(){show("guard did not finish in 10s")},10000)})();
+</script>
 <script type="module">
 import {confirmDialog} from "./src/js/ui.js";
 import {supabase} from "./src/js/supabase.js";
@@ -137,13 +146,13 @@ async function guard(){
  if(!supabase){gate.textContent="Configure Supabase first.";return false}
  try{
   session=(await Promise.race([supabase.auth.getSession(),new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),8000))])).data.session;
- }catch{gate.innerHTML='Could not reach login. <a href="login.html?next=admin.html" class="underline text-sky-300">Sign in again</a>';return false}
+ }catch(err){try{console.error("[admin-guard] session check failed:",err)}catch(e){}gate.innerHTML='Could not reach login. <a href="login.html?next=admin.html" class="underline text-sky-300">Sign in again</a>';return false}
  if(!session){location.href="login.html?next=admin.html";return false}
  let data=null;
  try{
   const r=await Promise.race([supabase.rpc("is_admin"),new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),8000))]);
-  data=r.data;
- }catch{gate.innerHTML='Admin check timed out. <a href="login.html?next=admin.html" class="underline text-sky-300">Sign in again</a> or refresh.';return false}
+  if(r.error)throw r.error;data=r.data;
+ }catch(err){try{console.error("[admin-guard] admin check failed:",err)}catch(e){}gate.innerHTML='Admin check timed out. <a href="login.html?next=admin.html" class="underline text-sky-300">Sign in again</a> or refresh.';return false}
  if(data!==true){gate.textContent="You don't have access to this page.";return false}
  gate.classList.add("hidden");$("#app").classList.remove("hidden");return true}
 async function stats(){
@@ -417,7 +426,38 @@ $("#post-form").onsubmit=async e=>{e.preventDefault();
  const v=$("#p-view");v.href="/blog/"+r.data.slug;v.classList.toggle("hidden",r.data.status!=="published");loadPosts()};
 $("#p-delete").onclick=async()=>{if(!editingPost)return;if(!await confirmDialog("Delete this post? This cannot be undone.",{danger:true,confirmText:"Delete"}))return;
  const {error}=await supabase.from("posts").delete().eq("id",editingPost);flash(error?error.message:"Post deleted.");if(!error){$("#p-cancel").click();loadPosts()}};
-const TABS=["places","reports","contributors","comments","posts"],loaders={reports:loadReports,contributors:loadContributors,comments:loadComments,posts:loadPosts};
+async function loadDms(){
+ const box=$("#dms"),note=$("#dms-note");
+ note.textContent="Loading...";
+ const {data,error}=await supabase.from("blog_dms").select("id,user_id,subject,body,status,created_at").in("status",["open","read"]).order("created_at",{ascending:false}).limit(50);
+ if(error){note.textContent="Could not load messages.";return}
+ note.textContent=(data||[]).length?`${data.length} open`:"All caught up. No open messages.";
+ box.innerHTML=(data||[]).map(d=>`<div class="tl-card p-4" data-did="${escapeHtml(d.id)}" data-uid="${escapeHtml(d.user_id)}" data-subject="${escapeHtml(d.subject)}"><p class="text-sm font-bold text-white">${escapeHtml(d.subject)} <span class="ml-2 rounded-full border border-white/15 px-2 py-0.5 text-[11px] uppercase tracking-wide text-sky-300">${escapeHtml(d.status)}</span></p><p class="mt-1 text-sm text-white/55">${escapeHtml(d.body)}</p><p class="mt-2 text-xs text-white/40">${escapeHtml(new Date(d.created_at).toLocaleString())}</p><div class="mt-3 grid gap-2"><textarea class="tl-input tl-textarea !min-h-20" rows="2" maxlength="300" placeholder="Reply (sent to their notifications)" aria-label="Reply"></textarea><div class="flex flex-wrap gap-2"><button data-dact="read" class="tl-btn tl-btn-ghost !min-h-10">Mark read</button><button data-dact="reply" class="tl-btn tl-btn-primary !min-h-10">Reply</button><button data-dact="close" class="tl-btn tl-btn-ghost !min-h-10">Close</button></div></div></div>`).join("")||"";
+}
+$("#dms").addEventListener("click",async e=>{
+ const btn=e.target.closest("[data-dact]"),card=e.target.closest("[data-did]");
+ if(!btn||!card)return;
+ const act=btn.dataset.dact,id=card.dataset.did,uid=card.dataset.uid,title=card.dataset.subject;
+ const ta=card.querySelector("textarea");
+ if(act==="read"||act==="close"){
+  const to=act==="close"?"closed":"read";
+  const {error}=await supabase.from("blog_dms").update({status:to}).eq("id",id);
+  flash(error?error.message:(to==="closed"?"Message closed.":"Marked as read."));
+  if(!error)loadDms();
+  return;
+ }
+ const reply=(ta.value||"").trim().slice(0,300);
+ if(!reply){flash("Write a reply first.");return}
+ btn.disabled=true;
+ try{
+  const {error:uerr}=await supabase.from("blog_dms").update({status:"read"}).eq("id",id);
+  if(uerr)throw uerr;
+  notifyUser({userId:uid,kind:"system",title:`Re: ${title}`,body:reply,link:"write-for-us.html"});
+ }catch(err){flash(err?.message||"Could not reply.");btn.disabled=false;return}
+ btn.disabled=false;ta.value="";flash("Reply sent to their notifications.");loadDms();
+});
+$("#dms-refresh").onclick=()=>loadDms();
+const TABS=["places","reports","contributors","comments","posts","dms"],loaders={reports:loadReports,contributors:loadContributors,comments:loadComments,posts:loadPosts,dms:loadDms};
 const show=t=>{TABS.forEach(n=>{$(`#${n}-panel`).classList.toggle("hidden",n!==t);$(`#tab-${n}`).className="tl-btn !min-h-10 "+(n===t?"tl-btn-primary":"tl-btn-ghost")});loaders[t]?.()};
 TABS.forEach(n=>{$(`#tab-${n}`).onclick=()=>show(n)});
 $("#publish-drafts").onclick=async()=>{
@@ -432,7 +472,7 @@ $("#publish-drafts").onclick=async()=>{
  stats();loadPlaces();(data||[]).forEach(p=>announcePlace(p.id));
 };
 let timer;const refresh=()=>{clearTimeout(timer);timer=setTimeout(loadPlaces,250)};$("#q").oninput=refresh;$("#status").onchange=()=>loadPlaces();$("#mine").onchange=()=>loadPlaces();$("#more-places-admin").onclick=()=>loadPlaces(true);
-if(await guard()){const pend=await stats();if(pend>0)$("#status").value="pending";loadPlaces()}
+if(await guard()){const pend=await stats();if(pend>0)$("#status").value="pending";loadPlaces();try{supabase.channel("blogdms").on("postgres_changes",{event:"INSERT",schema:"public",table:"blog_dms"},()=>{if(!$("#dms-panel").classList.contains("hidden"))loadDms()}).subscribe()}catch{};setInterval(()=>{if(!$("#dms-panel").classList.contains("hidden"))loadDms()},10000)}
 </script>
 
 
