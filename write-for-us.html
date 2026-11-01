@@ -75,8 +75,20 @@
 <div class="mt-8 space-y-6 text-sm leading-7 text-white/60">
 <p>The <a class="underline text-sky-300" href="/blog">TerraLens blog</a> is written by our own team. Only TerraLens admins can publish articles. If you have a travel, destination or photography story you would like to share with our readers, you can publish a <strong class="text-white">guest post</strong> by emailing us and paying a one-time fee of <strong class="text-white">US$5</strong>.</p>
 <h2 class="text-xl font-bold text-white">How it works</h2>
-<ol class="list-decimal space-y-2 pl-5"><li><strong class="text-white">Email us</strong> your idea: a working title, a short outline, and links to anything you have written or photographed before.</li><li><strong class="text-white">We reply</strong> to say whether the idea fits. If it does, we send you the payment details for the US$5 fee.</li><li><strong class="text-white">You send the article</strong> after paying. Aim for 500 to 1,500 words, with any photos you own.</li><li><strong class="text-white">We review and publish.</strong> We may edit lightly for clarity and format, then publish it with a clear "Guest post" label and your name.</li></ol>
-<p><a id="mail" class="tl-btn tl-btn-primary" href="#">Email us your idea</a></p>
+<ol class="list-decimal space-y-2 pl-5"><li><strong class="text-white">Message us below</strong> with your idea: a working title, a short outline, and links to anything you have written or photographed before.</li><li><strong class="text-white">We reply</strong> to say whether the idea fits. If it does, we send you the payment details for the US$5 fee.</li><li><strong class="text-white">You send the article</strong> after paying. Aim for 500 to 1,500 words, with any photos you own.</li><li><strong class="text-white">We review and publish.</strong> We may edit lightly for clarity and format, then publish it with a clear "Guest post" label and your name.</li></ol>
+<p class="flex flex-wrap gap-3"><a id="mail" class="tl-btn tl-btn-ghost" href="#">Email us instead</a></p>
+<div class="tl-card mt-6 p-5">
+<p class="text-base font-bold text-white">Message the editors</p>
+<p class="mt-1 text-sm text-white/50">Sign in, send your idea here, and we reply to your notifications.</p>
+<form id="dm-form" class="mt-4 grid gap-3">
+<input id="dm-subject" class="tl-input" maxlength="120" placeholder="Working title" aria-label="Working title" required>
+<textarea id="dm-body" class="tl-input tl-textarea !min-h-36" rows="5" maxlength="2000" placeholder="Short outline + links to your work" aria-label="Short outline and links" required></textarea>
+<p id="dm-count" class="text-xs text-white/40"></p>
+<div class="flex flex-wrap items-center gap-3"><button class="tl-btn tl-btn-primary !min-h-10" type="submit">Send message</button><a id="dm-login" href="login.html?next=write-for-us.html" class="tl-btn tl-btn-ghost hidden !min-h-10">Sign in to message</a></div>
+<p id="dm-msg" class="text-sm text-white/55" role="status" aria-live="polite"></p>
+</form>
+<div id="my-dms" class="mt-6 grid gap-3"></div>
+</div>
 <h2 class="text-xl font-bold text-white">What the fee covers</h2>
 <p>The US$5 covers our editing, formatting and hosting time. It does not buy a guaranteed ranking, traffic or any particular result. If we decide not to publish your article after you have paid, we refund the fee.</p>
 <h2 class="text-xl font-bold text-white">What we publish</h2>
@@ -84,7 +96,45 @@
 <h2 class="text-xl font-bold text-white">Labelling and rights</h2>
 <p>Every guest post is clearly labelled as a guest post, with a short note that the author paid a fee to publish it. You keep ownership of your writing and give TerraLens permission to publish it, resize your photos and promote the article. We can edit, decline or remove a post at any time, for example if it turns out to break the rules. See the <a class="underline text-sky-300" href="terms.html">Terms of Service</a> for the full details.</p>
 </div></div></main>
-<script type="module">import {CONTACT_EMAIL} from "./src/js/site.js";const subject=encodeURIComponent("Guest post idea for TerraLens");const body=encodeURIComponent("Hi,\n\nI would like to write a guest post for TerraLens.\n\nWorking title:\nShort outline:\nLinks to my work:\n\nThanks,");document.querySelector("#mail").href="mailto:"+CONTACT_EMAIL+"?subject="+subject+"&body="+body;</script>
+<script type="module">
+import {CONTACT_EMAIL} from "./src/js/site.js";
+import {supabase} from "./src/js/supabase.js";
+import {escapeHtml} from "./src/js/app.js";
+const subject=encodeURIComponent("Guest post idea for TerraLens");
+const body=encodeURIComponent("Hi,\n\nI would like to write a guest post for TerraLens.\n\nWorking title:\nShort outline:\nLinks to my work:\n\nThanks,");
+document.querySelector("#mail").href="mailto:"+CONTACT_EMAIL+"?subject="+subject+"&body="+body;
+const form=document.querySelector("#dm-form"),sub=document.querySelector("#dm-subject"),txt=document.querySelector("#dm-body"),msg=document.querySelector("#dm-msg"),mine=document.querySelector("#my-dms"),login=document.querySelector("#dm-login"),count=document.querySelector("#dm-count");
+const paint=()=>{count.textContent=(txt.value.length||0)+" / 2000";};
+txt.addEventListener("input",paint);paint();
+let me=null,btn=form.querySelector("button[type=submit]");
+try{me=(await supabase.auth.getSession()).data.session?.user||null}catch{}
+if(!me){btn.disabled=true;sub.disabled=true;txt.disabled=true;login.classList.remove("hidden");msg.textContent="Sign in to send your idea directly.";}
+async function loadMine(){
+ if(!me||!supabase){return}
+ try{
+  const {data,error}=await supabase.from("blog_dms").select("id,subject,body,status,created_at").eq("user_id",me.id).order("created_at",{ascending:false}).limit(20);
+  if(error)return;
+  mine.innerHTML=((data||[]).map(d=>`<div class="rounded-2xl border border-white/10 p-4"><p class="text-sm font-bold text-white">${escapeHtml(d.subject)} <span class="ml-2 rounded-full border border-white/15 px-2 py-0.5 text-[11px] uppercase tracking-wide text-sky-300">${escapeHtml(d.status)}</span></p><p class="mt-1 text-sm text-white/55">${escapeHtml(String(d.body).slice(0,280))}</p><p class="mt-2 text-xs text-white/40">${escapeHtml(new Date(d.created_at).toLocaleString())}</p></div>`).join(""))||'<p class="text-sm text-white/45">No messages yet.</p>';
+ }catch{}
+}
+await loadMine();
+form.addEventListener("submit",async e=>{
+ e.preventDefault();
+ if(!me){location.href="login.html?next=write-for-us.html";return}
+ const s=sub.value.trim(),b=txt.value.trim();
+ if(s.length<1||s.length>120){msg.textContent="Give your idea a short title (up to 120 characters).";return}
+ if(b.length<1||b.length>2000){msg.textContent="Add a short outline (up to 2000 characters).";return}
+ btn.disabled=true;msg.textContent="Sending...";
+ try{
+  const {error}=await supabase.from("blog_dms").insert({user_id:me.id,subject:s,body:b});
+  if(error){msg.textContent="Could not send. Please try again.";}
+  else{msg.textContent="Sent. We reply to your notifications.";sub.value="";txt.value="";paint();loadMine();}
+ }catch{msg.textContent="Could not send. Please try again.";}
+ btn.disabled=false;
+});
+try{supabase.channel("mydms").on("postgres_changes",{event:"*",schema:"public",table:"blog_dms"},()=>loadMine()).subscribe();}catch{}
+setInterval(loadMine,10000);
+</script>
 <script type="module">import {CONTACT_EMAIL} from "./src/js/site.js";document.querySelectorAll("[data-contact]").forEach(a=>{a.textContent=CONTACT_EMAIL;a.href="mailto:"+CONTACT_EMAIL});</script>
 
 <footer class="tl-footer">
