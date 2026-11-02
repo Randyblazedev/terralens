@@ -61,6 +61,7 @@
 <div class="mt-3 flex items-center justify-between gap-4">
 <h1 class="text-4xl font-extrabold sm:text-5xl">Notifications.</h1>
 <div class="flex items-center gap-2">
+<button id="push-toggle" class="tl-btn tl-btn-ghost !min-h-10" aria-pressed="false">Push: Off</button>
 <button id="sound-toggle" class="tl-btn tl-btn-ghost !min-h-10" aria-pressed="true">Sound: On</button>
 <button id="mark-read" class="tl-btn tl-btn-ghost !min-h-10">Mark all read</button>
 </div>
@@ -72,12 +73,15 @@
 </div></main>
 <script type="module">
 import {supabase} from "./src/js/supabase.js";
-import {initNav,escapeHtml,getUnreadCount,markAllRead,notifyUser,playNotifPing,maybeBrowserNotify,notifSoundEnabled,setNotifSoundEnabled} from "./src/js/app.js";
+import {initNav,escapeHtml,getUnreadCount,markAllRead,notifyUser,playNotifPing,maybeBrowserNotify,notifSoundEnabled,setNotifSoundEnabled,pushStatus,enablePush,disablePush} from "./src/js/app.js";
 void notifyUser; void getUnreadCount;
 await initNav();
-const list=document.querySelector("#list"),note=document.querySelector("#note"),btn=document.querySelector("#mark-read"),soundBtn=document.querySelector("#sound-toggle");
+const list=document.querySelector("#list"),note=document.querySelector("#note"),btn=document.querySelector("#mark-read"),soundBtn=document.querySelector("#sound-toggle"),pushBtn=document.querySelector("#push-toggle");
 const paintSound=()=>{const on=notifSoundEnabled();soundBtn.textContent=on?"Sound: On":"Sound: Off";soundBtn.setAttribute("aria-pressed",on?"true":"false")};
 paintSound();
+const paintPush=async()=>{try{const st=await pushStatus();if(!st.supported){pushBtn.textContent="Push: N/A";pushBtn.disabled=true;return}pushBtn.disabled=false;const on=!!st.subscribed;pushBtn.textContent=on?"Push: On":"Push: Off";pushBtn.setAttribute("aria-pressed",on?"true":"false")}catch{}};
+paintPush();
+pushBtn.onclick=async()=>{pushBtn.disabled=true;try{const st=await pushStatus();if(st.subscribed){await disablePush()}else{await enablePush()}note.textContent="";}catch(e){note.textContent=String((e&&e.message)||e||"Push failed. Try again.");}await paintPush();pushBtn.disabled=false};
 soundBtn.onclick=()=>{setNotifSoundEnabled(!notifSoundEnabled());paintSound()};
 let lastUnread=-1;
 const skel='<div class="tl-card animate-pulse p-5"><div class="h-4 rounded bg-white/10"></div><div class="mt-3 h-3 w-2/3 rounded bg-white/5"></div></div>';

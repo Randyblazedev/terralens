@@ -24,6 +24,41 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+self.addEventListener("push", (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch { try { data = { title: event.data ? String(event.data.text() || "") : "" }; } catch { data = {}; } }
+  const title = String(data.title || "TerraLens: new notification");
+  const body = String(data.body || "");
+  const url = String(data.url || data.link || "/notifications.html");
+  event.waitUntil((async () => {
+    await self.registration.showNotification(title, {
+      body,
+      icon: "/assets/icon-192.png",
+      badge: "/assets/icon-192.png",
+      data: { url: url.startsWith("/") ? url : "/" + url },
+      tag: String(data.tag || "terralens-notif"),
+      renotify: true
+    });
+  })());
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const raw = (event.notification && event.notification.data && event.notification.data.url) || "/notifications.html";
+  const target = new URL(String(raw).startsWith("/") ? String(raw) : "/" + String(raw), self.location.origin).href;
+  event.waitUntil((async () => {
+    const wins = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const w of wins) {
+      try {
+        const u = new URL(w.url);
+        if (u.origin === self.location.origin) { try { await w.navigate(target); } catch {} w.focus(); return; }
+      } catch {}
+    }
+    self.clients.openWindow(target);
+  })());
+});
+
+
 // Live backends are network-only and never cached.
 function isLiveBackend(url) {
   return url.pathname.startsWith("/api/")
