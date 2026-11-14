@@ -156,20 +156,44 @@ document.querySelector("#hero-search").addEventListener("submit",e=>{e.preventDe
   img.src=imgSize(p.url,640);
   if(!p.own&&p.credit)credits.push(p.link?`<a class="underline" target="_blank" rel="noopener" href="${escapeHtml(p.link)}">${escapeHtml(p.credit)}</a>`:escapeHtml(p.credit))});
  if(credits.length)document.querySelector("#photo-credits").innerHTML=`Photos: ${credits.join(", ")} — <a class="underline" target="_blank" rel="noopener" href="https://commons.wikimedia.org/">Wikimedia Commons</a>`})();
-document.querySelector("#featured-grid").innerHTML=(await queryFeatured(8)).map(card).join("");
-await initCardSaves(document.querySelector("#featured-grid"));
+async function paintFeatured(){
+  const grid=document.querySelector("#featured-grid");
+  const rows=await queryFeatured(8);
+  grid.innerHTML=rows.map(card).join("");
+  await initCardSaves(grid);
+}
+await paintFeatured();
 
 // ---- New this week: places added in the last 7 days, newest first ----
-(async()=>{
+async function paintNewWeek(){
  if(!supabase)return;
  const since=new Date(Date.now()-7*864e5).toISOString();
  const {data}=await supabase.from("places").select("*")
   .eq("status","published").gte("created_at",since)
   .order("created_at",{ascending:false}).limit(4);
- if(!data||!data.length)return;
+ const box=document.querySelector("#new-week");
+ if(!data||!data.length){ box.classList.add("hidden"); return; }
  document.querySelector("#new-grid").innerHTML=data.map(card).join("");
- document.querySelector("#new-week").classList.remove("hidden");
+ box.classList.remove("hidden");
  await initCardSaves(document.querySelector("#new-grid"));
+}
+await paintNewWeek();
+
+// ---- Live home: new places appear without a reload ----
+(()=>{
+ if(!supabase)return;
+ let busy=false;
+ async function refreshHome(){
+  if(busy)return; busy=true;
+  try{ await Promise.allSettled([paintFeatured(),paintNewWeek()]); } finally { busy=false; }
+ }
+ try{
+  supabase.channel("home-live")
+   .on("postgres_changes",{event:"*",schema:"public",table:"places"},refreshHome)
+   .subscribe();
+ }catch{}
+ setInterval(refreshHome,45000);
+ document.addEventListener("visibilitychange",()=>{ if(!document.hidden) refreshHome(); });
 })();
 
 // ---- Live search suggestions, so the hero search feels alive ----

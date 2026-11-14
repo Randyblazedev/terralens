@@ -118,7 +118,27 @@ async function run(){
  if(!supabase){gridC.innerHTML=gridP.innerHTML=gridT.innerHTML=gridU.innerHTML='<div class="tl-card p-7 text-white/50">Connect Supabase to see the community.</div>';return;}
  await Promise.allSettled([loadCollections(),loadPlaces(),loadPeople()]);
 }
-run();
+// Live: refresh the boards when anything community-visible changes, and poll as a fallback.
+let running=false;
+async function refresh(){
+  if(running)return;running=true;
+  try{ await run(); } finally { running=false; }
+}
+function live(){
+  try{
+    supabase.channel("community-live")
+      .on("postgres_changes",{event:"*",schema:"public",table:"places"},refresh)
+      .on("postgres_changes",{event:"*",schema:"public",table:"collections"},refresh)
+      .on("postgres_changes",{event:"*",schema:"public",table:"profiles"},refresh)
+      .on("postgres_changes",{event:"*",schema:"public",table:"follows"},refresh)
+      .on("postgres_changes",{event:"*",schema:"public",table:"collection_items"},refresh)
+      .subscribe();
+  }catch{}
+  setInterval(refresh,30000);
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden) refresh(); });
+}
+await run();
+live();
 </script>
 
 <footer class="tl-footer">
