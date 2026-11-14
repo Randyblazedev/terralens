@@ -58,22 +58,22 @@
 
 <main class="tl-section"><div class="tl-shell max-w-3xl">
 <p class="tl-eyebrow">Activity</p>
-<div class="mt-3 flex items-center justify-between gap-4">
+<div class="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 <h1 class="text-4xl font-extrabold sm:text-5xl">Notifications.</h1>
-<div class="flex items-center gap-2">
-<button id="push-toggle" class="tl-btn tl-btn-ghost !min-h-10" aria-pressed="false">Push: Off</button>
-<button id="sound-toggle" class="tl-btn tl-btn-ghost !min-h-10" aria-pressed="true">Sound: On</button>
-<button id="mark-read" class="tl-btn tl-btn-ghost !min-h-10">Mark all read</button>
+<div class="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+<button id="push-toggle" class="tl-btn tl-btn-ghost !min-h-10 !px-3 text-xs sm:text-sm" aria-pressed="false">Push: Off</button>
+<button id="sound-toggle" class="tl-btn tl-btn-ghost !min-h-10 !px-3 text-xs sm:text-sm" aria-pressed="true">Sound: On</button>
+<button id="mark-read" class="tl-btn tl-btn-ghost !min-h-10 col-span-2 !px-3 text-xs sm:col-span-1 sm:text-sm">Mark all read</button>
 </div>
 </div>
 <p class="mt-4 text-white/50">Follows, comments, new places, new posts, chat replies and verification updates.</p>
-<p id="summary" class="mt-4 text-sm font-bold text-white/80"></p>
-<p id="note" role="status" class="mt-2 text-sm text-white/50"></p>
-<div id="list" class="mt-6 grid gap-3"></div>
+<p id="summary" class="mt-4 break-words text-xs font-bold leading-5 text-white/80 sm:text-sm"></p>
+<p id="note" role="status" class="mt-2 break-words text-xs text-white/50 sm:text-sm"></p>
+<div id="list" class="mt-6 grid gap-2 sm:gap-3"></div>
 </div></main>
 <script type="module">
 import {supabase} from "./src/js/supabase.js";
-import {initNav,escapeHtml,getUnreadCount,markAllRead,notifyUser,playNotifPing,maybeBrowserNotify,notifSoundEnabled,setNotifSoundEnabled,pushStatus,enablePush,disablePush} from "./src/js/app.js";
+import {initNav,escapeHtml,waitForAuthSession,getUnreadCount,markAllRead,notifyUser,playNotifPing,maybeBrowserNotify,notifSoundEnabled,setNotifSoundEnabled,pushStatus,enablePush,disablePush} from "./src/js/app.js";
 void notifyUser; void getUnreadCount;
 await initNav();
 const list=document.querySelector("#list"),note=document.querySelector("#note"),btn=document.querySelector("#mark-read"),soundBtn=document.querySelector("#sound-toggle"),pushBtn=document.querySelector("#push-toggle");
@@ -84,23 +84,11 @@ paintPush();
 pushBtn.onclick=async()=>{pushBtn.disabled=true;try{const st=await pushStatus();if(st.subscribed){await disablePush()}else{await enablePush()}note.textContent="";}catch(e){note.textContent=String((e&&e.message)||e||"Push failed. Try again.");}await paintPush();pushBtn.disabled=false};
 soundBtn.onclick=()=>{setNotifSoundEnabled(!notifSoundEnabled());paintSound()};
 let lastUnread=-1;
-const skel='<div class="tl-card animate-pulse p-5"><div class="h-4 rounded bg-white/10"></div><div class="mt-3 h-3 w-2/3 rounded bg-white/5"></div></div>';
+const skel='<div class="tl-card animate-pulse p-4 sm:p-5"><div class="h-4 rounded bg-white/10"></div><div class="mt-3 h-3 w-2/3 rounded bg-white/5"></div></div>';
 // The session is restored from storage asynchronously, so getSession() can return null
 // for a moment on a cold load even when the user IS signed in. Wait for it to settle
 // before deciding to send anyone back to the sign-in page.
-async function waitForSession(timeoutMs=6000){
-  const start=Date.now();
-  while(Date.now()-start<timeoutMs){
-    try{
-      const r=await supabase.auth.getSession();
-      const s=r&&r.data?r.data.session:null;
-      if(s&&s.user) return s;
-    }catch{}
-    await new Promise(r=>setTimeout(r,250));
-  }
-  return null;
-}
-const session=await waitForSession();
+const session=await waitForAuthSession();
 if(!session){
   location.href="login.html?next="+encodeURIComponent("notifications.html");
   throw new Error("redirect");
@@ -108,7 +96,7 @@ if(!session){
 const me=session.user;
 const when=t=>new Date(t).toLocaleString(undefined,{year:"numeric",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
 const KIND_LABEL={follow:"Follow",comment:"Comment",like:"Like",place:"Place",new_place:"New place",new_post:"New post",chat_reply:"Reply",chat_mention:"Mention",verify:"Verified",report:"Report",system:"Update"};
-const row=n=>{const k=n.kind?`<span class="mr-2 inline-flex rounded-full border border-white/15 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-sky-300">${escapeHtml(KIND_LABEL[n.kind]||n.kind)}</span>`:"";return `<a href="${escapeHtml(n.link||"profile.html")}" data-nid="${escapeHtml(n.id)}" data-read="${n.is_read?"1":"0"}" class="tl-card block p-4 hover:bg-white/5${n.is_read?" opacity-70":""}"><p class="font-bold">${k}${escapeHtml(n.title)}</p>${n.body?`<p class="mt-1 text-sm text-white/60">${escapeHtml(n.body)}</p>`:""}<p class="mt-2 text-xs text-white/40">${escapeHtml(when(n.created_at))}${n.is_read?"":" · New"}</p></a>`};
+const row=n=>{const k=n.kind?`<span class="inline-flex shrink-0 rounded-full border border-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-300">${escapeHtml(KIND_LABEL[n.kind]||n.kind)}</span>`:"";return `<a href="${escapeHtml(n.link||"profile.html")}" data-nid="${escapeHtml(n.id)}" data-read="${n.is_read?"1":"0"}" class="tl-card block p-3 hover:bg-white/5 sm:p-4${n.is_read?" opacity-70":""}"><div class="flex items-start gap-2">${k}<p class="min-w-0 flex-1 break-words text-sm font-bold leading-6 sm:text-base">${escapeHtml(n.title)}</p></div>${n.body?`<p class="mt-1 break-words text-xs leading-5 text-white/60 sm:text-sm">${escapeHtml(n.body)}</p>`:""}<p class="mt-2 text-[11px] text-white/40 sm:text-xs">${escapeHtml(when(n.created_at))}${n.is_read?"":" · New"}</p></a>`};
 async function load(){
  list.innerHTML=skel.repeat(4);note.textContent="";
  const {data,error}=await supabase.from("notifications").select("id,kind,title,body,link,is_read,created_at").eq("user_id",me.id).order("created_at",{ascending:false}).limit(100);

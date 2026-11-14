@@ -672,6 +672,46 @@ function showInstallButtons() {
   document.querySelectorAll("header nav").forEach(n => n.appendChild(makeInstallBtn("hover:text-white")));
   document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.appendChild(makeInstallBtn("rounded-xl px-4 py-3 text-left hover:bg-white/5")));
 }
+// Supabase restores the stored session asynchronously. A single getSession() on a cold
+// load can return null for a moment even when the user is signed in, which made pages
+// bounce back to the sign-in screen. Wait for the session to actually settle.
+let _authSettled = null;
+export function waitForAuthSession(timeoutMs = 8000) {
+  if (_authSettled) return _authSettled;
+  _authSettled = (async () => {
+    if (!supabase) return null;
+    const started = Date.now();
+    let seen = null;
+    try {
+      const { data } = await supabase.auth.getSession();
+      seen = data?.session || null;
+    } catch {}
+    if (seen?.user) return seen;
+    // Give onAuthStateChange a chance to deliver INITIAL_SESSION / SIGNED_IN.
+    const viaEvent = await new Promise(resolve => {
+      let done = false;
+      const finish = s => { if (!done) { done = true; resolve(s); } };
+      try {
+        const { data: sub } = supabase.auth.onAuthStateChange((_evt, s) => {
+          if (s?.user) finish(s);
+        });
+        setTimeout(() => { try { sub?.subscription?.unsubscribe?.(); } catch {} finish(null); }, Math.max(1200, timeoutMs - 2000));
+      } catch { finish(null); }
+    });
+    if (viaEvent?.user) return viaEvent;
+    // Last resort: poll briefly, which also covers a slow storage read.
+    while (Date.now() - started < timeoutMs) {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session?.user) return data.session;
+      } catch {}
+      await new Promise(r => setTimeout(r, 250));
+    }
+    return null;
+  })();
+  return _authSettled;
+}
+
 export async function initNav() {
   injectBack();
   document.addEventListener("click", e => {
@@ -685,8 +725,8 @@ export async function initNav() {
   const open = /\/(login|terms|privacy|content-policy)(\.html)?$/.test(location.pathname);
   if (REQUIRE_LOGIN && supabase && !open) {
     document.documentElement.style.visibility = "hidden";
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    const wallSession = await waitForAuthSession();
+    if (!wallSession) {
       location.replace("login.html?next=" + encodeURIComponent(location.pathname.replace(/^\//, "") + location.search));
       return;
     }
