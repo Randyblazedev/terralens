@@ -1,5 +1,5 @@
 // TerraLens service worker. Bump CACHE_VERSION to force clients to update.
-const CACHE_VERSION = "terralens-v2";
+const CACHE_VERSION = "terralens-v3";
 const CORE = [
   "/index.html",
   "/manifest.webmanifest",
@@ -95,7 +95,24 @@ self.addEventListener("fetch", (event) => {
     })());
     return;
   }
-  // Static app shell (assets, styles, scripts): cache first.
+  // Scripts and styles: network first, cache only as an offline fallback.
+  // These change with every deploy, and a stale copy silently breaks auth and UI.
+  if (url.pathname.startsWith("/src/") || url.pathname.endsWith(".js") || url.pathname.endsWith(".css")) {
+    event.respondWith((async () => {
+      try {
+        const fresh = await fetch(req);
+        if (fresh && fresh.status === 200) {
+          const copy = fresh.clone();
+          caches.open(CACHE_VERSION).then((c) => c.put(req, copy)).catch(() => {});
+        }
+        return fresh;
+      } catch {
+        return (await caches.match(req)) || Response.error();
+      }
+    })());
+    return;
+  }
+  // Other static assets (images, fonts): cache first.
   event.respondWith((async () => {
     const hit = await caches.match(req);
     if (hit) return hit;
