@@ -104,6 +104,18 @@ try {
 const photos=(images.length?images.map(i=>({id:i.id,url:i.image_url,likes:i.like_count})):[{url:place.cover_url}]).filter(x=>x.url);
 const likeBtn=p=>`<button data-like="${escapeHtml(p.id)}" aria-pressed="${likedIds.has(p.id)}" aria-label="Like this photo" class="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-2 text-sm font-bold backdrop-blur"><span data-heart aria-hidden="true">${likedIds.has(p.id)?"♥":"♡"}</span><span data-count>${Number(p.likes)||0}</span></button>`;
 const isReal=supabase&&!String(place.id).startsWith("seed-");
+// Anyone can like. Signed-out likes live on this device and are merged into the account
+// on the next sign-in, so the tap is never lost and the count still moves.
+const ANON_LIKES="tl_anon_likes";
+const anonLikes=()=>{try{return new Set(JSON.parse(localStorage.getItem(ANON_LIKES)||"[]"))}catch{return new Set()}};
+const saveAnonLikes=s=>{try{localStorage.setItem(ANON_LIKES,JSON.stringify([...s]))}catch{}};
+async function mergeAnonLikes(user){
+ if(!user)return;
+ const local=anonLikes();if(!local.size)return;
+ const rows=[...local].map(id=>({user_id:user.id,image_id:id}));
+ try{await supabase.from("image_likes").upsert(rows,{onConflict:"user_id,image_id",ignoreDuplicates:true})}catch{}
+ saveAnonLikes(new Set());
+}
 let likedIds=new Set(),savedInit=false,isOwner=false,isAdmin=false,contribHtml="";
 if(isReal){
  const me=(await supabase.auth.getSession()).data.session?.user||null,ids=photos.filter(p=>p.id).map(p=>p.id);
@@ -113,7 +125,9 @@ if(isReal){
   me?supabase.from("saves").select("place_id").eq("user_id",me.id).eq("place_id",place.id).maybeSingle():null,
   place.created_by?supabase.from("profiles").select("display_name,username,verified").eq("id",place.created_by).maybeSingle():null,
   me?supabase.rpc("is_admin"):null]);
- likedIds=new Set((lk?.data||[]).map(x=>x.image_id));savedInit=!!sv?.data;isOwner=!!me&&me.id===place.created_by;isAdmin=ad?.data===true;
+ likedIds=new Set((lk?.data||[]).map(x=>x.image_id));
+ if(me){ await mergeAnonLikes(me); } else { likedIds=new Set([...likedIds,...anonLikes()]); }
+ savedInit=!!sv?.data;isOwner=!!me&&me.id===place.created_by;isAdmin=ad?.data===true;
  const nm=ow?.data?(ow.data.display_name||ow.data.username||""):"";
  contribHtml=place.status==="pending"?"This place is awaiting review and is only visible to you.":nm?`By <a href="profile.html?id=${encodeURIComponent(place.created_by)}" class="text-sky-300 hover:underline">${escapeHtml(nm)}</a>${ow.data.verified?" "+verifiedBadge(18):""}${me&&me.id!==place.created_by?` <button type="button" data-follow="${escapeHtml(place.created_by)}" data-state="not-following" class="tl-btn tl-btn-ghost !min-h-8 !px-3 !py-1 !text-xs">Follow</button>`:""}`:"";
 }
@@ -189,7 +203,17 @@ document.querySelector("#rsend").onclick=async()=>{if(!isReal){status("Reporting
 const likeBtns=[...document.querySelectorAll("[data-like]")];
 const paintLike=(b,on)=>{b.setAttribute("aria-pressed",String(on));b.querySelector("[data-heart]").textContent=on?"♥":"♡"};
 likeBtns.forEach(b=>b.onclick=async()=>{if(!isReal)return;
- const {data:{user}}=await supabase.auth.getUser();if(!user){location.href="login.html?next="+encodeURIComponent(location.pathname.replace(/^\//,"")+location.search);return}
+ const {data:{user}}=await supabase.auth.getUser();
+ if(!user){
+  // No account needed to like: toggle locally and keep the count honest.
+  const was=b.getAttribute("aria-pressed")==="true",c=b.querySelector("[data-count]");
+  const set=anonLikes();
+  if(was)set.delete(b.dataset.like);else set.add(b.dataset.like);
+  saveAnonLikes(set);
+  paintLike(b,!was);
+  if(c)c.textContent=Math.max(0,Number(c.textContent)+(was?-1:1));
+  return;
+ }
  const was=b.getAttribute("aria-pressed")==="true",c=b.querySelector("[data-count]");b.disabled=true;
  const r=was?await supabase.from("image_likes").delete().eq("user_id",user.id).eq("image_id",b.dataset.like):await supabase.from("image_likes").insert({user_id:user.id,image_id:b.dataset.like});
  b.disabled=false;
