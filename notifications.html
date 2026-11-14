@@ -79,9 +79,40 @@ await initNav();
 const list=document.querySelector("#list"),note=document.querySelector("#note"),btn=document.querySelector("#mark-read"),soundBtn=document.querySelector("#sound-toggle"),pushBtn=document.querySelector("#push-toggle");
 const paintSound=()=>{const on=notifSoundEnabled();soundBtn.textContent=on?"Sound: On":"Sound: Off";soundBtn.setAttribute("aria-pressed",on?"true":"false")};
 paintSound();
-const paintPush=async()=>{try{const st=await pushStatus();if(!st.supported){pushBtn.textContent="Push: N/A";pushBtn.disabled=true;return}pushBtn.disabled=false;const on=!!st.subscribed;pushBtn.textContent=on?"Push: On":"Push: Off";pushBtn.setAttribute("aria-pressed",on?"true":"false")}catch{}};
+// Paint from the real subscription first, then fall back to what we just did, so the
+// label never lags behind the tap.
+const setPushLabel=on=>{
+  pushBtn.textContent=on?"Push: On":"Push: Off";
+  pushBtn.setAttribute("aria-pressed",on?"true":"false");
+  pushBtn.dataset.on=on?"1":"0";
+};
+const paintPush=async()=>{
+  try{
+    const st=await pushStatus();
+    if(!st.supported){pushBtn.textContent="Push: N/A";pushBtn.disabled=true;return}
+    pushBtn.disabled=false;
+    if(st.subscribed){ setPushLabel(true); return; }
+    // Not subscribed per the browser — keep whatever we last confirmed, if anything.
+    if(pushBtn.dataset.on==="1") return;
+    setPushLabel(false);
+  }catch{}
+};
 paintPush();
-pushBtn.onclick=async()=>{pushBtn.disabled=true;try{const st=await pushStatus();if(st.subscribed){await disablePush()}else{await enablePush()}note.textContent="";}catch(e){note.textContent=String((e&&e.message)||e||"Push failed. Try again.");}await paintPush();pushBtn.disabled=false};
+pushBtn.onclick=async()=>{
+  if(pushBtn.disabled) return;
+  pushBtn.disabled=true;
+  const wasOn=pushBtn.dataset.on==="1";
+  try{
+    if(wasOn){ await disablePush(); setPushLabel(false); }
+    else { await enablePush(); setPushLabel(true); }
+    note.textContent="";
+  }catch(e){
+    note.textContent=String((e&&e.message)||e||"Push failed. Try again.");
+    // On failure, re-read the truth rather than leaving a wrong label up.
+    try{ const st=await pushStatus(); setPushLabel(!!st.subscribed); }catch{}
+  }
+  pushBtn.disabled=false;
+};
 soundBtn.onclick=()=>{setNotifSoundEnabled(!notifSoundEnabled());paintSound()};
 let lastUnread=-1;
 const skel='<div class="tl-card animate-pulse p-4 sm:p-5"><div class="h-4 rounded bg-white/10"></div><div class="mt-3 h-3 w-2/3 rounded bg-white/5"></div></div>';
