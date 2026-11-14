@@ -1,5 +1,5 @@
-import { clean } from "../../../_lib/env.js";
-import { clientIp, rateLimit, verifyAdmin } from "../../../_lib/guard.js";
+import { clean } from "../../_lib/env.js";
+import { clientIp, rateLimit, verifyAdmin } from "../../_lib/guard.js";
 
 // Unsplash requires apps to report when a photo is used. Admin-only so keys and quota stay safe.
 export default async function handler(req, res) {

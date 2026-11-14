@@ -1,5 +1,5 @@
-import { clean } from "../../../_lib/env.js";
-import { rateLimit, clientIp } from "../../../_lib/guard.js";
+import { clean } from "../../_lib/env.js";
+import { rateLimit, clientIp } from "../../_lib/guard.js";
 
 // Finds a real photo of one specific place on Wikimedia Commons.
 //
