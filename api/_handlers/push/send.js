@@ -1,5 +1,5 @@
-import { verifyUser, verifyAdmin } from "../_lib/guard.js";
-import { clean, cleanUrl } from "../_lib/env.js";
+import { verifyUser, verifyAdmin } from "../../../_lib/guard.js";
+import { clean, cleanUrl } from "../../../_lib/env.js";
 import { encryptAes128gcm, b64urlEncode } from "./encrypt.js";
 
 const AUTH = atob("QXV0aG9yaXphdGlvbg==");

@@ -1,5 +1,5 @@
-import { verifyUser, verifyAdmin } from "../_lib/guard.js";
-import { clean, cleanUrl } from "../_lib/env.js";
+import { verifyUser, verifyAdmin } from "../../../_lib/guard.js";
+import { clean, cleanUrl } from "../../../_lib/env.js";
 
 
 export default async function handler(req, res) {

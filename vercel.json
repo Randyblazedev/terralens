@@ -17,6 +17,18 @@
     "api/blog.js": {
       "includeFiles": "hub.html",
       "maxDuration": 15
+    },
+    "api/push.js": {
+      "maxDuration": 30
+    },
+    "api/admin.js": {
+      "maxDuration": 60
+    },
+    "api/photos.js": {
+      "maxDuration": 30
+    },
+    "api/unsplash.js": {
+      "maxDuration": 30
     }
   },
   "rewrites": [

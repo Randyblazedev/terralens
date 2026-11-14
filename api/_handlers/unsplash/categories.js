@@ -1,4 +1,4 @@
-import { clean } from "../_lib/env.js";
+import { clean } from "../../../_lib/env.js";
 // One real photo per home-page category, fetched from Unsplash with YOUR key on the server
 // and cached for a day (so it uses ~6 requests/day of the 50/hour demo limit).
 const QUERIES = {

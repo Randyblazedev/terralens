@@ -1,4 +1,4 @@
-import { clean } from "../_lib/env.js";
+import { clean } from "../../../_lib/env.js";
 
 // Category photos for the homepage tiles.
 //

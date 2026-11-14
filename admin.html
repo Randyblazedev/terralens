@@ -234,7 +234,7 @@ $("#audit-run").onclick=async()=>{
  try{
   const status=$("#audit-status").value||undefined;
   const limit=Number($("#audit-limit").value)||12;
-  const d=await api("/api/admin/image-audit",{limit,status});
+  const d=await api("/api/admin?action=image-audit",{limit,status});
   if(d.error){out.textContent=d.error;btn.disabled=false;return}
   const flagged=d.flaggedOnly||[];
   out.textContent=flagged.length?`${d.checked} checked · ${flagged.length} need a look`:`${d.checked} checked · every photo looks right`;
@@ -297,7 +297,7 @@ $("#places").addEventListener("click",async e=>{
  if(act==="savemeta"){const aff=card.querySelector('[data-f="affiliate_url"]').value.trim();if(aff&&!httpsUrl(aff)){flash("Affiliate link must start with https://");return}
   const {error}=await supabase.from("places").update({sponsor_name:card.querySelector('[data-f="sponsor_name"]').value.trim()||null,affiliate_url:aff||null}).eq("id",id);flash(error?error.message:"Sponsor details saved.")}
  if(act==="usearch"){const term=card.querySelector('[data-f="usq"]').value.trim();if(!term)return;const box=card.querySelector("[data-results]");box.textContent="Searching...";
-  const r=await fetch(`/api/unsplash/search?${new URLSearchParams({query:term,per_page:"8"})}`);const d=await r.json().catch(()=>({}));
+  const r=await fetch(`/api/unsplash?action=search&${new URLSearchParams({query:term,per_page:"8"})}`);const d=await r.json().catch(()=>({}));
   if(!r.ok){box.textContent=d.error||"Search failed.";return}
   box.innerHTML=d.results.map((p,i)=>`<button data-act="usepick" data-i="${i}" class="group overflow-hidden rounded-xl border border-white/10 text-left"><img src="${escapeHtml(p.urls.small)}" alt="${escapeHtml(p.description||"Unsplash photo")}" class="aspect-[4/3] w-full object-cover"><span class="block truncate p-2 text-xs text-white/55">${escapeHtml(p.user.name||"")}</span></button>`).join("")||"No photos found.";
   box._picks=d.results}
@@ -307,7 +307,7 @@ $("#places").addEventListener("click",async e=>{
   const {error}=await supabase.from("place_images").insert({place_id:id,image_url:p.urls.regular,alt_text:p.description||name,credit_name:p.user.name||"Unsplash photographer",credit_url:credit,created_by:session.user.id});
   if(error){flash(error.message);btn.disabled=false;return}
   const cover=card.querySelector("img").getAttribute("src");if(!cover)await supabase.from("places").update({cover_url:p.urls.regular}).eq("id",id);
-  if(p.links?.download_location)await api("/api/unsplash/download",{download_location:p.links.download_location});
+  if(p.links?.download_location)await api("/api/unsplash?action=download",{download_location:p.links.download_location});
   flash(`Added photo by ${p.user.name||"Unsplash photographer"} to ${name}.`)}
 });
 $("#comments").addEventListener("click",async e=>{const btn=e.target.closest('[data-act="delcomment"]'),row=e.target.closest("[data-cid]");if(!btn||!row||!await confirmDialog("Delete this comment?",{danger:true,confirmText:"Delete"}))return;
@@ -345,14 +345,14 @@ $("#fill").onclick=async()=>{const out=$("#fill-out"),btn=$("#fill");btn.disable
  if(!data.length){out.textContent="Every place already has a photo.";btn.disabled=false;return}
  const wait=()=>new Promise(z=>setTimeout(z,2200));let ok=0,skipped=0;
  for(const [i,p] of data.entries()){out.textContent=`Adding photos: ${i+1} of ${data.length} (${p.name})`;
-  const r=await fetch(`/api/unsplash/search?${new URLSearchParams({query:`${p.name} ${p.country||""}`.trim(),per_page:"1",orientation:"landscape"})}`);
+  const r=await fetch(`/api/unsplash?action=search&${new URLSearchParams({query:`${p.name} ${p.country||""}`.trim(),per_page:"1",orientation:"landscape"})}`);
   if(r.status===429){out.textContent=`Paused after ${ok} places: the Unsplash limit was reached. Tap again in about an hour.`;btn.disabled=false;stats();loadPlaces();return}
   const d=await r.json().catch(()=>({})),ph=d.results?.[0];
   if(!ph){skipped++;await wait();continue}
   const ins=await supabase.from("place_images").insert({place_id:p.id,image_url:ph.urls.regular,alt_text:ph.description||p.name,credit_name:ph.user?.name||"Unsplash photographer",credit_url:ph.user?.profile?ph.user.profile+"?utm_source=terralens&utm_medium=referral":null,created_by:session.user.id});
   if(ins.error){skipped++;await wait();continue}
   const upd=await supabase.from("places").update(p.status==="draft"?{cover_url:ph.urls.regular,status:"published"}:{cover_url:ph.urls.regular}).eq("id",p.id);
-  if(upd.error)skipped++;else{ok++;if(ph.links?.download_location)api("/api/unsplash/download",{download_location:ph.links.download_location})}
+  if(upd.error)skipped++;else{ok++;if(ph.links?.download_location)api("/api/unsplash?action=download",{download_location:ph.links.download_location})}
   await wait()}
  out.textContent=`Done: ${ok} place${ok===1?"":"s"} now ${ok===1?"has":"have"} a photo and ${ok===1?"is":"are"} live${skipped?`. ${skipped} skipped, tap again to retry`:""}.`;btn.disabled=false;stats();loadPlaces()};
 $("#clear-filler").onclick=async()=>{
@@ -433,7 +433,7 @@ $("#fill-real").onclick=async()=>{
   }
   for(const p of data){
    out.textContent=`Finding real photos... ${total} done, ${data.length} in this round (${p.name})`;
-   const r=await fetch(`/api/photos/place?${new URLSearchParams({name:p.name,country:p.country||""})}`);
+   const r=await fetch(`/api/photos?action=place&${new URLSearchParams({name:p.name,country:p.country||""})}`);
    if(r.status===429){out.textContent=`Paused after ${total} places: too many lookups. Tap again in a minute.`;btn.disabled=false;stats();loadPlaces();return}
    const d=await r.json().catch(()=>({}));
    const ph=(d.photos||[])[0];

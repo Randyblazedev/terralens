@@ -1,5 +1,5 @@
-import { verifyAdmin } from "../_lib/guard.js";
-import { clean, cleanUrl } from "../_lib/env.js";
+import { verifyAdmin } from "../../../_lib/guard.js";
+import { clean, cleanUrl } from "../../../_lib/env.js";
 
 // Autonomous admin worker: checks whether each place's cover image actually matches
 // the place (name, category, country). Reports mismatches; never edits anything itself.

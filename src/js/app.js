@@ -359,7 +359,7 @@ function _authHeader(token) {
 }
 async function _getVapidKey() {
   try {
-    const r = await fetch("/api/push/config", { cache: "no-store" });
+    const r = await fetch("/api/push?action=config", { cache: "no-store" });
     if (!r.ok) return "";
     const j = await r.json().catch(() => ({}));
     const k = String(j && j.publicKey ? j.publicKey : "").trim();
@@ -391,7 +391,7 @@ export async function enablePush() {
   const sess = await supabase.auth.getSession();
   const token = sess && sess.data && sess.data.session ? sess.data.session.access_token : "";
   if (!token) throw new Error("Sign in first, then turn push on");
-  const r = await fetch("/api/push/subscribe", { method: "POST", headers: _authHeader(token), body: JSON.stringify(sub.toJSON ? sub.toJSON() : sub) });
+  const r = await fetch("/api/push?action=subscribe", { method: "POST", headers: _authHeader(token), body: JSON.stringify(sub.toJSON ? sub.toJSON() : sub) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(String((j && j.error) || "Could not save this device. Try again"));
   return true;
@@ -406,7 +406,7 @@ export async function disablePush() {
       try {
         const sess = await supabase.auth.getSession();
         const token = sess && sess.data && sess.data.session ? sess.data.session.access_token : "";
-        if (token && endpoint) await fetch("/api/push/unsubscribe", { method: "POST", headers: _authHeader(token), body: JSON.stringify({ endpoint }) });
+        if (token && endpoint) await fetch("/api/push?action=unsubscribe", { method: "POST", headers: _authHeader(token), body: JSON.stringify({ endpoint }) });
       } catch {}
     }
   } catch {}
@@ -418,7 +418,7 @@ async function _sendPush(userId, title, body, link) {
     const sess = await supabase.auth.getSession();
     const token = sess && sess.data && sess.data.session ? sess.data.session.access_token : "";
     if (!token) return;
-    await fetch("/api/push/send", { method: "POST", headers: _authHeader(token), body: JSON.stringify({ userId, title, body, link }) });
+    await fetch("/api/push?action=send", { method: "POST", headers: _authHeader(token), body: JSON.stringify({ userId, title, body, link }) });
   } catch {}
 }
 // PWA_PUSH_CLIENT_END

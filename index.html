@@ -137,7 +137,7 @@ document.querySelector("#hero-search").addEventListener("submit",e=>{e.preventDe
 (async()=>{
  // Tiles must never be empty boxes: paint the fallback colour first, then try a photo.
  const tiles=[...document.querySelectorAll("[data-cat]")],photos={},fallbacks={};
- try{const r=await fetch("/api/photos/categories");if(r.ok){const d=await r.json();Object.assign(photos,d.photos||{});Object.assign(fallbacks,d.fallbacks||{})}}catch{}
+ try{const r=await fetch("/api/photos?action=categories");if(r.ok){const d=await r.json();Object.assign(photos,d.photos||{});Object.assign(fallbacks,d.fallbacks||{})}}catch{}
  tiles.forEach(t=>{if(fallbacks[t.dataset.cat])t.style.background=fallbacks[t.dataset.cat]});
  // A place's own cover photo is better than a stock one, when one exists.
  if(supabase){

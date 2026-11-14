@@ -1,5 +1,5 @@
-import { clean } from "../_lib/env.js";
-import { clientIp, rateLimit } from "../_lib/guard.js";
+import { clean } from "../../../_lib/env.js";
+import { clientIp, rateLimit } from "../../../_lib/guard.js";
 
 const ORIENTATIONS = new Set(["landscape", "portrait", "squarish"]);
 const ORDERS = new Set(["relevant", "latest"]);
