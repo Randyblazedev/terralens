@@ -114,7 +114,10 @@ if(supabase){
 }
 document.querySelector("#google").onclick=async()=>{if(!supabase){msg.textContent="Configure Supabase first.";return}
  sessionStorage.setItem(KEY,next);
- const {error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+"/login.html"}});
+ // Pin the OAuth return to the canonical host. Signing in on one Vercel domain
+ // and landing on the other left the PKCE verifier on a different origin.
+ const canonical="https://terralenss.vercel.app";
+ const {error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:canonical+"/login.html"}});
  if(error)msg.textContent=error.message};
 </script>
 
