@@ -85,8 +85,26 @@ pushBtn.onclick=async()=>{pushBtn.disabled=true;try{const st=await pushStatus();
 soundBtn.onclick=()=>{setNotifSoundEnabled(!notifSoundEnabled());paintSound()};
 let lastUnread=-1;
 const skel='<div class="tl-card animate-pulse p-5"><div class="h-4 rounded bg-white/10"></div><div class="mt-3 h-3 w-2/3 rounded bg-white/5"></div></div>';
-const {data:{session}}=await supabase.auth.getSession();
-if(!session){location.href="login.html?next="+encodeURIComponent("notifications.html");throw new Error("redirect");}
+// The session is restored from storage asynchronously, so getSession() can return null
+// for a moment on a cold load even when the user IS signed in. Wait for it to settle
+// before deciding to send anyone back to the sign-in page.
+async function waitForSession(timeoutMs=6000){
+  const start=Date.now();
+  while(Date.now()-start<timeoutMs){
+    try{
+      const r=await supabase.auth.getSession();
+      const s=r&&r.data?r.data.session:null;
+      if(s&&s.user) return s;
+    }catch{}
+    await new Promise(r=>setTimeout(r,250));
+  }
+  return null;
+}
+const session=await waitForSession();
+if(!session){
+  location.href="login.html?next="+encodeURIComponent("notifications.html");
+  throw new Error("redirect");
+}
 const me=session.user;
 const when=t=>new Date(t).toLocaleString(undefined,{year:"numeric",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
 const KIND_LABEL={follow:"Follow",comment:"Comment",like:"Like",place:"Place",new_place:"New place",new_post:"New post",chat_reply:"Reply",chat_mention:"Mention",verify:"Verified",report:"Report",system:"Update"};
