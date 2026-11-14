@@ -73,7 +73,7 @@
 </div></main>
 <script type="module">
 import {supabase} from "./src/js/supabase.js";
-import {initNav,escapeHtml,waitForAuthSession,getUnreadCount,markAllRead,notifyUser,playNotifPing,maybeBrowserNotify,notifSoundEnabled,setNotifSoundEnabled,pushStatus,enablePush,disablePush} from "./src/js/app.js";
+import {initNav,escapeHtml,waitForAuthSession,getUnreadCount,markAllRead,notifyUser,playNotifPing,maybeBrowserNotify,notifSoundEnabled,setNotifSoundEnabled,pushStatus,enablePush,disablePush,healPush} from "./src/js/app.js";
 void notifyUser; void getUnreadCount;
 await initNav();
 const list=document.querySelector("#list"),note=document.querySelector("#note"),btn=document.querySelector("#mark-read"),soundBtn=document.querySelector("#sound-toggle"),pushBtn=document.querySelector("#push-toggle");
@@ -98,6 +98,17 @@ const paintPush=async()=>{
   }catch{}
 };
 paintPush();
+// Self-heal: a new service worker can drop the subscription while permission stays
+// granted, which showed "Off" even though the user had already turned push on.
+(async()=>{
+  try{
+    if(!("Notification" in window) || Notification.permission!=="granted") return;
+    const before=await pushStatus();
+    if(before.subscribed) return;
+    const healed=await healPush();
+    if(healed){ setPushLabel(true); }
+  }catch{}
+})();
 pushBtn.onclick=async()=>{
   if(pushBtn.disabled) return;
   pushBtn.disabled=true;

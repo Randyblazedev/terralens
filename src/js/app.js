@@ -366,14 +366,60 @@ async function _getVapidKey() {
     return VAPID_B64URL_RE.test(k) ? k : "";
   } catch { return ""; }
 }
+// Resolve the service worker registration without hanging on .ready, which never settles
+// if no worker has activated yet.
+async function _swReg(timeoutMs = 4000) {
+  if (!("serviceWorker" in navigator)) return null;
+  try {
+    const existing = await navigator.serviceWorker.getRegistration();
+    if (existing) return existing;
+  } catch {}
+  try {
+    return await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise(r => setTimeout(() => r(null), timeoutMs))
+    ]);
+  } catch { return null; }
+}
+
 export async function pushStatus() {
   try {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return { supported: false };
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.getSubscription();
     const perm = ("Notification" in window) ? Notification.permission : "unsupported";
+    const reg = await _swReg();
+    let sub = null;
+    try { sub = reg ? await reg.pushManager.getSubscription() : null; } catch {}
     return { supported: true, permission: perm, subscribed: !!sub };
   } catch { return { supported: false }; }
+}
+
+// A new service worker can drop the existing push subscription, which left the UI
+// reading "Off" while the browser still had notifications allowed. If permission is
+// already granted, quietly re-subscribe and re-register the device with the server.
+export async function healPush() {
+  try {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
+    if (!("Notification" in window) || Notification.permission !== "granted") return false;
+    const reg = await _swReg();
+    if (!reg) return false;
+    let sub = null;
+    try { sub = await reg.pushManager.getSubscription(); } catch {}
+    if (!sub) {
+      const key = await _getVapidKey();
+      if (!key) return false;
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: _b64urlToU8(key) });
+    }
+    if (!sub) return false;
+    const sess = await supabase.auth.getSession();
+    const token = sess && sess.data && sess.data.session ? sess.data.session.access_token : "";
+    if (!token) return false;
+    const r = await fetch("/api/push?action=subscribe", {
+      method: "POST",
+      headers: _authHeader(token),
+      body: JSON.stringify(sub.toJSON ? sub.toJSON() : sub)
+    });
+    return r.ok;
+  } catch { return false; }
 }
 export async function enablePush() {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) throw new Error("Push is not supported on this browser yet");
