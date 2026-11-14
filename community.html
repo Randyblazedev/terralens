@@ -94,48 +94,54 @@ async function loadPlaces(){
   gridP.innerHTML=(await attachAuthors(p.data||[])).map(card).join("")||'<p class="text-white/45">No places yet.</p>';
  }catch{ gridP.innerHTML='<p class="text-white/45">No places yet.</p>'; }
 }
-// Page through a table so counts are real, not capped at the first page.
-async function fetchAll(table, select, apply){
- const out=[];
- const PAGE=1000;
- for(let from=0; from<20000; from+=PAGE){
-  let q=supabase.from(table).select(select).range(from, from+PAGE-1);
-  if(apply) q=apply(q);
-  const {data,error}=await q;
-  if(error) break;
-  const rows=data||[];
-  out.push(...rows);
-  if(rows.length<PAGE) break;
- }
- return out;
-}
+// Contributor ranking: count published places per uploader.
+// Kept deliberately simple — one bounded select (Supabase caps rows anyway),
+// count in memory, then resolve the top profiles by id. No nested paging.
 async function loadPeople(){
  try{
-  const [plc,fol,profs]=await Promise.all([
-   fetchAll("places","created_by",q=>q.eq("status","published")),
-   fetchAll("follows","following_id"),
-   supabase.from("profiles").select("id,display_name,username,verified,avatar_url").order("created_at",{ascending:false}).limit(30)
-  ]);
-  const counts={};
-  plc.forEach(r=>{ if(r.created_by) counts[r.created_by]=(counts[r.created_by]||0)+1; });
-  const fcounts={};
-  fol.forEach(r=>{ if(r.following_id) fcounts[r.following_id]=(fcounts[r.following_id]||0)+1; });
+  const placesRes = await supabase
+    .from("places")
+    .select("created_by")
+    .eq("status","published")
+    .not("created_by","is",null)
+    .limit(5000);
 
-  // Rank every uploader by published places, then fetch those profiles by id —
-  // so an older account with lots of places is not hidden by a "newest 30" window.
-  const topIds=Object.keys(counts)
-   .sort((a,b)=>counts[b]-counts[a])
-   .slice(0,6);
-  let topProfiles=[];
-  if(topIds.length){
-   const r=await supabase.from("profiles").select("id,display_name,username,verified,avatar_url").in("id",topIds);
-   const byId={};
-   (r.data||[]).forEach(u=>{byId[u.id]=u});
-   topProfiles=topIds.filter(id=>byId[id]).map(id=>({...byId[id],place_count:counts[id]||0,follower_count:fcounts[id]||0}));
+  const counts = {};
+  ((placesRes && placesRes.data) || []).forEach(r=>{
+    if(r && r.created_by) counts[r.created_by] = (counts[r.created_by]||0) + 1;
+  });
+
+  const topIds = Object.keys(counts)
+    .sort((a,b)=>counts[b]-counts[a])
+    .slice(0,6);
+
+  if(!topIds.length){
+    gridT.innerHTML='<p class="text-white/45">No contributors yet.</p>';
+  } else {
+    const profRes = await supabase
+      .from("profiles")
+      .select("id,display_name,username,verified,avatar_url")
+      .in("id", topIds);
+
+    const byId = {};
+    ((profRes && profRes.data) || []).forEach(u=>{ byId[u.id]=u; });
+
+    const ranked = topIds
+      .filter(id=>byId[id])
+      .map(id=>({...byId[id], place_count:counts[id]||0}));
+
+    gridT.innerHTML = ranked.map(u=>
+      userCard(u, `${u.place_count} place${u.place_count===1?"":"s"}`)
+    ).join("") || '<p class="text-white/45">No contributors yet.</p>';
   }
-  gridT.innerHTML=topProfiles.map(u=>userCard(u,`${u.place_count} place${u.place_count===1?"":"s"} · ${u.follower_count} follower${u.follower_count===1?"":"s"}`)).join("")||'<p class="text-white/45">No contributors yet.</p>';
-  const list=profs.data||[];
-  gridU.innerHTML=list.slice(0,6).map(u=>userCard(u)).join("")||'<p class="text-white/45">No users yet.</p>';
+
+  const profs = await supabase
+    .from("profiles")
+    .select("id,display_name,username,verified,avatar_url")
+    .order("created_at",{ascending:false})
+    .limit(6);
+  const list = (profs && profs.data) || [];
+  gridU.innerHTML = list.map(u=>userCard(u)).join("") || '<p class="text-white/45">No users yet.</p>';
  }catch{
   gridT.innerHTML='<p class="text-white/45">No contributors yet.</p>';
   gridU.innerHTML='<p class="text-white/45">No users yet.</p>';
