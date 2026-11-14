@@ -81,7 +81,37 @@ import {supabase,ensureProfile} from "./src/js/supabase.js";import {safeNext} fr
 const msg=document.querySelector("#msg"),KEY="tl_next",params=new URLSearchParams(location.search);
 const next=safeNext(params.get("next")||sessionStorage.getItem(KEY));
 if(params.get("error_description"))msg.textContent=params.get("error_description");
-if(supabase){const {data:{session}}=await supabase.auth.getSession();if(session){await ensureProfile(session.user);sessionStorage.removeItem(KEY);location.replace(next)}}
+if(supabase){
+  // The OAuth callback can land as ?code= (PKCE) or #access_token= (implicit).
+  // Give Supabase a moment to finish the exchange before deciding we are signed out,
+  // otherwise the user bounces straight back to this screen.
+  async function settleSession(timeoutMs=10000){
+    const start=Date.now();
+    let s=null;
+    try{ s=(await supabase.auth.getSession()).data.session; }catch{}
+    if(s&&s.user) return s;
+    s=await new Promise(resolve=>{
+      let done=false;
+      const finish=v=>{if(!done){done=true;resolve(v)}};
+      try{
+        const {data:sub}=supabase.auth.onAuthStateChange((_e,sess)=>{ if(sess&&sess.user) finish(sess); });
+        setTimeout(()=>{ try{sub?.subscription?.unsubscribe?.()}catch{} finish(null); },4000);
+      }catch{ finish(null); }
+    });
+    if(s&&s.user) return s;
+    while(Date.now()-start<timeoutMs){
+      try{ const r=(await supabase.auth.getSession()).data.session; if(r&&r.user) return r; }catch{}
+      await new Promise(r=>setTimeout(r,300));
+    }
+    return null;
+  }
+  const session=await settleSession();
+  if(session){
+    try{ await ensureProfile(session.user); }catch{}
+    sessionStorage.removeItem(KEY);
+    location.replace(next);
+  }
+}
 document.querySelector("#google").onclick=async()=>{if(!supabase){msg.textContent="Configure Supabase first.";return}
  sessionStorage.setItem(KEY,next);
  const {error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+"/login.html"}});

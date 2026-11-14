@@ -2,7 +2,17 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 
 export const supabase = SUPABASE_URL && SUPABASE_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        // PKCE keeps the OAuth exchange in the browser and survives a redirect hop
+        // between the two Vercel domains. detectSessionInUrl still handles implicit
+        // hash tokens, so older links keep working.
+        flowType: "pkce",
+        detectSessionInUrl: true,
+        persistSession: true,
+        autoRefreshToken: true
+      }
+    })
   : null;
 
 export async function getUser() {
