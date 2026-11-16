@@ -737,7 +737,7 @@ create table if not exists public.place_views (
   place_id uuid not null references public.places(id) on delete cascade,
   viewer text not null check (char_length(viewer) between 8 and 64),
   day date not null default current_date,
-  primary key (place_id, viewer, day)
+  primary key (place_id, viewer)
 );
 alter table public.place_views enable row level security; -- no policies: only the function below can write
 
@@ -793,7 +793,7 @@ begin
   if p_viewer is null or char_length(p_viewer) < 8 or char_length(p_viewer) > 64 then return false; end if;
   insert into public.place_views (place_id, viewer)
   select p_place, p_viewer where exists (select 1 from public.places where id = p_place and status = 'published')
-  on conflict do nothing;
+  on conflict (place_id, viewer) do nothing;
   get diagnostics n = row_count;
   if n = 0 then return false; end if;
   perform set_config('app.bumping_views', '1', true);
