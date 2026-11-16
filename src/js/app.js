@@ -840,8 +840,8 @@ export async function initNav() {
       });
     }
   }
-  document.querySelectorAll("[data-menu]").forEach(btn =>
   injectBottomNav(); // Add app-like bottom nav for mobile
+  document.querySelectorAll("[data-menu]").forEach(btn => {
     btn.addEventListener("click", () => document.querySelector("[data-mobile-nav]")?.classList.toggle("hidden"));
   });
 }
