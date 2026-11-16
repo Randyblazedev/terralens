@@ -76,6 +76,25 @@ export function formatCount(n) {
   return String(m).replace(/\.0$/, "") + "M";
 }
 export const EYE = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>`;
+
+// Pro feature checks
+export async function checkProFeature(feature){
+  const sub = await getProStatus();
+  if(!sub)return {allowed:false, reason:"No active pro subscription"};
+  const allowedFeatures = {
+    offline:true,
+    immersive:true, 
+    storyteller:true,
+    trip_simulator:true,
+    ad_free:true
+  };
+  if(!allowedFeatures[feature])return {allowed:false, reason:"Unknown feature"};
+  return {allowed:true, plan:sub.plan};
+}
+export function proGatedHTML(freeHtml, proHtml){
+  return `<div class="pro-gated" data-free="${escapeHtml(freeHtml)}" data-pro="${escapeHtml(proHtml)}"></div>`;
+}
+
 // Listen for view updates from place pages and refresh card counts.
 let _viewUpdaters=new Set();
 export function registerViewUpdater(fn){_viewUpdaters.add(fn);return()=>_viewUpdaters.delete(fn)}
