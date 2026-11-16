@@ -76,6 +76,11 @@ export function formatCount(n) {
   return String(m).replace(/\.0$/, "") + "M";
 }
 export const EYE = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>`;
+// Listen for view updates from place pages and refresh card counts.
+let _viewUpdaters=new Set();
+export function registerViewUpdater(fn){_viewUpdaters.add(fn);return()=>_viewUpdaters.delete(fn)}
+export function bumpViewCount(placeId,delta){_viewUpdaters.forEach(fn=>fn(placeId,delta))}
+
 // A zero count is a negative signal, so nothing is shown until a place has been viewed.
 export const viewsBadge = n => (Number(n) || 0) > 0 ? `<span class="inline-flex items-center gap-1 text-xs text-white/45" aria-label="${Number(n)} views" title="${Number(n)} views">${EYE}${formatCount(n)}</span>` : "";
 
@@ -142,6 +147,8 @@ export async function initCardSaves(root = document) {
 
 export function card(place) {
   const url = placeUrl(place);
+  // Store view count on the card for live updates
+  const viewCount = Number(place.view_count) || 0;
   const name = place.author ? (place.author.display_name || place.author.username || "") : "";
   const authorId = place.author?.id || place.created_by || "";
   const by = name ? `<span class="flex min-w-0 items-center gap-1.5 text-xs text-white/55">${authorId ? `<a href="profile.html?id=${escapeHtml(authorId)}" class="truncate hover:text-white hover:underline">${escapeHtml(name)}</a>` : `<span class="truncate">${escapeHtml(name)}</span>`}${place.author.verified ? verifiedBadge(15) : ""}</span>` : "<span></span>";
@@ -155,7 +162,7 @@ export function card(place) {
       </div>
       <h3 class="font-display text-xl font-bold"><a href="${url}">${escapeHtml(place.name)}</a></h3>
       <p class="mt-2 line-clamp-2 text-sm leading-6 text-white/55">${escapeHtml(place.description || "")}</p>
-      <div class="mt-4 flex items-center justify-between gap-3">${by}<div class="flex shrink-0 items-center gap-3">${viewsBadge(place.view_count)}${saveButton(place)}<a href="${url}" class="tl-btn tl-btn-ghost !min-h-9 shrink-0 !px-4" aria-label="View ${escapeHtml(place.name)}">View</a></div></div>
+      <div class="mt-4 flex items-center justify-between gap-3">${by}<div class="flex shrink-0 items-center gap-3"><div data-place-id="${escapeHtml(place.id)}" data-view-count="${viewCount}">${viewsBadge(viewCount)}</div>${saveButton(place)}<a href="${url}" class="tl-btn tl-btn-ghost !min-h-9 shrink-0 !px-4" aria-label="View ${escapeHtml(place.name)}">View</a></div></div>
     </div>
   </article>`;
 }

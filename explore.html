@@ -115,6 +115,18 @@ async function loadCountries(){let list=[];
 document.querySelector("#search").onclick=()=>run();cat.onchange=()=>run();country.onchange=()=>run();q.onkeydown=e=>{if(e.key==="Enter")run()};moreBtn.onclick=()=>run(true);
 grid.addEventListener("click",e=>{if(e.target.closest("a"))sessionStorage.setItem("tl_explore_scroll",String(scrollY))});
 await loadCountries();await run();
+// Listen for view updates from place pages
+try{registerViewUpdater((id,delta)=>{
+  const card=document.querySelector(`[data-place-id="${CSS.escape(id)}"]`);
+  if(!card)return;
+  const badge=card.querySelector("[data-view-count]");
+  if(badge){
+    let n=Number(badge.dataset.viewCount||0)+delta;
+    if(n<0)n=0;
+    badge.dataset.viewCount=n;
+    badge.textContent=formatCount(n);
+  }
+})}catch{}
 if(performance.getEntriesByType("navigation")[0]?.type==="back_forward"){const y=Number(sessionStorage.getItem("tl_explore_scroll")||0);if(y)scrollTo(0,y)}
 </script>
 

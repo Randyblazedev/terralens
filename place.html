@@ -78,7 +78,7 @@
 <script type="module">
 import {confirmDialog} from "./src/js/ui.js";
 import {pickCollectionForPlace,pickTripForPlace} from "./src/js/collections.js";
-import {supabase} from "./src/js/supabase.js";import {fallbackPlaces,escapeHtml,placeUrl,verifiedBadge,canEdit,backLink,backFab,imgSize,formatCount,EYE,stayLink,initFollowButtons,notifyUser} from "./src/js/app.js";
+import {supabase} from "./src/js/supabase.js";import {fallbackPlaces,escapeHtml,placeUrl,verifiedBadge,canEdit,backLink,backFab,imgSize,formatCount,EYE,stayLink,initFollowButtons,notifyUser,bumpViewCount} from "./src/js/app.js";
 import {AFFILIATE_BOOKING_AID,AFFILIATE_BOOKING_LABEL} from "./src/js/config.js";
 const slug=new URLSearchParams(location.search).get("slug")||decodeURIComponent(location.pathname.match(/^\/place\/([^/]+)/)?.[1]||"");
 let place=null,images=[];
@@ -225,8 +225,7 @@ if(isReal&&place.status==="published"){
  if(!sessionStorage.getItem(seen)){sessionStorage.setItem(seen,"1");
   const vid=(await supabase.auth.getSession()).data.session?.user?.id||localStorage.getItem("tl_vid")||crypto.randomUUID();
   const r=await supabase.rpc("record_place_view",{p_place:place.id,p_viewer:vid});
-  const el=document.querySelector("#views-n");
-  if(el)el.textContent=formatCount(place.view_count+(r.data?1:0));
+  if(r.data){const el=document.querySelector("#views-n");if(el)el.textContent=formatCount(place.view_count+1);bumpViewCount(place.id,1)}
   if(r.data)try{localStorage.setItem("tl_vid",vid)}catch{}
  }}
 document.body.insertAdjacentHTML("beforeend",backFab("explore.html"));
