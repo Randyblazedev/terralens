@@ -188,7 +188,15 @@ let loaded=places.length;
 listEl.innerHTML=(await attachAuthors(places)).map(rowHtml).join("")||(isSelf?'<p class="text-white/45">You have not uploaded a place yet.</p>':'<p class="text-white/45">No published places yet.</p>');
 moreBtn.classList.toggle("hidden",loaded>=((placesRes.count)||0));
 moreBtn.onclick=async()=>{moreBtn.disabled=true;const r=await supabase.from("places").select("*").eq("created_by",targetId).eq("status","published").order("created_at",{ascending:false}).range(loaded,loaded+PAGE-1);listEl.insertAdjacentHTML("beforeend",(await attachAuthors(r.data||[])).map(rowHtml).join(""));loaded+=r.data?.length||0;moreBtn.disabled=false;moreBtn.classList.toggle("hidden",loaded>=((placesRes.count)||0))};
-document.querySelector("#stats").innerHTML=`<div class="tl-card p-4"><strong class="text-2xl">${placesRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Places</span></div>${isSelf?`<a href="saved.html" class="tl-card block p-4 hover:bg-white/5"><strong class="text-2xl">${savedRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Saved · view all</span></a>`:""}<div class="tl-card p-4"><strong class="text-2xl">${followersRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Followers</span></div><div class="tl-card p-4"><strong class="text-2xl">${followingRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Following</span></div>`;
+// Check if user is admin and add admin button
+  let isAdminLink = "";
+  try {
+    const {data:isAdmin} = await supabase.rpc("is_admin");
+    if(isAdmin===true){
+      isAdminLink = `<a href="admin.html" class="tl-card block p-4 hover:bg-white/5 mt-4" style="grid-column:1/-1"><strong class="text-2xl">⚙️</strong><span class="mt-1 block text-xs text-white/40">Admin Panel</span></a>`;
+    }
+  }catch{}
+  document.querySelector("#stats").innerHTML=`<div class="tl-card p-4"><strong class="text-2xl">${placesRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Places</span></div>${isSelf?`<a href="saved.html" class="tl-card block p-4 hover:bg-white/5"><strong class="text-2xl">${savedRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Saved · view all</span></a>`:""}<div class="tl-card p-4"><strong class="text-2xl">${followersRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Followers</span></div><div class="tl-card p-4"><strong class="text-2xl">${followingRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Following</span></div>${isAdminLink}`;
 }}
 </script>
 

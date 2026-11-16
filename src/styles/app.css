@@ -39,3 +39,5 @@ h1,h2,h3,h4,h5{font-family:'Manrope',sans-serif}
 .tl-bottom-nav a:hover,.tl-bottom-nav a.active{color:#7dd3fc;background:rgba(125,211,252,.1)}
 .tl-bottom-nav a svg{width:22px;height:22px;display:block;margin:0 auto 2px}
 @media(min-width:768px){.tl-bottom-nav{display:none}}
+/* Hide top nav on mobile, only show bottom nav */
+@media(max-width:767px){.tl-nav .nav-links,.tl-nav header nav{display:none !important}.tl-nav .nav-right{display:none !important}}
