@@ -198,9 +198,11 @@ moreBtn.classList.toggle("hidden",loaded>=((placesRes.count)||0));
 moreBtn.onclick=async()=>{moreBtn.disabled=true;const r=await supabase.from("places").select("*").eq("created_by",targetId).eq("status","published").order("created_at",{ascending:false}).range(loaded,loaded+PAGE-1);listEl.insertAdjacentHTML("beforeend",(await attachAuthors(r.data||[])).map(rowHtml).join(""));loaded+=r.data?.length||0;moreBtn.disabled=false;moreBtn.classList.toggle("hidden",loaded>=((placesRes.count)||0))};
 // Check if user is admin and add admin button
   let isAdminLink = "";
+  let isAdmin = false;
   try {
-    const {data:isAdmin} = await supabase.rpc("is_admin");
-    if(isAdmin===true){
+    const {data:isAdminData} = await supabase.rpc("is_admin");
+    isAdmin = isAdminData === true;
+    if(isAdmin){
       isAdminLink = `<a href="admin.html" class="tl-card block p-4 hover:bg-white/5 mt-4" style="grid-column:1/-1"><strong class="text-2xl">⚙️</strong><span class="mt-1 block text-xs text-white/40">Admin Panel</span></a>`;
     }
   }catch{}

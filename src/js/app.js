@@ -105,6 +105,15 @@ export async function getProStatus(){
   if(!supabase)return null;
   const {data:{session}}=await supabase.auth.getSession();
   if(!session?.id)return null;
+  
+  // Admins are automatically pro
+  try{
+    const {data:isAdmin} = await supabase.rpc("is_admin");
+    if(isAdmin === true){
+      return {plan: "pro_lifetime", status: "verified", is_admin: true};
+    }
+  }catch{}
+  
   const {data}=await supabase.from("pro_subscriptions").select("*").eq("user_id",session.id).in("status",["active","verified"]).order("created_at",{ascending:false}).limit(1).maybeSingle();
   return data||null;
 }
