@@ -100,24 +100,123 @@ let _viewUpdaters=new Set();
 export function registerViewUpdater(fn){_viewUpdaters.add(fn);return()=>_viewUpdaters.delete(fn)}
 export function bumpViewCount(placeId,delta){_viewUpdaters.forEach(fn=>fn(placeId,delta))}
 
-// Pro subscription helpers
+
+// Pro features
 export async function getProStatus(){
   if(!supabase)return null;
   const {data:{session}}=await supabase.auth.getSession();
   if(!session?.id)return null;
-  
-  // Admins are automatically pro
+  // Admins are auto pro
   try{
     const {data:isAdmin} = await supabase.rpc("is_admin");
     if(isAdmin === true){
       return {plan: "pro_lifetime", status: "verified", is_admin: true};
     }
   }catch{}
-  
   const {data}=await supabase.from("pro_subscriptions").select("*").eq("user_id",session.id).in("status",["active","verified"]).order("created_at",{ascending:false}).limit(1).maybeSingle();
   return data||null;
 }
 export function isProUser(sub){return sub&&["active","verified"].includes(sub.status)}
+
+// Offline mode - cache place data for offline viewing
+const OFFLINE_CACHE = "tl_offline_places";
+export async function cachePlaceForOffline(place){
+  if(!isProUser(await getProStatus()))return false;
+  try{
+    const cached = JSON.parse(localStorage.getItem(OFFLINE_CACHE) || "{}");
+    cached[place.slug] = {
+      ...place,
+      cached_at: new Date().toISOString()
+    };
+    localStorage.setItem(OFFLINE_CACHE, JSON.stringify(cached));
+    return true;
+  }catch{return false}
+}
+export async function getOfflinePlace(slug){
+  try{
+    const cached = JSON.parse(localStorage.getItem(OFFLINE_CACHE) || "{}");
+    return cached[slug] || null;
+  }catch{return null}
+}
+export async function listOfflinePlaces(){
+  try{
+    const cached = JSON.parse(localStorage.getItem(OFFLINE_CACHE) || "{}");
+    return Object.values(cached);
+  }catch{return []}
+}
+
+// Immersive gallery - enhanced view with lightbox
+export function openImmersiveGallery(photos, startIndex=0){
+  if(!isProUser(getProStatus())){
+    location.href = "pro.html";
+    return;
+  }
+  // Create modal
+  const modal = document.createElement("div");
+  modal.className = "fixed inset-0 z-50 bg-black/95 flex items-center justify-center";
+  modal.innerHTML = `
+    <button class="absolute top-4 right-4 text-white/70 hover:text-white text-3xl">&times;</button>
+    <button class="absolute left-4 text-white/70 hover:text-white text-3xl" id="prev-img">&#8249;</button>
+    <button class="absolute right-4 text-white/70 hover:text-white text-3xl" id="next-img">&#8250;</button>
+    <img src="${photos[startIndex]?.url || ''}" class="max-h-[90vh] max-w-[90vw] object-contain" id="immersive-img">
+    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/70 text-sm" id="img-counter">${startIndex+1}/${photos.length}</div>
+  `;
+  document.body.appendChild(modal);
+  
+  let current = startIndex;
+  const img = modal.querySelector("#immersive-img");
+  const counter = modal.querySelector("#img-counter");
+  
+  modal.querySelector("button:first-child").onclick = () => modal.remove();
+  modal.querySelector("#prev-img").onclick = () => {
+    current = (current - 1 + photos.length) % photos.length;
+    img.src = photos[current].url;
+    counter.textContent = `${current+1}/${photos.length}`;
+  };
+  modal.querySelector("#next-img").onclick = () => {
+    current = (current + 1) % photos.length;
+    img.src = photos[current].url;
+    counter.textContent = `${current+1}/${photos.length}`;
+  };
+  modal.onclick = (e) => { if(e.target === modal) modal.remove(); };
+}
+
+// Storyteller audio guides (placeholder for now)
+export function showStorytellerGuide(place){
+  if(!isProUser(getProStatus())){
+    location.href = "pro.html";
+    return;
+  }
+  // Placeholder - will connect to actual audio files later
+  alert(`Storyteller guide for ${place.name} coming soon!\nThis will feature local voices sharing authentic stories.`);
+}
+
+// Trip simulator - plan digital trips
+export function openTripSimulator(place){
+  if(!isProUser(getProStatus())){
+    location.href = "pro.html";
+    return;
+  }
+  // Add to trip session
+  let trips = JSON.parse(localStorage.getItem("tl_trips") || "[]");
+  trips.push({
+    place_id: place.id,
+    slug: place.slug,
+    name: place.name,
+    added_at: new Date().toISOString()
+  });
+  localStorage.setItem("tl_trips", JSON.stringify(trips));
+  alert(`${place.name} added to your trip!\nVisit /trips.html to see your digital journey.`);
+}
+
+// Check if user has access to pro feature
+export async function checkProAccess(feature){
+  const sub = await getProStatus();
+  if(!sub)return {allowed:false, reason:"No pro subscription"};
+  const allowed = {offline:true, gallery:true, storyteller:true, trip:true};
+  return {allowed: !!allowed[feature], plan: sub.plan};
+}
+
 
 // A zero count is a negative signal, so nothing is shown until a place has been viewed.
 export const viewsBadge = n => (Number(n) || 0) > 0 ? `<span class="inline-flex items-center gap-1 text-xs text-white/45" aria-label="${Number(n)} views" title="${Number(n)} views">${EYE}${formatCount(n)}</span>` : "";
