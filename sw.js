@@ -1,5 +1,5 @@
 // TerraLens service worker. Bump CACHE_VERSION to force clients to update.
-const CACHE_VERSION = "terralens-v3";
+const CACHE_VERSION = "terralens-v4";
 const CORE = [
   "/index.html",
   "/manifest.webmanifest",
