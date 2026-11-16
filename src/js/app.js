@@ -81,6 +81,16 @@ let _viewUpdaters=new Set();
 export function registerViewUpdater(fn){_viewUpdaters.add(fn);return()=>_viewUpdaters.delete(fn)}
 export function bumpViewCount(placeId,delta){_viewUpdaters.forEach(fn=>fn(placeId,delta))}
 
+// Pro subscription helpers
+export async function getProStatus(){
+  if(!supabase)return null;
+  const {data:{session}}=await supabase.auth.getSession();
+  if(!session?.id)return null;
+  const {data}=await supabase.from("pro_subscriptions").select("*").eq("user_id",session.id).in("status",["active","verified"]).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  return data||null;
+}
+export function isProUser(sub){return sub&&["active","verified"].includes(sub.status)}
+
 // A zero count is a negative signal, so nothing is shown until a place has been viewed.
 export const viewsBadge = n => (Number(n) || 0) > 0 ? `<span class="inline-flex items-center gap-1 text-xs text-white/45" aria-label="${Number(n)} views" title="${Number(n)} views">${EYE}${formatCount(n)}</span>` : "";
 

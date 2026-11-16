@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Upgrade to Pro — TerraLens</title>
+<meta name="description" content="Unlock offline mode, immersive galleries, and local storyteller audio guides.">
+<link rel="stylesheet" href="src/styles/tailwind.css">
+<link rel="stylesheet" href="src/styles/app.css">
+</head>
+<body class="bg-[#06080b] text-white">
+  <header class="tl-nav sticky top-0 z-50">
+    <div class="tl-shell flex items-center justify-between h-16">
+      <a href="index.html" class="flex items-center gap-2">
+        <img src="assets/terralens-mark.png" class="tl-logo" alt="">
+        <span class="font-display text-xl font-extrabold">Terra<span class="text-sky-300">Lens</span></span>
+      </a>
+      <a href="profile.html" class="tl-btn tl-btn-ghost !min-h-9 !px-4">Profile</a>
+    </div>
+  </header>
+
+  <main class="tl-section">
+    <div class="tl-shell max-w-2xl">
+      <div class="text-center mb-10">
+        <p class="tl-eyebrow mb-3">UNLOCK THE FULL EXPERIENCE</p>
+        <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl">Go Pro</h1>
+        <p class="mt-4 text-lg text-white/60">Explore anywhere, even without internet. Support local storytellers. Get priority access.</p>
+      </div>
+
+      <!-- Pricing -->
+      <div class="grid gap-4 mb-10">
+        <div class="tl-card p-6 border-sky-500/30 bg-sky-500/5">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="tl-eyebrow">One-Time Purchase</p>
+              <p class="mt-2 text-3xl font-extrabold">$15 <span class="text-base font-normal text-white/50">lifetime</span></p>
+            </div>
+            <span class="bg-sky-500 text-white text-xs font-bold px-3 py-1 rounded-full">RECOMMENDED</span>
+          </div>
+          <ul class="mt-5 space-y-3 text-sm text-white/70">
+            <li class="flex items-center gap-2"><span class="text-sky-400">✓</span> Offline mode — download places for offline viewing</li>
+            <li class="flex items-center gap-2"><span class="text-sky-400">✓</span> Immersive galleries — 360° photos & video tours</li>
+            <li class="flex items-center gap-2"><span class="text-sky-400">✓</span> Local storyteller audio guides</li>
+            <li class="flex items-center gap-2"><span class="text-sky-400">✓</span> Trip simulator — plan digital journeys</li>
+            <li class="flex items-center gap-2"><span class="text-sky-400">✓</span> Ad-free experience</li>
+            <li class="flex items-center gap-2"><span class="text-sky-400">✓</span> Early access to new features</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Payment Instructions -->
+      <div class="tl-card p-6 mb-6">
+        <h2 class="text-xl font-bold mb-4">How to Pay</h2>
+        <ol class="space-y-4 text-sm text-white/70">
+          <li class="flex gap-3">
+            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold">1</span>
+            <div>Send payment via MTN Mobile Money to: <strong class="text-white">+237 6XX XXX XXX</strong></div>
+          </li>
+          <li class="flex gap-3">
+            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold">2</span>
+            <div>Take a screenshot of your payment confirmation</div>
+          </li>
+          <li class="flex gap-3">
+            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold">3</span>
+            <div>Send the screenshot to <a href="https://wa.me/2376XXXXXXXX" class="text-sky-400 hover:underline">WhatsApp</a> with your email</div>
+          </li>
+          <li class="flex gap-3">
+            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold">4</span>
+            <div>We'll verify and activate your pro account within 24 hours</div>
+          </li>
+        </ol>
+      </div>
+
+      <!-- Alternative: Pay with Card -->
+      <div class="tl-card p-6">
+        <h2 class="text-xl font-bold mb-4">Pay with Card (International)</h2>
+        <p class="text-sm text-white/60 mb-4">For users outside Cameroon, pay securely with your card:</p>
+        <button id="pay-card" class="tl-btn tl-btn-primary w-full">Pay $15 with Card</button>
+        <p class="mt-3 text-xs text-white/40 text-center">Powered by Flutterwave. Secure checkout.</p>
+      </div>
+
+      <!-- FAQ -->
+      <div class="mt-10">
+        <h2 class="text-2xl font-extrabold mb-4">FAQ</h2>
+        <div class="space-y-4">
+          <details class="tl-card p-4">
+            <summary class="font-bold cursor-pointer">How long does activation take?</summary>
+            <p class="mt-2 text-sm text-white/60">Usually within 24 hours. We check your payment and activate your account.</p>
+          </details>
+          <details class="tl-card p-4">
+            <summary class="font-bold cursor-pointer">Can I downgrade?</summary>
+            <p class="mt-2 text-sm text-white/60">Pro is a one-time purchase. You keep access forever, even if you stop using the app.</p>
+          </details>
+          <details class="tl-card p-4">
+            <summary class="font-bold cursor-pointer">What if I have issues?</summary>
+            <p class="mt-2 text-sm text-white/60">Contact us on WhatsApp or email us at randyblazedev@gmail.com</p>
+          </details>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import {supabase} from "./src/js/supabase.js";
+    import {waitForAuthSession} from "./src/js/app.js";
+    
+    // Check if already pro
+    (async () => {
+      const session = await waitForAuthSession();
+      if (!session) {
+        location.href = "login.html?next=" + encodeURIComponent(location.pathname);
+        return;
+      }
+      
+      // Check pro status
+      const {data: subs} = await supabase
+        .from("pro_subscriptions")
+        .select("status,plan")
+        .eq("user_id", session.user.id)
+        .in("status", ["active", "verified"])
+        .single();
+      
+      if (subs) {
+        document.querySelector("main").innerHTML = `
+          <div class="tl-shell max-w-2xl py-20 text-center">
+            <div class="text-6xl mb-4">✓</div>
+            <h1 class="text-3xl font-extrabold">You're already Pro!</h1>
+            <p class="mt-4 text-white/60">Enjoy all premium features. Thank you for supporting TerraLens.</p>
+            <a href="explore.html" class="tl-btn tl-btn-primary mt-8 inline-block">Start Exploring</a>
+          </div>
+        `;
+      }
+    })();
+
+    // Card payment button
+    document.getElementById("pay-card")?.addEventListener("click", async () => {
+      const FLUTTERWAVE_PUBLIC_KEY = "FLWPUBK_TEST-X-X-X"; // Replace with your key
+      const amount = 15;
+      const currency = "USD";
+      const email = (await supabase.auth.getUser()).data.user?.email || "";
+      
+      // Open Flutterwave checkout
+      const checkout = new window.FlutterwaveCheckout({
+        public_key: FLUTTERWAVE_PUBLIC_KEY,
+        amount: amount,
+        currency: currency,
+        email: email,
+        tx_ref: "TL-" + Date.now(),
+        callback: async (response) => {
+          if (response.status === "Successful") {
+            // Save subscription record
+            const {error} = await supabase.from("pro_subscriptions").insert({
+              user_id: (await supabase.auth.getUser()).data.user.id,
+              plan: "pro_lifetime",
+              amount: amount,
+              currency: currency,
+              payment_method: "flutterwave",
+              transaction_id: response.transaction_id,
+              status: "pending"
+            });
+            if (!error) {
+              document.querySelector("main").innerHTML = `
+                <div class="tl-shell max-w-2xl py-20 text-center">
+                  <div class="text-6xl mb-4">🎉</div>
+                  <h1 class="text-3xl font-extrabold">Payment Received!</h1>
+                  <p class="mt-4 text-white/60">Your pro account will be activated within 24 hours. Check your email for confirmation.</p>
+                  <a href="explore.html" class="tl-btn tl-btn-primary mt-8 inline-block">Explore Now</a>
+                </div>
+              `;
+            }
+          }
+        },
+        customizations: {
+          title: "TerraLens Pro",
+          description: "Unlock offline mode, immersive content, and more",
+          logo: "https://terralenss.vercel.app/assets/terralens-mark.png"
+        }
+      });
+      checkout.open();
+    });
+  </script>
+</body>
+</html>
