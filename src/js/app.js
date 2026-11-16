@@ -840,9 +840,49 @@ export async function initNav() {
       });
     }
   }
-  document.querySelectorAll("[data-menu]").forEach(btn => {
+  document.querySelectorAll("[data-menu]").forEach(btn =>
+  injectBottomNav(); // Add app-like bottom nav for mobile {
     btn.addEventListener("click", () => document.querySelector("[data-mobile-nav]")?.classList.toggle("hidden"));
   });
+}
+
+// App-like bottom navigation bar for mobile
+export function injectBottomNav(){
+  if(document.querySelector("[data-bottom-nav]"))return;
+  const nav=document.createElement("nav");
+  nav.setAttribute("data-bottom-nav","");
+  nav.className="tl-bottom-nav";
+  nav.innerHTML=`
+    <a href="index.html" data-nav-home>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Home
+    </a>
+    <a href="explore.html" data-nav-explore>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Explore
+    </a>
+    <a href="collections.html" data-nav-collections>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      Collections
+    </a>
+    <a href="saved.html" data-nav-saved>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+      Saved
+    </a>
+    <a href="profile.html" data-nav-profile>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profile
+    </a>
+  `;
+  document.body.appendChild(nav);
+  // Highlight current page
+  const current=location.pathname.split("/").pop().replace(".html","")||"index";
+  const navMap={"index":"home","explore":"explore","collections":"collections","saved":"saved","profile":"profile"};
+  const link=navMap[current];
+  if(link){
+    const el=document.querySelector(`[data-nav-${link}]`);
+    if(el)el.classList.add("active");
+  }
 }
 
 if (supabase) {

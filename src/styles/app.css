@@ -32,3 +32,10 @@ h1,h2,h3,h4,h5{font-family:'Manrope',sans-serif}
 [data-auth-href]{visibility:hidden;animation:tl-reveal 0s linear 1.8s forwards}
 [data-auth-href].tl-ready{visibility:visible;animation:none}
 @keyframes tl-reveal{to{visibility:visible}}
+
+/* App-like bottom navigation */
+.tl-bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(6,8,11,.95);border-top:1px solid rgba(255,255,255,.08);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);z-index:50;display:flex;justify-content:space-around;padding:8px 0 env(safe-area-inset-bottom,8px)}
+.tl-bottom-nav a{text-align:center;color:rgba(255,255,255,.5);text-decoration:none;font-size:11px;font-weight:600;padding:4px 12px;border-radius:12px;transition:all .2s}
+.tl-bottom-nav a:hover,.tl-bottom-nav a.active{color:#7dd3fc;background:rgba(125,211,252,.1)}
+.tl-bottom-nav a svg{width:22px;height:22px;display:block;margin:0 auto 2px}
+@media(min-width:768px){.tl-bottom-nav{display:none}}
