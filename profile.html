@@ -81,10 +81,18 @@ const isUuid=v=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 if(!supabase){p.innerHTML='<p class="text-white/45">Supabase is not configured.</p>';document.querySelector("#places").innerHTML="";document.querySelector("#stats").innerHTML = `<div class="tl-card p-4"><strong class="text-2xl">${placesRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Places</span></div>${isSelf?`<a href="saved.html" class="tl-card block p-4 hover:bg-white/5"><strong class="text-2xl">${savedRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Saved · view all</span></a>`:""}<div class="tl-card p-4"><strong class="text-2xl">${followersRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Followers</span></div><div class="tl-card p-4"><strong class="text-2xl">${followingRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Following</span></div>`;
   // Add pro badge if user is pro
   const {data:proSub} = await supabase.from("pro_subscriptions").select("*").eq("user_id",targetId).in("status",["active","verified"]).order("created_at",{ascending:false}).limit(1).maybeSingle();
-  if(proSub){
+  // Admins are pro too
+  let adminPro = false;
+  try{ const {data:ad} = await supabase.rpc("is_admin"); adminPro = ad === true; }catch{}
+  if(proSub || adminPro){
     const badge = document.createElement("div");
-    badge.className = "mt-4 p-4 rounded-2xl border border-sky-500/30 bg-sky-500/5";
-    badge.innerHTML = `<div class="flex items-center gap-2"><span class="text-2xl">👑</span><div><p class="font-bold text-sky-400">Pro Member</p><p class="text-xs text-white/50">${proSub.plan === "pro_lifetime" ? "Lifetime Access" : "Monthly Subscriber"}</p></div></div>`;
+    badge.className = "mt-6 rounded-2xl border border-sky-500/30 bg-sky-500/5 p-5";
+    badge.innerHTML = `<div class="flex items-center gap-3"><span class="text-3xl">👑</span><div class="flex-1"><p class="font-bold text-sky-400">Pro Member</p><p class="text-xs text-white/50">${adminPro ? "Admin · all features unlocked" : (proSub?.plan === "pro_lifetime" ? "Lifetime Access" : "Monthly Subscriber")}</p></div></div>
+      <div class="mt-4 grid gap-2 sm:grid-cols-3">
+        <a href="trips.html" class="tl-btn tl-btn-ghost !min-h-10 !text-xs">✈️ Trips</a>
+        <a href="pro.html" class="tl-btn tl-btn-ghost !min-h-10 !text-xs">📥 Offline & more</a>
+        <a href="explore.html" class="tl-btn tl-btn-ghost !min-h-10 !text-xs">🔍 Explore</a>
+      </div>`;
     document.querySelector("#stats")?.parentNode?.insertBefore(badge, document.querySelector("#stats")?.nextSibling);
   }""}else{
 const qs=new URLSearchParams(location.search);
@@ -206,10 +214,18 @@ moreBtn.onclick=async()=>{moreBtn.disabled=true;const r=await supabase.from("pla
   document.querySelector("#stats").innerHTML = `<div class="tl-card p-4"><strong class="text-2xl">${placesRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Places</span></div>${isSelf?`<a href="saved.html" class="tl-card block p-4 hover:bg-white/5"><strong class="text-2xl">${savedRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Saved · view all</span></a>`:""}<div class="tl-card p-4"><strong class="text-2xl">${followersRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Followers</span></div><div class="tl-card p-4"><strong class="text-2xl">${followingRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Following</span></div>`;
   // Add pro badge if user is pro
   const {data:proSub} = await supabase.from("pro_subscriptions").select("*").eq("user_id",targetId).in("status",["active","verified"]).order("created_at",{ascending:false}).limit(1).maybeSingle();
-  if(proSub){
+  // Admins are pro too
+  let adminPro = false;
+  try{ const {data:ad} = await supabase.rpc("is_admin"); adminPro = ad === true; }catch{}
+  if(proSub || adminPro){
     const badge = document.createElement("div");
-    badge.className = "mt-4 p-4 rounded-2xl border border-sky-500/30 bg-sky-500/5";
-    badge.innerHTML = `<div class="flex items-center gap-2"><span class="text-2xl">👑</span><div><p class="font-bold text-sky-400">Pro Member</p><p class="text-xs text-white/50">${proSub.plan === "pro_lifetime" ? "Lifetime Access" : "Monthly Subscriber"}</p></div></div>`;
+    badge.className = "mt-6 rounded-2xl border border-sky-500/30 bg-sky-500/5 p-5";
+    badge.innerHTML = `<div class="flex items-center gap-3"><span class="text-3xl">👑</span><div class="flex-1"><p class="font-bold text-sky-400">Pro Member</p><p class="text-xs text-white/50">${adminPro ? "Admin · all features unlocked" : (proSub?.plan === "pro_lifetime" ? "Lifetime Access" : "Monthly Subscriber")}</p></div></div>
+      <div class="mt-4 grid gap-2 sm:grid-cols-3">
+        <a href="trips.html" class="tl-btn tl-btn-ghost !min-h-10 !text-xs">✈️ Trips</a>
+        <a href="pro.html" class="tl-btn tl-btn-ghost !min-h-10 !text-xs">📥 Offline & more</a>
+        <a href="explore.html" class="tl-btn tl-btn-ghost !min-h-10 !text-xs">🔍 Explore</a>
+      </div>`;
     document.querySelector("#stats")?.parentNode?.insertBefore(badge, document.querySelector("#stats")?.nextSibling);
   }
   document.querySelector("#stats").innerHTML = `<div class="tl-card p-4"><strong class="text-2xl">${placesRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Places</span></div>${isSelf?`<a href="saved.html" class="tl-card block p-4 hover:bg-white/5"><strong class="text-2xl">${savedRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Saved · view all</span></a>`:""}<div class="tl-card p-4"><strong class="text-2xl">${followersRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Followers</span></div><div class="tl-card p-4"><strong class="text-2xl">${followingRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Following</span></div>${isAdminLink}`;

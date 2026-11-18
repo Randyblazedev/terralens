@@ -73,7 +73,7 @@
  <div id="place"><div class="tl-shell"><div class="animate-pulse"><div class="h-10 w-2/3 rounded bg-white/10"></div><div class="mt-4 h-4 w-1/2 rounded bg-white/5"></div><div class="mt-8 grid gap-2 overflow-hidden rounded-[28px] sm:grid-cols-2 lg:grid-cols-3"><div class="h-[320px] rounded-2xl bg-white/10 sm:col-span-2 sm:h-[420px] lg:row-span-2"></div><div class="aspect-[4/3] rounded-2xl bg-white/5"></div><div class="aspect-[4/3] rounded-2xl bg-white/5"></div></div></div></div></div>
 </main>
 <script type="module">
-import {confirmDialog} from "./src/js/ui.js";
+import {confirmDialog,toast} from "./src/js/ui.js";
 import {pickCollectionForPlace,pickTripForPlace} from "./src/js/collections.js";
 import {supabase} from "./src/js/supabase.js";import {fallbackPlaces,escapeHtml,placeUrl,verifiedBadge,canEdit,backLink,backFab,imgSize,formatCount,EYE,stayLink,initFollowButtons,notifyUser,bumpViewCount,getProStatus,cachePlaceForOffline,showStorytellerGuide,openTripSimulator} from "./src/js/app.js";
 import {AFFILIATE_BOOKING_AID,AFFILIATE_BOOKING_LABEL} from "./src/js/config.js";
@@ -230,11 +230,11 @@ if(isReal&&place.status==="published"){
   const isPro = proStatus && ["active","verified"].includes(proStatus.status);
   if(isPro){
     // Add offline button
-    document.body.insertAdjacentHTML("beforeend",`<button id="offline-btn" class="fixed bottom-20 right-4 z-40 tl-btn tl-btn-primary !min-h-12 !px-4" title="Save for offline">📥 Offline</button>`);
+    document.body.insertAdjacentHTML("beforeend",`<button id="offline-btn" class="fixed bottom-24 right-4 z-[60] tl-btn tl-btn-primary !min-h-11 !px-4 shadow-xl" title="Save for offline">📥 Offline</button>`);
     // Add storyteller button
-    document.body.insertAdjacentHTML("beforeend",`<button id="story-btn" class="fixed bottom-36 right-4 z-40 tl-btn tl-btn-ghost !min-h-12 !px-4" title="Local stories">🎙️ Stories</button>`);
+    document.body.insertAdjacentHTML("beforeend",`<button id="story-btn" class="fixed bottom-40 right-4 z-[60] tl-btn tl-btn-ghost !min-h-11 !px-4 shadow-xl" title="Local stories">🎙️ Stories</button>`);
     // Add trip button
-    document.body.insertAdjacentHTML("beforeend",`<button id="trip-btn" class="fixed bottom-52 right-4 z-40 tl-btn tl-btn-ghost !min-h-12 !px-4" title="Add to trip">✈️ Trip</button>`);
+    document.body.insertAdjacentHTML("beforeend",`<button id="trip-btn" class="fixed bottom-56 right-4 z-[60] tl-btn tl-btn-ghost !min-h-11 !px-4 shadow-xl" title="Add to trip">✈️ Trip</button>`);
     
     document.getElementById("offline-btn")?.addEventListener("click", async ()=>{
       const cached = await cachePlaceForOffline(place);
