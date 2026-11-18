@@ -41,3 +41,6 @@ h1,h2,h3,h4,h5{font-family:'Manrope',sans-serif}
 @media(min-width:768px){.tl-bottom-nav{display:none}}
 /* Hide top nav on mobile, only show bottom nav */
 @media(max-width:767px){.tl-nav .nav-links,.tl-nav header nav{display:none !important}.tl-nav .nav-right{display:none !important}}
+
+/* Bottom nav already has Profile — hide the header name chip on mobile */
+@media(max-width:767px){.tl-nav [data-auth-href]{display:none}}
