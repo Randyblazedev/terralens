@@ -79,6 +79,14 @@ document.querySelector("#places").innerHTML=skel.repeat(4);
 const httpsUrl=u=>{try{const x=new URL(String(u||"").trim());return x.protocol==="https:"?x.href:""}catch{return ""}};
 const isUuid=v=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v||""));
 if(!supabase){p.innerHTML='<p class="text-white/45">Supabase is not configured.</p>';document.querySelector("#places").innerHTML="";document.querySelector("#stats").innerHTML = `<div class="tl-card p-4"><strong class="text-2xl">${placesRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Places</span></div>${isSelf?`<a href="saved.html" class="tl-card block p-4 hover:bg-white/5"><strong class="text-2xl">${savedRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Saved · view all</span></a>`:""}<div class="tl-card p-4"><strong class="text-2xl">${followersRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Followers</span></div><div class="tl-card p-4"><strong class="text-2xl">${followingRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Following</span></div>`;
+  // Admin link on profile (no pro UI)
+  let isAdminLink = "";
+  try {
+    const {data:isAdminData} = await supabase.rpc("is_admin");
+    if(isAdminData === true){
+      isAdminLink = `<a href="admin.html" class="tl-card block p-4 hover:bg-white/5 mt-4" style="grid-column:1/-1"><strong class="text-2xl">⚙️</strong><span class="mt-1 block text-xs text-white/40">Admin Panel</span></a>`;
+    }
+  }catch{}
   document.querySelector("#stats").innerHTML = `<div class="tl-card p-4"><strong class="text-2xl">${placesRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Places</span></div>${isSelf?`<a href="saved.html" class="tl-card block p-4 hover:bg-white/5"><strong class="text-2xl">${savedRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Saved · view all</span></a>`:""}<div class="tl-card p-4"><strong class="text-2xl">${followersRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Followers</span></div><div class="tl-card p-4"><strong class="text-2xl">${followingRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Following</span></div>${isAdminLink}`;
 }
 </script>
