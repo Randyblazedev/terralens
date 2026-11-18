@@ -297,7 +297,7 @@ export function card(place) {
       <div class="mb-2 flex items-center justify-between gap-3 text-[11px] font-bold uppercase tracking-[.16em] text-sky-300">
         <span>${escapeHtml(categoryLabel(place))}</span><span class="text-white/40">${escapeHtml(place.country || "")}</span>
       </div>
-      <h3 class="font-display text-xl font-bold"><a href="${url}">${escapeHtml(place.name)}</a></h3>
+      <h3 class="font-display text-xl font-bold line-clamp-2 break-words"><a href="${url}">${escapeHtml(place.name)}</a></h3>
       <p class="mt-2 line-clamp-2 text-sm leading-6 text-white/55">${escapeHtml(place.description || "")}</p>
       <div class="mt-4 flex items-center justify-between gap-3">${by}<div class="flex shrink-0 items-center gap-3"><div data-place-id="${escapeHtml(place.id)}" data-view-count="${viewCount}">${viewsBadge(viewCount)}</div>${saveButton(place)}<a href="${url}" class="tl-btn tl-btn-ghost !min-h-9 shrink-0 !px-4" aria-label="View ${escapeHtml(place.name)}">View</a></div></div>
     </div>
