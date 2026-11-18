@@ -1,5 +1,5 @@
 /* TerraLens home — contact sheet direction */
-.hv2-hero{position:relative;background:#080a0e;overflow:hidden;min-height:640px}
+.hv2-hero{position:relative;background:#080a0e;overflow:hidden;display:flex;flex-direction:column}
 .hv2-mosaic{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:170px;gap:6px;padding:6px}
 .hv2-tile{position:relative;display:block;overflow:hidden;background:#141820}
 .hv2-tile:first-child{grid-column:span 2;grid-row:span 2}
@@ -10,8 +10,8 @@
 .hv2-cap b{font-size:13px;font-weight:700;line-height:1.2;text-shadow:0 1px 6px rgba(0,0,0,.5)}
 .hv2-cap span{font-size:10px;color:rgba(255,255,255,.6)}
 .hv2-tile:first-child .hv2-cap b{font-size:20px}
-.hv2-hero-shade{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,10,14,.05) 0%,rgba(8,10,14,.72) 58%,#080a0e 100%);pointer-events:none}
-.hv2-hero-inner{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:0 22px 40px;pointer-events:none;background:linear-gradient(to bottom,transparent 0%,#080a0e 42%)}
+.hv2-hero-shade{display:none}
+.hv2-hero-inner{position:relative;z-index:2;padding:54px 22px 38px;background:#080a0e}
 .hv2-hero-copy{max-width:760px;margin:0 auto;pointer-events:auto}
 .hv2-kicker{font-size:13px;color:#ffcf5c;margin-bottom:14px;font-weight:600}
 .hv2-hero h1{font-family:'Fraunces',Georgia,serif;font-size:clamp(2.9rem,7vw,5.2rem);line-height:1.02;letter-spacing:-.035em;font-weight:600;color:#f4f1ea}
@@ -50,5 +50,5 @@
 .hv2-trip-meta b{font-size:15px;color:#f4f1ea;display:block}
 .hv2-trip-meta span{font-size:12px;color:rgba(244,241,234,.5)}
 .hv2-trip-meta a{font-size:12px;color:#ffcf5c;font-weight:600;white-space:nowrap}
-@media(max-width:639px){.hv2-hero{min-height:720px}.hv2-mosaic{grid-template-columns:repeat(2,1fr);grid-auto-rows:130px}.hv2-mosaic .hv2-tile:first-child{grid-column:span 2;grid-row:span 2}.hv2-hero-inner{padding:0 18px 26px;background:linear-gradient(to bottom,transparent 0%,#080a0e 55%)}.hv2-hero h1{font-size:clamp(2.4rem,10vw,3.4rem)}.hv2-lede{font-size:14px;margin-top:12px}.hv2-search{margin-top:18px}}
+@media(max-width:639px){.hv2-mosaic{grid-template-columns:repeat(2,1fr);grid-auto-rows:120px}.hv2-mosaic .hv2-tile:first-child{grid-column:span 2;grid-row:span 2}.hv2-hero-inner{padding:38px 18px 28px}.hv2-hero h1{font-size:clamp(2.4rem,10vw,3.4rem)}.hv2-lede{font-size:14px;margin-top:12px}.hv2-search{margin-top:18px}}
 @media(prefers-reduced-motion:reduce){.hv2-tile img,.hv2-feel-tile img{transition:none}}
