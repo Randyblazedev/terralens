@@ -59,6 +59,9 @@
   </div>
   <div data-mobile-nav class="tl-shell hidden pb-4 lg:hidden">
     <div class="grid gap-1 rounded-2xl border border-white/10 bg-black/30 p-2">
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="index.html" data-i18n="nav.home">Home</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="explore.html" data-i18n="nav.explore">Explore</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="collections.html" data-i18n="nav.collections">Collections</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="community.html">Community</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="chat.html">Chat</a>
       <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="/blog" data-i18n="nav.blog">Blog</a>
@@ -79,16 +82,141 @@ document.querySelector("#places").innerHTML=skel.repeat(4);
 const httpsUrl=u=>{try{const x=new URL(String(u||"").trim());return x.protocol==="https:"?x.href:""}catch{return ""}};
 const isUuid=v=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v||""));
 if(!supabase){p.innerHTML='<p class="text-white/45">Supabase is not configured.</p>';document.querySelector("#places").innerHTML="";document.querySelector("#stats").innerHTML = `<div class="tl-card p-4"><strong class="text-2xl">${placesRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Places</span></div>${isSelf?`<a href="saved.html" class="tl-card block p-4 hover:bg-white/5"><strong class="text-2xl">${savedRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Saved · view all</span></a>`:""}<div class="tl-card p-4"><strong class="text-2xl">${followersRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Followers</span></div><div class="tl-card p-4"><strong class="text-2xl">${followingRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Following</span></div>`;
-  // Admin link on profile (no pro UI)
+  // Add pro badge if user is pro
+  const {data:proSub} = await supabase.from("pro_subscriptions").select("*").eq("user_id",targetId).in("status",["active","verified"]).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(false){
+    const badge = document.createElement("div");
+    badge.className = "mt-4 p-4 rounded-2xl border border-sky-500/30 bg-sky-500/5";
+    badge.innerHTML = `<div class="flex items-center gap-2"><span class="text-2xl">👑</span><div><p class="font-bold text-sky-400">Pro Member</p><p class="text-xs text-white/50">${proSub.plan === "pro_lifetime" ? "Lifetime Access" : "Monthly Subscriber"}</p></div></div>`;
+    document.querySelector("#stats")?.parentNode?.insertBefore(badge, document.querySelector("#stats")?.nextSibling);
+  }""}else{
+const qs=new URLSearchParams(location.search);
+const qId=qs.get("id"),qUser=qs.get("u");
+const me=await getUser();
+let targetId=qId&&isUuid(qId)?qId:null;
+let target=null;
+if(!targetId&&qUser){
+  const r=await supabase.from("profiles").select("*").eq("username",String(qUser).toLowerCase()).maybeSingle();
+  target=r.data||null;targetId=target?.id||null;
+}else if(targetId){
+  const r=await supabase.from("profiles").select("*").eq("id",targetId).maybeSingle();
+  target=r.data||null;
+  if(!target)targetId=null;
+}
+if(!targetId){
+  if(!me){location.href="login.html?next="+encodeURIComponent("profile.html")}
+  else{
+    const r=await supabase.from("profiles").select("*").eq("id",me.id).maybeSingle();
+    target=r.data||null;targetId=me.id;
+  }
+}
+if(!targetId){p.innerHTML='<h1 class="text-4xl font-extrabold">Profile not found</h1><p class="mt-4 text-white/55">This user does not exist or the link is wrong.</p><a href="explore.html" class="tl-btn tl-btn-primary mt-8">Explore places</a>'}
+else{
+const isSelf=!!me&&me.id===targetId;
+const PAGE=12;
+const [placesRes,savedRes,followersRes,followingRes]=await Promise.all([
+  supabase.from("places").select("*",{count:"exact"}).eq("created_by",targetId).eq("status","published").order("created_at",{ascending:false}).range(0,PAGE-1),
+  isSelf?supabase.from("saves").select("place_id",{count:"exact"}).eq("user_id",me.id):Promise.resolve({count:0}),
+  supabase.from("follows").select("follower_id",{count:"exact",head:true}).eq("following_id",targetId),
+  supabase.from("follows").select("following_id",{count:"exact",head:true}).eq("follower_id",targetId)
+]);
+const places=placesRes.data||[];
+const displayName=target?.display_name||target?.username||"Traveler";
+const avatar=target?.avatar_url||"assets/terralens-mark.png";
+p.innerHTML=`<div class="flex flex-col gap-6 sm:flex-row sm:items-start"><img src="${escapeHtml(avatar)}" alt="" class="h-20 w-20 rounded-full object-cover ring-1 ring-white/10"><div class="min-w-0 flex-1"><p class="tl-eyebrow">Creator</p><h1 class="mt-2 text-4xl font-extrabold">${escapeHtml(displayName)}${target?.verified?" "+verifiedBadge(28):""}</h1><p class="mt-2 text-white/45">@${escapeHtml(target?.username||"traveler")}</p>${target?.website_url?`<p class="mt-2"><a href="${escapeHtml(target.website_url)}" target="_blank" rel="noopener" class="text-sm text-sky-300 hover:underline">${escapeHtml(target.website_url)}</a></p>`:""}<p class="mt-4 max-w-2xl text-white/55">${escapeHtml(target?.bio||"Building a collection of places worth seeing.")}</p><div class="mt-5 flex flex-wrap items-center gap-3">${isSelf?`<button type="button" id="edit-toggle" class="tl-btn tl-btn-ghost">Edit profile</button><a href="logout.html" class="tl-btn tl-btn-ghost">Sign out</a>`:(me?`<button type="button" data-follow="${escapeHtml(targetId)}" data-state="not-following" class="tl-btn tl-btn-primary">Follow</button>`:`<a href="login.html?next=${encodeURIComponent(location.pathname+location.search)}" class="tl-btn tl-btn-primary">Sign in to follow</a>`)}</div></div></div>`;
+await initFollowButtons(p);
+try {
+  const fbBtn = p.querySelector("[data-follow]");
+  if (fbBtn && !fbBtn.dataset.wired && me && targetId && me.id !== targetId) {
+    fbBtn.addEventListener("click", async e => {
+      e.preventDefault();
+      const on = fbBtn.getAttribute("aria-pressed") === "true";
+      fbBtn.disabled = true;
+      try {
+        const r = await toggleFollow(me.id, targetId, on);
+        if (r.error) { console.error("Follow failed:", r.error); try { await alertDialog(r.error.message || "Could not update follow. Try again."); } catch { toast(r.error.message || "Could not update follow. Try again.", "error"); } return; }
+        const nowOn = !on;
+        fbBtn.textContent = nowOn ? "Following" : "Follow";
+        fbBtn.setAttribute("aria-pressed", String(nowOn));
+        fbBtn.dataset.state = nowOn ? "following" : "not-following";
+        try { document.dispatchEvent(new CustomEvent("follow-changed", { detail: { target: targetId, following: nowOn } })); } catch {}
+      } catch (err) { console.error("Follow failed:", err); try { await alertDialog("Could not update follow. Try again."); } catch { toast("Could not update follow. Try again.", "error"); } }
+      finally { fbBtn.disabled = false; }
+    });
+    fbBtn.dataset.wired = "fallback";
+  }
+  document.addEventListener("follow-changed", async () => {
+    try {
+      const f1 = await supabase.from("follows").select("follower_id", { count: "exact", head: true }).eq("following_id", targetId);
+      const f2 = await supabase.from("follows").select("following_id", { count: "exact", head: true }).eq("follower_id", targetId);
+      const stats = document.querySelector("#stats");
+      if (stats) {
+        const cells = stats.querySelectorAll(":scope > *");
+        const t = cells.length >= 2;
+        const fi = t ? cells.length - 2 : -1, gi = t ? cells.length - 1 : -1;
+        if (fi >= 0 && cells[fi].querySelector("strong")) cells[fi].querySelector("strong").textContent = String(f1.count || 0);
+        if (gi >= 0 && cells[gi].querySelector("strong")) cells[gi].querySelector("strong").textContent = String(f2.count || 0);
+      }
+    } catch (err) { console.error("Follow count refresh failed:", err); }
+  });
+} catch (err) { console.error("Follow fallback failed:", err); }
+if(isSelf){
+  const wrap=document.querySelector("#edit-wrap"),form=document.querySelector("#edit-form"),msg=document.querySelector("#edit-msg");
+  const toggle=document.querySelector("#edit-toggle");
+  form.display_name.value=target?.display_name||"";
+  form.username.value=target?.username||"";
+  form.bio.value=target?.bio||"";
+  form.avatar_url.value=target?.avatar_url||"";
+  form.website_url.value=target?.website_url||"";
+  toggle.onclick=()=>{wrap.classList.toggle("hidden");wrap.scrollIntoView({behavior:"smooth",block:"start"})};
+  document.querySelector("#edit-cancel").onclick=()=>wrap.classList.add("hidden");
+  form.onsubmit=async e=>{
+    e.preventDefault();msg.textContent="Saving...";
+    const display_name=String(form.display_name.value||"").trim().slice(0,60);
+    const username=String(form.username.value||"").trim().toLowerCase();
+    const bio=String(form.bio.value||"").trim().slice(0,300);
+    const avatarRaw=String(form.avatar_url.value||"").trim(),siteRaw=String(form.website_url.value||"").trim();
+    if(username&&!/^[a-z0-9_]{1,24}$/.test(username)){msg.textContent="Username must be lowercase letters, numbers or underscores, max 24.";return}
+    if(avatarRaw&&!httpsUrl(avatarRaw)){msg.textContent="Avatar URL must start with https://";return}
+    if(siteRaw&&!httpsUrl(siteRaw)){msg.textContent="Website URL must start with https://";return}
+    if(username&&username!==target?.username){
+      const dup=await supabase.from("profiles").select("id").eq("username",username).neq("id",me.id).maybeSingle();
+      if(dup.data){msg.textContent="That username is taken. Try another.";return}
+    }
+    const r=await supabase.from("profiles").update({display_name:display_name||null,username:username||null,bio:bio||null,avatar_url:avatarRaw?httpsUrl(avatarRaw):null,website_url:siteRaw?httpsUrl(siteRaw):null}).eq("id",me.id).select().maybeSingle();
+    if(r.error){msg.textContent=r.error.message||"Could not save. Try again.";return}
+    target=r.data||target;msg.textContent="Saved.";location.reload();
+  };
+}
+const statusLabel={pending:"Awaiting review",published:"Live",hidden:"Hidden",draft:"Draft"};
+const rowHtml=pl=>{const badge=isSelf?"<span class=\"rounded-full border border-white/10 px-3 py-1 text-white/55\">"+escapeHtml(statusLabel[pl.status]||pl.status||"Live")+"</span>":"";const edit=isSelf?(canEdit(pl)?"<a class=\"tl-btn tl-btn-ghost !min-h-9 !px-4\" href=\"edit.html?slug="+encodeURIComponent(pl.slug)+"\">Edit \u00B7 "+editMinutesLeft(pl)+" min left</a>":"<span class=\"text-xs text-white/35\">Edit window closed</span>"):"";return "<div>"+card(pl)+"<div class=\"mt-2 flex items-center justify-between text-sm\">"+badge+edit+"</div></div>"};
+const listEl=document.querySelector("#places"),moreBtn=document.querySelector("#more-places");
+document.querySelector("#places-label").textContent=isSelf?"Your places":("Places by "+displayName);
+let loaded=places.length;
+listEl.innerHTML=(await attachAuthors(places)).map(rowHtml).join("")||(isSelf?'<p class="text-white/45">You have not uploaded a place yet.</p>':'<p class="text-white/45">No published places yet.</p>');
+moreBtn.classList.toggle("hidden",loaded>=((placesRes.count)||0));
+moreBtn.onclick=async()=>{moreBtn.disabled=true;const r=await supabase.from("places").select("*").eq("created_by",targetId).eq("status","published").order("created_at",{ascending:false}).range(loaded,loaded+PAGE-1);listEl.insertAdjacentHTML("beforeend",(await attachAuthors(r.data||[])).map(rowHtml).join(""));loaded+=r.data?.length||0;moreBtn.disabled=false;moreBtn.classList.toggle("hidden",loaded>=((placesRes.count)||0))};
+// Check if user is admin and add admin button
   let isAdminLink = "";
+  let isAdmin = false;
   try {
     const {data:isAdminData} = await supabase.rpc("is_admin");
-    if(isAdminData === true){
+    isAdmin = isAdminData === true;
+    if(isAdmin){
       isAdminLink = `<a href="admin.html" class="tl-card block p-4 hover:bg-white/5 mt-4" style="grid-column:1/-1"><strong class="text-2xl">⚙️</strong><span class="mt-1 block text-xs text-white/40">Admin Panel</span></a>`;
     }
   }catch{}
+  document.querySelector("#stats").innerHTML = `<div class="tl-card p-4"><strong class="text-2xl">${placesRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Places</span></div>${isSelf?`<a href="saved.html" class="tl-card block p-4 hover:bg-white/5"><strong class="text-2xl">${savedRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Saved · view all</span></a>`:""}<div class="tl-card p-4"><strong class="text-2xl">${followersRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Followers</span></div><div class="tl-card p-4"><strong class="text-2xl">${followingRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Following</span></div>`;
+  // Add pro badge if user is pro
+  const {data:proSub} = await supabase.from("pro_subscriptions").select("*").eq("user_id",targetId).in("status",["active","verified"]).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(false){
+    const badge = document.createElement("div");
+    badge.className = "mt-4 p-4 rounded-2xl border border-sky-500/30 bg-sky-500/5";
+    badge.innerHTML = `<div class="flex items-center gap-2"><span class="text-2xl">👑</span><div><p class="font-bold text-sky-400">Pro Member</p><p class="text-xs text-white/50">${proSub.plan === "pro_lifetime" ? "Lifetime Access" : "Monthly Subscriber"}</p></div></div>`;
+    document.querySelector("#stats")?.parentNode?.insertBefore(badge, document.querySelector("#stats")?.nextSibling);
+  }
   document.querySelector("#stats").innerHTML = `<div class="tl-card p-4"><strong class="text-2xl">${placesRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Places</span></div>${isSelf?`<a href="saved.html" class="tl-card block p-4 hover:bg-white/5"><strong class="text-2xl">${savedRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Saved · view all</span></a>`:""}<div class="tl-card p-4"><strong class="text-2xl">${followersRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Followers</span></div><div class="tl-card p-4"><strong class="text-2xl">${followingRes.count||0}</strong><span class="mt-1 block text-xs text-white/40">Following</span></div>${isAdminLink}`;
-}
+}}
 </script>
 
 <footer class="tl-footer">
