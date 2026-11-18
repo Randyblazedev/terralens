@@ -333,16 +333,23 @@ export async function queryFeatured(limit = 8) {
   if (error) return fallbackPlaces.slice(0, limit);
 
   const pool = await attachAuthors((data || []).filter(good));
+  // Shuffle within each "featured tier" so the overview changes on each visit,
+  // while still favouring featured/high-view places overall.
+  const shuffled = pool.slice();
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
   const picked = [], perCategory = new Map();
   // First pass: one per category, so the grid shows range.
-  for (const p of pool) {
+  for (const p of shuffled) {
     if (picked.length >= limit) break;
     if ((perCategory.get(p.category) || 0) > 0) continue;
     perCategory.set(p.category, 1);
     picked.push(p);
   }
   // Second pass: fill any remaining slots with the next best, allowing a second per category.
-  for (const p of pool) {
+  for (const p of shuffled) {
     if (picked.length >= limit) break;
     if (picked.includes(p)) continue;
     if ((perCategory.get(p.category) || 0) >= 2) continue;
