@@ -78,7 +78,7 @@
 <script type="module">
 import {confirmDialog} from "./src/js/ui.js";
 import {pickCollectionForPlace,pickTripForPlace} from "./src/js/collections.js";
-import {supabase} from "./src/js/supabase.js";import {fallbackPlaces,escapeHtml,placeUrl,verifiedBadge,canEdit,backLink,backFab,imgSize,formatCount,EYE,stayLink,initFollowButtons,notifyUser,bumpViewCount} from "./src/js/app.js";
+import {supabase} from "./src/js/supabase.js";import {fallbackPlaces,escapeHtml,placeUrl,verifiedBadge,canEdit,backLink,backFab,imgSize,formatCount,EYE,stayLink,initFollowButtons,notifyUser,bumpViewCount,getProStatus,cachePlaceForOffline,showStorytellerGuide,openTripSimulator} from "./src/js/app.js";
 import {AFFILIATE_BOOKING_AID,AFFILIATE_BOOKING_LABEL} from "./src/js/config.js";
 const slug=new URLSearchParams(location.search).get("slug")||decodeURIComponent(location.pathname.match(/^\/place\/([^/]+)/)?.[1]||"");
 let place=null,images=[];

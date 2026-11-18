@@ -87,7 +87,7 @@
  </div>
 </main>
 <script type="module">
-import {queryPlaces,card,initCardSaves,fallbackPlaces,attachAuthors,escapeHtml,canEdit,editMinutesLeft} from "./src/js/app.js";
+import {queryPlaces,card,initCardSaves,fallbackPlaces,attachAuthors,escapeHtml,canEdit,editMinutesLeft,getProStatus} from "./src/js/app.js";
 import {supabase} from "./src/js/supabase.js";
 const params=new URLSearchParams(location.search);
 const q=document.querySelector("#q"),cat=document.querySelector("#category"),country=document.querySelector("#country");
