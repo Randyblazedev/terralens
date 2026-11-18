@@ -98,17 +98,7 @@ async function run(append=false){if(busy)return;busy=true;
  else{moreBtn.disabled=true}
  const data=await queryPlaces({q:q.value,category:cat.value,country:country.value,limit:PAGE+1,offset});
  const page=data.slice(0,PAGE),more=data.length>PAGE;offset+=page.length;
- // Check pro status for gated features
-  const proStatus = await getProStatus();
-  const isPro = proStatus && ["active","verified"].includes(proStatus.status);
-  grid.insertAdjacentHTML("beforeend",page.map(p=>{
-    const cardHtml = card(p);
-    if(!isPro && p.cover_url){
-      // Add pro gate overlay for non-pro users
-      return cardHtml.replace(/<article/, '<article class="relative">').replace(/aspect-\[4\/3\]/, 'aspect-[4/3] overflow-hidden');
-    }
-    return cardHtml;
-  }).join(""));
+ grid.insertAdjacentHTML("beforeend",page.map(card).join(""));
  await initCardSaves(grid);
  const n=grid.children.length;statusEl.textContent=n?`Showing ${n} place${n===1?"":"s"}${more?" so far":""}`:"No places found yet.";
  moreBtn.disabled=false;moreBtn.classList.toggle("hidden",!more);
