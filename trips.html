@@ -99,13 +99,22 @@ const fmtDates = t => {
   return a ? `From ${a}` : `Until ${b}`;
 };
 
+const STARTER_TRIPS = [
+  { name: "A week of waterfalls", note: "Six falls across four countries. Save it, then make it yours.", q: "Waterfall" },
+  { name: "Climb something real", note: "Mountains in Cameroon, Ethiopia and beyond.", q: "Mountain" },
+  { name: "Slow water", note: "Lakes and lagoons you could sit beside for hours.", q: "Lake" }
+];
+function starterTripsHTML(){
+  return `<div class="tl-card p-7 sm:col-span-2"><p class="tl-eyebrow">Start here</p><h2 class="mt-2 text-2xl font-extrabold">Trips you can copy.</h2><p class="mt-2 text-sm text-white/50">Three routes built from real places on TerraLens. Open one in the planner and change anything.</p><div class="mt-5 grid gap-3 sm:grid-cols-3">${STARTER_TRIPS.map(t=>`<a href="planner.html?q=${encodeURIComponent(t.q)}" class="tl-card p-4 hover:bg-white/5"><b class="text-sm">${esc(t.name)}</b><p class="mt-1 text-xs text-white/50">${esc(t.note)}</p><span class="mt-3 inline-block text-xs text-sky-300">Open in planner →</span></a>`).join("")}</div></div>`;
+}
+
 async function run() {
   if (!supabase) { statusEl.textContent = "Connect Supabase to use trips."; list.innerHTML=""; return; }
   const user = await getUser();
-  if (!user) { list.innerHTML = `<div class="tl-card p-7"><p class="font-bold">Sign in to see your trips.</p><p class="mt-2 text-sm text-white/50">Trips are saved to your account, so they follow you between devices.</p><a class="tl-btn tl-btn-primary mt-5" href="login.html?next=trips.html">Sign in</a></div>`; return; }
+  if (!user) { list.innerHTML = starterTripsHTML(); return; }
   const trips = await listTrips(user.id);
   if (!trips.length) {
-    list.innerHTML = `<div class="tl-card p-7"><p class="font-bold">No trips saved yet.</p><p class="mt-2 text-sm text-white/50">Build a plan in the planner and tap “Save this trip” to keep it here.</p><a class="tl-btn tl-btn-primary mt-5" href="planner.html">Open the planner</a></div>`;
+    list.innerHTML = starterTripsHTML();
     return;
   }
   const withPlaces = await Promise.all(trips.map(async t => ({ ...t, places: await tripPlaces(t.id) })));

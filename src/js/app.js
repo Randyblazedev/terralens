@@ -219,7 +219,7 @@ export async function checkProAccess(feature){
 
 
 // A zero count is a negative signal, so nothing is shown until a place has been viewed.
-export const viewsBadge = n => (Number(n) || 0) > 0 ? `<span class="inline-flex items-center gap-1 text-xs text-white/45" aria-label="${Number(n)} views" title="${Number(n)} views">${EYE}${formatCount(n)}</span>` : "";
+export const viewsBadge = n => (Number(n) || 0) >= 5 ? `<span class="inline-flex items-center gap-1 text-xs text-white/45" aria-label="${Number(n)} views" title="${Number(n)} views">${EYE}${formatCount(n)}</span>` : "";
 
 // "Other" is the database default, not a real category, so it is never shown to a visitor.
 const isRealCategory = c => !!c && String(c).trim() !== "" && String(c).toLowerCase() !== "other";

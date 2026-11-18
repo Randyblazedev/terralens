@@ -148,7 +148,7 @@ async function load(){
   if(r.error){ list.innerHTML='<p class="text-white/45">Could not load messages.</p>'; return; }
   const rows=(r.data||[]).reverse();
   await Promise.allSettled(rows.map(m=>paintAuthor(m)));
-  list.innerHTML=rows.map(rowHtml).join("")||'<p class="text-white/45">No messages yet. Say hello.</p>';
+  list.innerHTML=rows.map(rowHtml).join("")||`<div class="tl-card p-6"><p class="font-bold">No messages yet.</p><p class="mt-1 text-sm text-white/50">Start with one of these.</p><div class="mt-4 grid gap-2">${["Which place should I visit first in Cameroon?","Best time to see the waterfalls?","Share a place that surprised you"].map(q=>`<button class="tl-btn tl-btn-ghost !min-h-9 text-left" data-starter="${q.replace(/"/g,"&quot;")}">${q}</button>`).join("")}</div></div>`;
   wireDelete();wireReply(rows);
 }
 function rowHtml(m){
