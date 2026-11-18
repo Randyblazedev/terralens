@@ -14,9 +14,10 @@
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap">
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
+<link rel="stylesheet" href="assets/css/home-v2.css">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta name="theme-color" content="#020918">
@@ -70,23 +71,31 @@
 </header>
 
 <main>
-<section class="relative min-h-[760px] overflow-hidden">
-  <img src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=2200&q=90" class="absolute inset-0 h-full w-full object-cover" alt="" fetchpriority="high">
-  <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,6,8,.2)_0%,rgba(4,6,8,.5)_50%,rgba(6,8,11,.94)_100%)]"></div>
-  <div class="relative mx-auto flex min-h-[760px] w-full max-w-[1440px] items-end px-4 pb-20 sm:px-8 lg:px-10">
-    <div class="max-w-4xl">
-      <div class="tl-eyebrow mb-5" data-i18n="home.eyebrow">Places worth seeing</div>
-      <h1 class="font-display text-5xl font-extrabold leading-[.98] tracking-[-.05em] sm:text-7xl lg:text-[92px]">The photo is<br><span class="tl-gradient">only the beginning.</span></h1>
-      <p class="mt-7 max-w-2xl text-base leading-7 text-white/65 sm:text-lg">Discover places through the people who photograph them. Find the story behind the image, save what catches you, and turn inspiration into a trip.</p>
-      <div class="relative mt-8 max-w-2xl">
-        <form id="hero-search" class="tl-glass flex flex-col gap-2 rounded-2xl p-2 sm:flex-row">
-          <input id="hero-query" class="tl-input !border-0 !bg-transparent" placeholder="Search places, countries, experiences..." data-i18n-placeholder="home.searchPlaceholder" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="suggest" aria-autocomplete="list">
-          <button class="tl-btn tl-btn-primary shrink-0">Explore places</button>
+<section class="hv2-hero">
+  <div class="hv2-mosaic" id="hero-mosaic" aria-label="Photos from the community"></div>
+  <div class="hv2-hero-shade"></div>
+  <div class="hv2-hero-inner">
+    <div class="hv2-hero-copy">
+      <p class="hv2-kicker">TerraLens · real places, real photos</p>
+      <h1>The photo is only<br>the beginning.</h1>
+      <p class="hv2-lede">You saw a place and wanted to know where it actually is, when to go, and how to get there. That's what this is for.</p>
+      <div class="relative">
+        <form id="hero-search" class="hv2-search">
+          <input id="hero-query" class="tl-input !border-0 !bg-transparent" placeholder="Search a place, country or type of place" data-i18n-placeholder="home.searchPlaceholder" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="suggest" aria-autocomplete="list">
+          <button class="tl-btn shrink-0">Find it</button>
         </form>
-        <div id="suggest" role="listbox" aria-label="Search suggestions" class="absolute inset-x-0 top-full z-20 mt-2 hidden overflow-hidden rounded-2xl border border-white/10 bg-[#0b1220]/98 shadow-2xl backdrop-blur"></div>
+        <div id="suggest" role="listbox" aria-label="Search suggestions" class="absolute inset-x-0 top-full z-20 mt-2 hidden overflow-hidden rounded-xl border border-white/10 bg-[#0b1220]/98 shadow-2xl backdrop-blur"></div>
       </div>
     </div>
   </div>
+</section>
+
+<section class="hv2-feel">
+  <div class="hv2-feel-head"><h2>What are you in the mood for?</h2><p>Pick a feeling. We'll show you the places.</p></div>
+  <div class="hv2-feel-grid" id="feel-grid">
+<a href="/category/waterfall" data-cat="Waterfall" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Waterfalls</span></a><a href="/category/mountain" data-cat="Mountain" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Mountains</span></a><a href="/category/beach" data-cat="Beach" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Beaches</span></a><a href="/category/lake" data-cat="Lake" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Lakes</span></a><a href="/category/forest" data-cat="Forest" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Forests</span></a><a href="/category/culture" data-cat="Culture" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Culture</span></a>
+  </div>
+  <div class="hv2-feel-head" style="padding-top:12px"><p id="photo-credits" style="font-size:11px"></p></div>
 </section>
 
 <section class="tl-section">
@@ -103,29 +112,27 @@
   </div>
 </section>
 
-<section class="tl-section border-y border-white/5 bg-white/[.015]">
- <div class="tl-shell grid gap-10 lg:grid-cols-[1fr_1.2fr] lg:items-center">
-  <div><p class="tl-eyebrow">Why TerraLens</p><h2 class="mt-4 max-w-xl text-4xl font-extrabold tracking-tight sm:text-5xl">See a place. Then understand it.</h2><p class="mt-5 max-w-xl leading-7 text-white/55">A beautiful image should not leave you opening six different apps. TerraLens connects visual discovery with the place information that gives the image meaning.</p></div>
-  <div class="grid gap-4 sm:grid-cols-2">
-    <div class="tl-card p-6"><span class="text-2xl">📸</span><h3 class="mt-5 text-lg font-bold">Start with the image</h3><p class="mt-2 text-sm leading-6 text-white/50">Photography is the fastest way to make a place feel real.</p></div>
-    <div class="tl-card p-6"><span class="text-2xl">📍</span><h3 class="mt-5 text-lg font-bold">Know the place</h3><p class="mt-2 text-sm leading-6 text-white/50">Location, context, access, season and nearby experiences live together.</p></div>
-    <div class="tl-card p-6"><span class="text-2xl">🔖</span><h3 class="mt-5 text-lg font-bold">Keep inspiration</h3><p class="mt-2 text-sm leading-6 text-white/50">Save places and organize them into public or private collections.</p></div>
-    <div class="tl-card p-6"><span class="text-2xl">🧭</span><h3 class="mt-5 text-lg font-bold">Make it real</h3><p class="mt-2 text-sm leading-6 text-white/50">Build trips around the places you actually want to experience.</p></div>
+<section class="hv2-proof">
+  <div class="hv2-proof-inner">
+    <div>
+      <p class="hv2-title">Made for the trip you haven't taken yet.</p>
+      <p class="hv2-sub">Not everyone can get on a plane. TerraLens is a window into places worth seeing — built by people who took the photos and know the way there.</p>
+      <div class="hv2-numbers">
+        <div class="hv2-num"><b id="stat-places">—</b><span>places to explore</span></div>
+        <div class="hv2-num"><b id="stat-countries">—</b><span>countries covered</span></div>
+        <div class="hv2-num"><b id="stat-people">—</b><span>people adding places</span></div>
+        <div class="hv2-num"><b id="stat-collections">—</b><span>collections shared</span></div>
+      </div>
+      <div class="hv2-people" id="hv2-people"></div>
+    </div>
+    <div class="hv2-trip" id="hv2-trip">
+      <div class="hv2-trip-photos" id="hv2-trip-photos"></div>
+      <div class="hv2-trip-meta"><div><b id="hv2-trip-name">A trip someone made</b><span id="hv2-trip-by">Real places, saved together</span></div><a id="hv2-trip-link" href="/collections.html">See it →</a></div>
+    </div>
   </div>
- </div>
 </section>
 
-<section class="tl-section">
- <div class="tl-shell"><p class="tl-eyebrow">Browse by feeling</p><h2 class="mt-3 text-3xl font-extrabold">What are you looking for?</h2>
- <div class="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-  <a href="/category/waterfall" data-cat="Waterfall" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Waterfalls</span></a>
-  <a href="/category/mountain" data-cat="Mountain" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Mountains</span></a>
-  <a href="/category/beach" data-cat="Beach" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Beaches</span></a>
-  <a href="/category/lake" data-cat="Lake" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Lakes</span></a>
-  <a href="/category/forest" data-cat="Forest" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Forests</span></a>
-  <a href="/category/culture" data-cat="Culture" class="group relative block aspect-[4/3] overflow-hidden rounded-[22px] border border-white/10 bg-white/5"><img data-img alt="" class="absolute inset-0 hidden h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" decoding="async"><span class="absolute inset-0" style="background:linear-gradient(to top,rgba(3,8,20,.82),rgba(3,8,20,.05) 60%)"></span><span class="absolute bottom-3 left-4 font-bold">Culture</span></a>
- </div><p id="photo-credits" class="mt-4 text-xs text-white/35"></p></div>
-</section>
+
 </main>
 <script type="module">
 import {queryFeatured,card,initCardSaves,escapeHtml,imgSize} from "./src/js/app.js";
@@ -153,6 +160,62 @@ document.querySelector("#hero-search").addEventListener("submit",e=>{e.preventDe
   img.src=imgSize(p.url,640);
   if(!p.own&&p.credit)credits.push(p.link?`<a class="underline" target="_blank" rel="noopener" href="${escapeHtml(p.link)}">${escapeHtml(p.credit)}</a>`:escapeHtml(p.credit))});
  if(credits.length)document.querySelector("#photo-credits").innerHTML=`Photos: ${credits.join(", ")} — <a class="underline" target="_blank" rel="noopener" href="https://commons.wikimedia.org/">Wikimedia Commons</a>`})();
+// ---- Contact sheet hero: real community photos, not one stock image ----
+(async()=>{
+ if(!supabase)return;
+ const {data}=await supabase.from("places").select("id,name,country,category,cover_url,slug")
+  .eq("status","published").not("cover_url","is",null)
+  .order("featured",{ascending:false}).order("view_count",{ascending:false}).limit(9);
+ const good=(data||[]).filter(p=>p.cover_url);
+ if(!good.length)return;
+ document.querySelector("#hero-mosaic").innerHTML=good.slice(0,9).map((p,i)=>
+  `<a href="place/${encodeURIComponent(p.slug||p.id)}" class="hv2-tile" ${i>6?'style="display:none"':''} aria-label="${escapeHtml(p.name)}">
+    <img src="${escapeHtml(imgSize(p.cover_url,640))}" alt="${escapeHtml(p.name)}" loading="${i===0?'eager':'lazy'}" decoding="async">
+    <span class="hv2-cap"><b>${escapeHtml(p.name)}</b><span>${escapeHtml(p.country||p.category||"")}</span></span>
+  </a>`).join("");
+})();
+
+// ---- Proof: real numbers, real people, a real collection ----
+(async()=>{
+ if(!supabase)return;
+ try{
+  const [plc,cats,creators,cols]=await Promise.all([
+   supabase.from("places").select("id",{count:"exact",head:true}).eq("status","published"),
+   supabase.from("places").select("country").eq("status","published").limit(2000),
+   supabase.from("places").select("created_by").eq("status","published").limit(2000),
+   supabase.from("collections").select("id",{count:"exact",head:true}).eq("is_public",true)
+  ]);
+  const setN=(id,n)=>{const e=document.querySelector(id);if(e&&n!=null)e.textContent=n.toLocaleString()};
+  setN("#stat-places",plc.count);
+  setN("#stat-countries",new Set((cats.data||[]).map(x=>x.country).filter(Boolean)).size);
+  setN("#stat-people",new Set((creators.data||[]).map(x=>x.created_by).filter(Boolean)).size);
+  setN("#stat-collections",cols.count);
+
+  const ids=[...new Set((creators.data||[]).map(x=>x.created_by).filter(Boolean))].slice(0,4);
+  if(ids.length){
+   const {data:profs}=await supabase.from("profiles").select("id,display_name,username").in("id",ids);
+   const box=document.querySelector("#hv2-people");
+   if(box)box.innerHTML=(profs||[]).map(u=>`<span class="hv2-person"><i>${escapeHtml((u.display_name||u.username||"?").charAt(0).toUpperCase())}</i>${escapeHtml(u.display_name||u.username||"Contributor")}</span>`).join("");
+  }
+
+  const {data:featured}=await supabase.from("collections").select("id,name,description,user_id")
+   .eq("is_public",true).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(featured){
+   const {data:items}=await supabase.from("collection_items").select("place_id").eq("collection_id",featured.id).limit(4);
+   if(items&&items.length){
+    const pids=items.map(x=>x.place_id);
+    const {data:places}=await supabase.from("places").select("cover_url,name,slug").in("id",pids);
+    const imgs=(places||[]).filter(p=>p.cover_url).slice(0,4);
+    if(imgs.length){
+     document.querySelector("#hv2-trip-photos").innerHTML=imgs.map(p=>`<img src="${escapeHtml(imgSize(p.cover_url,400))}" alt="${escapeHtml(p.name)}" loading="lazy">`).join("");
+     document.querySelector("#hv2-trip-name").textContent=featured.name;
+     document.querySelector("#hv2-trip-link").href="collection.html?id="+encodeURIComponent(featured.id);
+    }
+   }
+  }
+ }catch{}
+})();
+
 async function paintFeatured(){
   const grid=document.querySelector("#featured-grid");
   const rows=await queryFeatured(8);
