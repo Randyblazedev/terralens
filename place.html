@@ -225,26 +225,7 @@ if(isReal&&place.status==="published"){
   if(r.data){const el=document.querySelector("#views-n");if(el)el.textContent=formatCount(place.view_count+1);bumpViewCount(place.id,1)}
   if(r.data)try{localStorage.setItem("tl_vid",vid)}catch{}
  }}
-// Add pro features if user is pro
-  const proStatus = await getProStatus();
-  const isPro = proStatus && ["active","verified"].includes(proStatus.status);
-  if(isPro){
-    // Add offline button
-    document.body.insertAdjacentHTML("beforeend",`<button id="offline-btn" class="fixed bottom-24 right-4 z-[60] tl-btn tl-btn-primary !min-h-11 !px-4 shadow-xl" title="Save for offline">📥 Offline</button>`);
-    // Add storyteller button
-    document.body.insertAdjacentHTML("beforeend",`<button id="story-btn" class="fixed bottom-40 right-4 z-[60] tl-btn tl-btn-ghost !min-h-11 !px-4 shadow-xl" title="Local stories">🎙️ Stories</button>`);
-    // Add trip button
-    document.body.insertAdjacentHTML("beforeend",`<button id="trip-btn" class="fixed bottom-56 right-4 z-[60] tl-btn tl-btn-ghost !min-h-11 !px-4 shadow-xl" title="Add to trip">✈️ Trip</button>`);
-    
-    document.getElementById("offline-btn")?.addEventListener("click", async ()=>{
-      const cached = await cachePlaceForOffline(place);
-      if(cached) toast("Saved for offline!");
-    });
-    document.getElementById("story-btn")?.addEventListener("click", ()=>showStorytellerGuide(place));
-    document.getElementById("trip-btn")?.addEventListener("click", ()=>openTripSimulator(place));
-  }
-  
-  document.body.insertAdjacentHTML("beforeend",backFab("explore.html"));
+document.body.insertAdjacentHTML("beforeend",backFab("explore.html"));
 if(isReal&&place.status==="published"){
  document.querySelector("#place").insertAdjacentHTML("beforeend",`<div class="tl-shell max-w-3xl pb-20"><h2 class="text-2xl font-extrabold">Comments <span id="ccount" class="text-base font-normal text-white/40"></span></h2><div id="cbox" class="mt-5"></div><p id="cmsg" role="status" aria-live="polite" class="mt-3 min-h-5 text-sm text-white/50"></p><div id="clist" class="mt-4 grid gap-4"></div></div>`);
  document.querySelector("#clist").innerHTML='<div class="tl-card p-5 animate-pulse"><div class="h-4 rounded bg-white/10"></div><div class="mt-3 h-3 w-2/3 rounded bg-white/5"></div></div><div class="tl-card p-5 animate-pulse"><div class="h-4 rounded bg-white/10"></div><div class="mt-3 h-3 w-2/3 rounded bg-white/5"></div></div><div class="tl-card p-5 animate-pulse"><div class="h-4 rounded bg-white/10"></div><div class="mt-3 h-3 w-2/3 rounded bg-white/5"></div></div>';
