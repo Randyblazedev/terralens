@@ -8,7 +8,8 @@ language sql stable security definer set search_path = public as $$
          count(*) as views,
          count(distinct v.viewer) as visitors
   from public.place_views v
-  where v.day >= current_date - (least(greatest(p_days, 1), 90) - 1)
+  where public.is_admin()
+    and v.day >= current_date - (least(greatest(p_days, 1), 90) - 1)
   group by v.day
   order by v.day desc;
 $$;
@@ -20,10 +21,10 @@ create or replace function public.site_totals()
 returns table (total_views bigint, today_views bigint, unique_visitors bigint, days_tracked bigint)
 language sql stable security definer set search_path = public as $$
   select
-    (select count(*) from public.place_views),
-    (select count(*) from public.place_views where day = current_date),
-    (select count(distinct viewer) from public.place_views),
-    (select count(distinct day) from public.place_views);
+    (select count(*) from public.place_views where public.is_admin()),
+    (select count(*) from public.place_views where public.is_admin() and day = current_date),
+    (select count(distinct viewer) from public.place_views where public.is_admin()),
+    (select count(distinct day) from public.place_views where public.is_admin());
 $$;
 
 revoke all on function public.site_totals() from public, anon;
