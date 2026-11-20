@@ -919,8 +919,9 @@ export async function initNav() {
     if (same && history.length > 1) { e.preventDefault(); history.back(); }
   });
   // Sign-in wall: everything except the login, terms and privacy pages needs an account.
+  const publicPages = /\/(|index|explore|place|category|country|collections|collection|about|blog|write-for-us|write-for-us)(\.html)?$|^\/place\//.test(location.pathname);
   const open = /\/(login|terms|privacy|content-policy)(\.html)?$/.test(location.pathname);
-  if (REQUIRE_LOGIN && supabase && !open) {
+  if (REQUIRE_LOGIN && supabase && !open && !publicPages) {
     document.documentElement.style.visibility = "hidden";
     const wallSession = await waitForAuthSession();
     if (!wallSession) {
