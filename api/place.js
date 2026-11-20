@@ -68,7 +68,16 @@ export default async function handler(req, res) {
       ...(free ? { isAccessibleForFree: true } : {}),
       ...(place.updated_at ? { dateModified: place.updated_at } : {}), datePublished: place.created_at
     },
-    breadcrumbLd(site, crumbs)
+    breadcrumbLd(site, crumbs),
+    {
+      "@context": "https://schema.org", "@type": "FAQPage", "@id": url + "#faq",
+      mainEntity: [
+        ...(place.city || place.country ? [{ "@type": "Question", name: `Where is ${place.name}?`, acceptedAnswer: { "@type": "Answer", text: `${place.name} is in ${[place.city, place.region, place.country].filter(Boolean).join(", ")}.` } }] : []),
+        ...(place.best_season ? [{ "@type": "Question", name: `What is the best time to visit ${place.name}?`, acceptedAnswer: { "@type": "Answer", text: place.best_season } }] : []),
+        ...(place.access_info ? [{ "@type": "Question", name: `How do you get to ${place.name}?`, acceptedAnswer: { "@type": "Answer", text: place.access_info } }] : []),
+        ...(place.entry_fee ? [{ "@type": "Question", name: `What is the entry fee for ${place.name}?`, acceptedAnswer: { "@type": "Answer", text: place.entry_fee } }] : [])
+      ]
+    }
   ];
 
   const fact = (k, v) => v ? `<div class="rounded-2xl border border-white/10 bg-white/[.03] p-4"><dt class="text-xs font-bold uppercase tracking-[.14em] text-sky-300">${k}</dt><dd class="mt-1 text-sm leading-6 text-white/70">${esc(v)}</dd></div>` : "";
