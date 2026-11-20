@@ -50,12 +50,17 @@ export default async function handler(req, res) {
   const where = [place.city, place.region, place.country].filter(Boolean).join(", ");
   const plural = CATEGORY_PLURAL[place.category] || (place.category ? place.category + "s" : "");
 
-  // Title: aim for 60 characters or fewer so it is not cut off in search results.
-  const titleOptions = [`${place.name} (${place.country}): Travel Guide | TerraLens`, `${place.name} Travel Guide | TerraLens`];
-  const title = titleOptions.find(t => t.length <= 62 && place.country) || trunc(titleOptions[1], 62);
+  // Titles answer the searches people actually make: "<place> location", "where is <place>".
+  const titleOptions = [
+    `${place.name} Location & Travel Guide | TerraLens`,
+    `${place.name} (${place.country}): Travel Guide | TerraLens`,
+    `${place.name} Travel Guide | TerraLens`
+  ];
+  const title = titleOptions.find(t => t.length <= 62) || trunc(titleOptions[2], 62);
   const lead = String(place.description || "").split(/(?<=[.!?])\s+/).slice(0, 2).join(" ");
-  const extras = [place.best_season ? `Best time to visit: ${place.best_season}.` : "", place.entry_fee ? `Entry: ${place.entry_fee}.` : ""].filter(Boolean).join(" ");
-  const description = trunc(`${trunc(lead, 110)} ${extras}`.trim() || place.description || place.name, 158);
+  const whereAnswer = where ? `${place.name} is in ${where}.` : "";
+  const extras = [place.best_season ? `Best time: ${place.best_season}.` : "", place.entry_fee ? `Entry: ${place.entry_fee}.` : ""].filter(Boolean).join(" ");
+  const description = trunc(`${whereAnswer} ${trunc(lead, 92)} ${extras}`.trim() || place.description || place.name, 158);
 
   const crumbs = [["Home", "/"], ["Explore", "/explore.html"], ...(place.category ? [[plural, categoryPath(place.category)]] : []), ...(place.country ? [[place.country, countryPath(place.country)]] : []), [place.name, placePath(place)]];
   const free = /^\s*(free|no entry fee)\b/i.test(place.entry_fee || "");
