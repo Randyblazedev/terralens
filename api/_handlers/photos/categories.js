@@ -36,7 +36,7 @@ async function searchCommons(query) {
     iiurlwidth: "1200"
   });
   const r = await fetch(`https://commons.wikimedia.org/w/api.php?${params}`, {
-    headers: { "User-Agent": "TerraLens/1.0 (https://terralenss.vercel.app)" }
+    headers: { "User-Agent": "TerraLens/1.0 (https://terralensapp.com)" }
   });
   if (!r.ok) return [];
   const data = await r.json();
