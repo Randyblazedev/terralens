@@ -3,7 +3,11 @@ import { clean, cleanUrl } from "./env.js";
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[c]));
 export const slugify = s => String(s ?? "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-export const siteUrl = req => cleanUrl("SITE_URL") || "https://terralensapp.com";
+export const siteUrl = req => {
+  const set = cleanUrl("SITE_URL");
+  if (set) return set.replace(/^https?:\/\/terralenss\.vercel\.app/, "https://terralensapp.com");
+  return "https://terralensapp.com";
+};
 export const trunc = (s, n) => { s = String(s ?? "").replace(/\s+/g, " ").trim(); return s.length <= n ? s : s.slice(0, n - 1).replace(/\s+\S*$/, "") + "…"; };
 export const configured = () => !!(cleanUrl("SUPABASE_URL") && clean("SUPABASE_PUBLISHABLE_KEY"));
 

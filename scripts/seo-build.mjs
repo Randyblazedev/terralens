@@ -4,7 +4,7 @@
 // - fills the site address into the home page's structured data
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 
-const site = (process.env.SITE_URL || "https://terralensapp.com").trim().replace(/["'`]+/g, "").replace(/\/+$/, "");
+const site = (process.env.SITE_URL || "https://terralensapp.com").trim().replace(/["'`]+/g, "").replace(/\/+$/, "").replace(/^https?:\/\/terralenss\.vercel\.app/, "https://terralensapp.com");
 const pages = readdirSync(".").filter(n => n.endsWith(".html"));
 const SKIP = new Set(["hub.html", "place.html", "404.html"]); // these are templates or error pages
 
