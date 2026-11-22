@@ -5,11 +5,19 @@ import { encryptAes128gcm, b64urlEncode } from "./encrypt.js";
 const AUTH = atob("QXV0aG9yaXphdGlvbg==");
 const BEARER = atob("QmVhcmVyIA==");
 
-async function es256Sign(privB64, data) {
+// Web-push VAPID keys are raw scalars: private = 32-byte d (base64url), public = 65-byte
+// uncompressed P-256 point (base64url). Node needs a real EC key object, so build a JWK
+// from d plus x/y taken from the public key. The old hand-built DER prefix was invalid
+// (ERR_OSSL_UNSUPPORTED), so every push send failed silently.
+const b64u = buf => Buffer.from(buf).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+async function es256Sign(privB64, pubB64, data) {
   const { createSign, createPrivateKey } = await import("node:crypto");
-  const raw = Buffer.from(privB64.replace(/-/g, "+").replace(/_/g, "/"), "base64");
-  const prefix = Buffer.from("304102301e", "hex");
-  const key = createPrivateKey({ key: Buffer.concat([prefix, raw]), format: "der", type: "sec1" });
+  const unb64 = s => Buffer.from(String(s).replace(/-/g, "+").replace(/_/g, "/"), "base64");
+  const d = unb64(privB64);
+  const point = unb64(pubB64);
+  if (d.length !== 32 || point.length !== 65 || point[0] !== 4) throw new Error("Invalid VAPID keys");
+  const x = b64u(point.subarray(1, 33)), y = b64u(point.subarray(33, 65));
+  const key = createPrivateKey({ key: { kty: "EC", crv: "P-256", d: b64u(d), x, y }, format: "jwk" });
   const signer = createSign("sha256"); signer.update(data); signer.end();
   return signer.sign(key);
 }
@@ -18,7 +26,7 @@ async function vapidHeaders(endpoint, pub, priv, subject, hasBody) {
   const exp = Math.floor(Date.now() / 1000) + 43200;
   const hdr = b64urlEncode(JSON.stringify({ typ: "JWT", alg: "ES256" }));
   const claims = b64urlEncode(JSON.stringify({ aud, exp, sub: subject }));
-  const sig = b64urlEncode(await es256Sign(priv, hdr + "." + claims));
+  const sig = b64urlEncode(await es256Sign(priv, pub, hdr + "." + claims));
   const h = {};
   h[AUTH] = "WebPush " + hdr + "." + claims + "." + sig;
   h["Crypto-Key"] = "p256ecdsa=" + pub;
