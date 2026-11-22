@@ -31,6 +31,16 @@
       "maxDuration": 30
     }
   },
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        { "type": "host", "value": "terralenss\\.vercel\\.app" }
+      ],
+      "destination": "https://www.terralensapp.com/$1",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/place/:slug",
