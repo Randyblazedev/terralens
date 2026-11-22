@@ -895,26 +895,23 @@ function showInstallButtons() {
 function showInstallPill() {
   try {
     if (document.querySelector("[data-install-pill]")) return;
-    if (localStorage.getItem("tl_install_pill_dismissed") === "1") return;
+    if (!document.body) {
+      if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", showInstallPill, { once: true });
+      return;
+    }
     if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) return;
+    if (window.navigator.standalone === true) return;
     const pill = document.createElement("div");
     pill.setAttribute("data-install-pill", "");
-    pill.style.cssText = "position:fixed;left:14px;bottom:18px;z-index:44;display:flex;align-items:center;gap:8px;background:rgba(9,14,24,.92);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:7px 12px 7px 8px;color:#e8eef8;font:600 11px/1.2 system-ui,sans-serif;backdrop-filter:blur(8px);box-shadow:0 8px 24px rgba(0,0,0,.25)";
-    pill.innerHTML = '<span style="width:24px;height:24px;border-radius:50%;background:#0ea5e9;display:grid;place-items:center;font-size:13px;color:#04121f">↓</span>' +
-      '<span>Install TerraLens</span>' +
-      '<button type="button" aria-label="Dismiss" style="border:0;background:none;color:rgba(232,238,248,.5);font-size:15px;line-height:1;padding:0 2px;cursor:pointer">×</button>';
-    const action = pill.querySelector("span:nth-child(2)");
-    action.style.cursor = "pointer";
-    action.addEventListener("click", async () => {
+    pill.style.cssText = "position:fixed;left:14px;bottom:18px;z-index:44;display:flex;align-items:center;gap:9px;background:rgba(9,14,24,.94);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:7px 14px 7px 8px;color:#e8eef8;font:600 12px/1.2 system-ui,sans-serif;backdrop-filter:blur(8px);box-shadow:0 8px 24px rgba(0,0,0,.28)";
+    pill.innerHTML = '<span style="width:26px;height:26px;border-radius:50%;background:#0ea5e9;display:grid;place-items:center;font-size:14px;color:#04121f">↓</span>' +
+      '<span class="install-action" style="cursor:pointer">Install TerraLens</span>';
+    pill.querySelector(".install-action").addEventListener("click", async () => {
       try {
         if (deferredInstall) { deferredInstall.prompt(); await deferredInstall.userChoice; }
-        else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) alert("In Safari, tap Share → Add to Home Screen to install TerraLens.");
-        else alert("Use your browser menu → Install app / Add to Home Screen to install TerraLens.");
+        else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) alert("On iPhone or iPad: tap Share, then Add to Home Screen, to install TerraLens from www.terralensapp.com.");
+        else alert("Open www.terralensapp.com in your browser and use the menu: Install app / Add to Home Screen.");
       } catch {}
-    });
-    pill.querySelector("button").addEventListener("click", () => {
-      try { localStorage.setItem("tl_install_pill_dismissed", "1"); } catch {}
-      pill.remove();
     });
     document.body.appendChild(pill);
   } catch {}
@@ -993,13 +990,14 @@ export async function initNav() {
   window.addEventListener("beforeinstallprompt", e => {
     e.preventDefault();
     deferredInstall = e;
-    showInstallButtons();
+    const pill = document.querySelector("[data-install-pill] .install-action");
+    if (pill) pill.textContent = "Install TerraLens";
   });
   window.addEventListener("appinstalled", () => {
     deferredInstall = null;
-    document.querySelectorAll("[data-install-app]").forEach(b => b.remove());
+    const pill = document.querySelector("[data-install-pill]");
+    if (pill) pill.remove();
   });
-  showInstallButtons();
   showInstallPill();
   document.querySelectorAll("[data-upload-link]").forEach(el => {
     el.addEventListener("click", async e => {
