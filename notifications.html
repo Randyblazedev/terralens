@@ -111,8 +111,8 @@ pushBtn.onclick=async()=>{
   pushBtn.disabled=true;
   const wasOn=pushBtn.dataset.on==="1";
   try{
-    if(wasOn){ await disablePush(); setPushLabel(false); }
-    else { await enablePush(); setPushLabel(true); }
+    if(wasOn){ await disablePush(); try{localStorage.setItem("tl_push_on","0")}catch{}; setPushLabel(false); }
+    else { await enablePush(); try{localStorage.setItem("tl_push_on","1")}catch{}; setPushLabel(true); }
     note.textContent="";
   }catch(e){
     note.textContent=String((e&&e.message)||e||"Push failed. Try again.");

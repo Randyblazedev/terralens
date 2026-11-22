@@ -405,6 +405,23 @@ export async function markAllRead() {
   return supabase.from("notifications").update({ is_read: true }).eq("user_id", uid).eq("is_read", false);
 }
 
+// Ask the server to deliver a real Web Push to the recipients. Called right after
+// the notification row is inserted so push_devices_for can authorise the actor.
+async function dispatchPush(userIds, title, body, link) {
+  try {
+    const ids = [...new Set((userIds || []).filter(Boolean))].slice(0, 200);
+    if (!ids.length) return;
+    const sess = await supabase.auth.getSession();
+    const token = sess && sess.data && sess.data.session && sess.data.session.access_token;
+    if (!token) return;
+    await fetch("/api/push?action=notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+      body: JSON.stringify({ userIds: ids, title, body: body || "", link: link || "/notifications.html" })
+    });
+  } catch {}
+}
+
 // Best-effort insert: never throws, so a notification failure can't break follows/comments/verifies.
 export function notifyUser({ userId, kind, title, body = null, link = null }) {
   (async () => {
@@ -414,7 +431,8 @@ export function notifyUser({ userId, kind, title, body = null, link = null }) {
       const actorId = session?.user?.id || null;
       if (actorId && actorId === userId && (kind === "follow" || kind === "comment" || kind === "like" || kind === "chat_reply" || kind === "chat_mention")) return;
       const { error } = await supabase.from("notifications").insert({ user_id: userId, actor_id: actorId, kind, title, body, link });
-      if (error) console.warn("notify failed:", error.message);
+      if (error) { console.warn("notify failed:", error.message); return; }
+      await dispatchPush([userId], title, body, link);
     } catch (err) { console.warn("notify failed:", err?.message || err); }
   })();
 }
@@ -431,7 +449,8 @@ export function notifyFollowers({ creatorId, creatorName = "Someone", placeName 
         .map(userId => ({ user_id: userId, actor_id: creatorId, kind: "new_place", title: `${creatorName} added ${placeName}`, body: "Tap to see the new place.", link }));
       if (!rows.length) return;
       const { error: insErr } = await supabase.from("notifications").insert(rows);
-      if (insErr) console.warn("notifyFollowers failed:", insErr.message);
+      if (insErr) { console.warn("notifyFollowers failed:", insErr.message); return; }
+      await dispatchPush(rows.map(r => r.user_id), rows[0].title, rows[0].body, rows[0].link);
     } catch (err) { console.warn("notifyFollowers failed:", err?.message || err); }
   })();
 }
@@ -448,7 +467,8 @@ export function notifyNewPost({ title, slug, actorId = null }) {
         .map(userId => ({ user_id: userId, actor_id: actorId, kind: "new_post", title: `New post: ${title}`, body: "Fresh on the TerraLens blog.", link: `/blog/${slug}` }));
       if (!rows.length) return;
       const { error: insErr } = await supabase.from("notifications").insert(rows);
-      if (insErr) console.warn("notifyNewPost failed:", insErr.message);
+      if (insErr) { console.warn("notifyNewPost failed:", insErr.message); return; }
+      await dispatchPush(rows.map(r => r.user_id), rows[0].title, rows[0].body, rows[0].link);
     } catch (err) { console.warn("notifyNewPost failed:", err?.message || err); }
   })();
 }
@@ -702,7 +722,7 @@ export async function initNotifBell(root = document) {
   const bump = (nextTotal, title) => {
     if (nextTotal > lastUnread) {
       playNotifPing();
-      if (title) { maybeBrowserNotify(`TerraLens: ${title}`); _sendPush(me.id, `TerraLens: ${title}`, "", "/notifications.html"); }
+      if (title) { maybeBrowserNotify(`TerraLens: ${title}`); }
     }
     lastUnread = nextTotal;
   };
@@ -726,7 +746,7 @@ export async function initNotifBell(root = document) {
         const over = cur.total - lastUnread;
         const top = notifBreakdown(cur.byKind, 3);
         maybeBrowserNotify(`TerraLens: ${over} new notification${over > 1 ? "s" : ""}${top ? ` (${top})` : ""}`);
-        _sendPush(me.id, `TerraLens: ${over} new notification`, top || "", "/notifications.html");
+        
       }
       lastUnread = cur.total;
       paintLinkBadges(cur.total, cur.byKind);
@@ -869,6 +889,36 @@ function showInstallButtons() {
   document.querySelectorAll("header nav").forEach(n => n.appendChild(makeInstallBtn("hover:text-white")));
   document.querySelectorAll("[data-mobile-nav] .grid").forEach(n => n.appendChild(makeInstallBtn("rounded-xl px-4 py-3 text-left hover:bg-white/5")));
 }
+
+// A tiny, dismissible "Install TerraLens" pill for visitors who haven't installed
+// the PWA. Kept out of the way at the bottom-left and remembered once dismissed.
+function showInstallPill() {
+  try {
+    if (document.querySelector("[data-install-pill]")) return;
+    if (localStorage.getItem("tl_install_pill_dismissed") === "1") return;
+    if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) return;
+    const pill = document.createElement("div");
+    pill.setAttribute("data-install-pill", "");
+    pill.style.cssText = "position:fixed;left:14px;bottom:18px;z-index:44;display:flex;align-items:center;gap:8px;background:rgba(9,14,24,.92);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:7px 12px 7px 8px;color:#e8eef8;font:600 11px/1.2 system-ui,sans-serif;backdrop-filter:blur(8px);box-shadow:0 8px 24px rgba(0,0,0,.25)";
+    pill.innerHTML = '<span style="width:24px;height:24px;border-radius:50%;background:#0ea5e9;display:grid;place-items:center;font-size:13px;color:#04121f">↓</span>' +
+      '<span>Install TerraLens</span>' +
+      '<button type="button" aria-label="Dismiss" style="border:0;background:none;color:rgba(232,238,248,.5);font-size:15px;line-height:1;padding:0 2px;cursor:pointer">×</button>';
+    const action = pill.querySelector("span:nth-child(2)");
+    action.style.cursor = "pointer";
+    action.addEventListener("click", async () => {
+      try {
+        if (deferredInstall) { deferredInstall.prompt(); await deferredInstall.userChoice; }
+        else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) alert("In Safari, tap Share → Add to Home Screen to install TerraLens.");
+        else alert("Use your browser menu → Install app / Add to Home Screen to install TerraLens.");
+      } catch {}
+    });
+    pill.querySelector("button").addEventListener("click", () => {
+      try { localStorage.setItem("tl_install_pill_dismissed", "1"); } catch {}
+      pill.remove();
+    });
+    document.body.appendChild(pill);
+  } catch {}
+}
 // Supabase restores the stored session asynchronously. A single getSession() on a cold
 // load can return null for a moment even when the user is signed in, which made pages
 // bounce back to the sign-in screen. Wait for the session to actually settle.
@@ -950,6 +1000,7 @@ export async function initNav() {
     document.querySelectorAll("[data-install-app]").forEach(b => b.remove());
   });
   showInstallButtons();
+  showInstallPill();
   document.querySelectorAll("[data-upload-link]").forEach(el => {
     el.addEventListener("click", async e => {
       e.preventDefault();
@@ -964,6 +1015,14 @@ export async function initNav() {
   }
   if (user && supabase) {
     try { await initNotifBell(document); } catch {}
+  }
+  // Push is a one-time choice: once enabled, silently re-attach after each load
+  // so a service-worker update never silently turns it off again.
+  if (user && supabase) {
+    try {
+      const on = localStorage.getItem("tl_push_on") === "1";
+      if (on && "Notification" in window && Notification.permission === "granted") await healPush();
+    } catch {}
   }
   if (user && supabase) {
     let isAdmin = false;
