@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
-<link rel="stylesheet" href="assets/css/new-features.css?v=20261124b">
+<link rel="stylesheet" href="assets/css/new-features.css?v=20261124cb">
 <script src="src/js/runtime-config.js"></script>
 <script type="module" src="src/js/supabase.js"></script>
 <style>
@@ -78,7 +78,8 @@
 <div id="composer" class="tl-card p-5 mt-6 hidden">
       <div class="grid gap-3">
         <label class="text-sm">Place <select id="place" class="tl-input"><option value="">Choose a place</option></select></label>
-        <label class="text-sm">Image link (HTTPS) <input id="media" class="tl-input" placeholder="https://…"></label>
+        <label class="text-sm">Photo or short video <input id="file" type="file" accept="image/*,video/mp4,video/webm,video/quicktime" class="tl-input"></label>
+        <p class="text-xs text-white/45">Photos and clips up to 50 MB. Everyone can post — Pro comes later.</p>
         <label class="text-sm">Caption <textarea id="caption" maxlength="600" class="tl-input !min-h-20"></textarea></label>
         <button id="publish" class="tl-btn tl-btn-primary">Post moment</button>
       </div>
@@ -108,14 +109,19 @@ import {initNav,escapeHtml,backFab,imgSize} from "./src/js/app.js";
       }
     };
     document.getElementById("publish").onclick=async()=>{
-      const cm=document.getElementById("composermsg"),place=document.getElementById("place").value,media=document.getElementById("media").value.trim();
-      if(!place||!media){cm.textContent="Choose a place and add an image link.";return}
-      cm.textContent="Checking image…";
-      const r=await fetch("/api/photos?action=moment-media",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({url:media})});
-      const d=await r.json().catch(()=>({}));
-      if(!r.ok){cm.textContent=d.error||"Could not use that image.";return}
-      const {error}=await supabase.from("moments").insert({user_id:session.user.id,place_id:place,kind:"photo",media_url:d.url,caption:document.getElementById("caption").value.trim()});
-      cm.textContent=error?error.message:"Moment posted.";if(!error)location.reload();
+      const cm=document.getElementById("composermsg"),place=document.getElementById("place").value,file=document.getElementById("file").files[0];
+      if(!place||!file){cm.textContent="Choose a place and a photo or short video.";return}
+      if(!session){cm.textContent="Sign in to post.";return}
+      cm.textContent="Uploading…";
+      const ext=(file.name.split(".").pop()||"bin").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,5);
+      const path=session.user.id+"/"+Date.now()+"."+ext;
+      const up=await supabase.storage.from("moment-media").upload(path,file,{contentType:file.type,upsert:false});
+      if(up.error){cm.textContent=up.error.message;return}
+      const url=supabase.storage.from("moment-media").getPublicUrl(path).data.publicUrl;
+      const kind=file.type.startsWith("video/")?"video":"photo";
+      const {error}=await supabase.from("moments").insert({user_id:session.user.id,place_id:place,kind,media_url:url,caption:document.getElementById("caption").value.trim()});
+      cm.textContent=error?error.message:"Moment posted.";
+      if(!error)location.reload();
     };
     const {data:rows,error}=await supabase.from("moments")
       .select("id,kind,media_url,caption,created_at,user_id,profiles!moments_user_id_fkey(display_name,username),places!moments_place_id_fkey(id,name,country)")
