@@ -60,6 +60,7 @@ revoke all on function public.admin_set_role(uuid, text) from public, anon;
 grant execute on function public.admin_set_role(uuid, text) to authenticated;
 
 -- Expose role in the admin contributor list without a second query.
+drop function if exists public.admin_contributors();
 create or replace function public.admin_contributors()
 returns table (id uuid, display_name text, username text, verified boolean, role text, places bigint,
                approved_places bigint, approved_photos bigint, actioned_reports_90d bigint, last_upload timestamptz)
