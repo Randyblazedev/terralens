@@ -29,13 +29,19 @@
     },
     "api/unsplash.js": {
       "maxDuration": 30
+    },
+    "api/live.js": {
+      "maxDuration": 30
     }
   },
   "redirects": [
     {
       "source": "/(.*)",
       "has": [
-        { "type": "host", "value": "terralenss\\.vercel\\.app" }
+        {
+          "type": "host",
+          "value": "terralenss\\.vercel\\.app"
+        }
       ],
       "destination": "https://www.terralensapp.com/$1",
       "permanent": true

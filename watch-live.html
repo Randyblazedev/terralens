@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Watch live — TerraLens</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="src/styles/tailwind.css">
+<link rel="stylesheet" href="src/styles/app.css">
+<script src="src/js/runtime-config.js"></script>
+<script type="module" src="src/js/supabase.js"></script>
+</head>
+<body class="bg-[#06080b] text-white">
+  <header class="tl-nav sticky top-0 z-50"><div class="tl-shell flex h-16 items-center justify-between">
+    <a href="index.html" class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-lg font-extrabold">Terra<span class="text-sky-300">Lens</span></span></a>
+    <a href="live.html" class="tl-btn tl-btn-ghost !min-h-10">← Live</a>
+  </div></header>
+  <main class="tl-section"><div class="tl-shell max-w-5xl">
+    <div id="room" class="tl-card p-6"><p class="text-white/50">Connecting to room…</p></div>
+    <div class="grid gap-5 mt-5 lg:grid-cols-3">
+      <div class="lg:col-span-2">
+        <video id="player" class="w-full rounded-xl bg-black" autoplay playsinline controls style="aspect-ratio:16/9"></video>
+        <p id="playmsg" class="mt-2 text-sm text-white/50"></p>
+        <div class="mt-3 flex gap-2"><button id="like" class="tl-btn tl-btn-ghost">♥ Like</button><button id="join" class="tl-btn tl-btn-primary">Request to join</button><span id="status" class="self-center text-sm text-white/50"></span></div>
+      </div>
+      <div>
+        <h2 class="text-lg font-bold">Live chat</h2>
+        <div id="comments" class="mt-3 grid gap-2 max-h-96 overflow-y-auto"></div>
+        <form id="chatform" class="mt-3 flex gap-2"><input id="chatinput" maxlength="300" class="tl-input" placeholder="Say something…"><button class="tl-btn tl-btn-primary">Send</button></form>
+      </div>
+    </div>
+  </div></main>
+  <script type="module">
+    import {supabase} from "./src/js/supabase.js";
+    import {initNav,escapeHtml,backFab} from "./src/js/app.js";
+    await initNav();
+    document.body.insertAdjacentHTML("beforeend",backFab("live.html"));
+    const id=new URLSearchParams(location.search).get("id")||"";
+    const roomEl=document.getElementById("room"),playmsg=document.getElementById("playmsg"),status=document.getElementById("status");
+    const res=await fetch("/api/live?action=room&id="+encodeURIComponent(id));const d=await res.json().catch(()=>({}));
+    if(!res.ok){roomEl.innerHTML='<p class="text-white/60">'+escapeHtml(d.error||"Broadcast not found")+'</p>';}
+    else{
+      const b=d.room;
+      roomEl.innerHTML=`<span class="tl-eyebrow">${b.status==='live'?'Live now':'Broadcast'}</span><h1 class="mt-2 text-2xl font-extrabold">${escapeHtml(b.title)}</h1><p class="mt-2 text-white/60">${escapeHtml(b.summary)}</p><p class="mt-2 text-sm text-white/45">Host: ${escapeHtml(b.host_name)} · ${escapeHtml(b.viewers||d.viewers||0)} watching${b.place_name?' · '+escapeHtml(b.place_name):''}</p>`;
+      const comments=document.getElementById("comments");
+      comments.innerHTML=(d.comments||[]).map(c=>`<div class="rounded-lg bg-white/5 p-2 text-sm"><b class="text-sky-300">${escapeHtml(c.profiles?.display_name||c.profiles?.username||'Viewer')}</b> ${escapeHtml(c.body)}</div>`).join("")||'<p class="text-sm text-white/40">No messages yet.</p>';
+      const video=document.getElementById("player");
+      const hls=b.playback_url;
+      if(hls){
+        if(video.canPlayType("application/vnd.apple.mpegurl")){video.src=hls;}
+        else{
+          try{
+            const {default:Hls}=await import("https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.esm.min.js");
+            if(Hls.isSupported()){const h=new Hls({lowLatencyMode:true});h.loadSource(hls);h.attachMedia(video);}
+            else playmsg.textContent="This browser cannot play HLS.";
+          }catch{playmsg.textContent="Player could not load. Try Safari or a modern Chrome.";}
+        }
+      }else playmsg.textContent="Playback is not ready yet.";
+      const {data:{session}}=await supabase.auth.getSession();
+      const post=async(action,extra={})=>{const r=await fetch("/api/live?action="+action,{method:"POST",headers:{"Content-Type":"application/json",...(session?{Authorization:"Bearer "+session.access_token}:{})},body:JSON.stringify({broadcast_id:id,...extra})});return r.json().catch(()=>({}))};
+      document.getElementById("like").onclick=async()=>{if(!session){status.textContent="Sign in to react.";return}await post("react",{kind:"like"});status.textContent="Liked";};
+      document.getElementById("join").onclick=async()=>{if(!session){status.textContent="Sign in to request.";return}const j=await post("join");status.textContent=j.error||"Request sent. The host will decide.";};
+      document.getElementById("chatform").onsubmit=async e=>{e.preventDefault();const input=document.getElementById("chatinput"),body=input.value.trim();if(!body||!session)return;await post("comment",{body});input.value="";location.reload();};
+    }
+  </script>
+</body>
+</html>
