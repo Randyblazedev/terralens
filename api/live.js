@@ -62,8 +62,13 @@ export default async function handler(req, res) {
     }
 
     if (action === "list") {
-      const rows = await db("rpc/live_broadcast_list", authToken);
-      return res.status(200).json({ broadcasts: Array.isArray(rows) ? rows : [] });
+      try {
+        const rows = await db("rpc/live_broadcast_list", authToken);
+        return res.status(200).json({ broadcasts: Array.isArray(rows) ? rows : [] });
+      } catch {
+        // Live tables not created yet — show an honest empty state, never an error.
+        return res.status(200).json({ broadcasts: [], unavailable: true });
+      }
     }
 
     if (action === "room") {
