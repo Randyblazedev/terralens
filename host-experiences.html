@@ -102,7 +102,7 @@
   </script>
 </body>
 </html>    (async()=>{
-      const {data:ex}=await supabase.from("places").select("id,name,country,cover_url").eq("status","published").not("cover_url","is",null).order("view_count",{ascending:false}).limit(3);
+      const {data:ex}=await supabase.from("places").select("id,name,country,cover_url").eq("status","published").neq("cover_url","").order("view_count",{ascending:false}).limit(3);
       const box=document.getElementById("example-places");
       if(box&&ex&&ex.length)box.innerHTML=ex.map(x=>`<a href="host-experiences.html?place=${encodeURIComponent(x.id)}" class="tl-card p-3 flex items-center gap-3 hover:bg-white/5"><span class="w-12 h-12 rounded-lg bg-white/5 shrink-0" style="background-image:url('${escapeHtml(imgSize(x.cover_url,160))}');background-size:cover;background-position:center"></span><span class="text-sm font-semibold">${escapeHtml(x.name)}<span class="block text-xs text-white/45">${escapeHtml(x.country||"")}</span></span></a>`).join("");
       const preset=new URLSearchParams(location.search).get("place")||"";
