@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Experience — TerraLens</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="src/styles/tailwind.css">
+<link rel="stylesheet" href="src/styles/app.css">
+<script src="src/js/runtime-config.js"></script>
+<script type="module" src="src/js/supabase.js"></script>
+</head>
+<body class="bg-[#06080b] text-white">
+  <header class="tl-nav sticky top-0 z-50"><div class="tl-shell flex h-16 items-center justify-between">
+    <a href="index.html" class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-lg font-extrabold">Terra<span class="text-sky-300">Lens</span></span></a>
+    <a href="experiences.html" class="tl-btn tl-btn-ghost !min-h-10">← All experiences</a>
+  </div></header>
+  <main class="tl-section"><div class="tl-shell max-w-4xl">
+    <div id="detail" class="tl-card p-8"><p class="text-white/50">Loading…</p></div>
+    <div id="book" class="tl-card p-6 mt-5 hidden">
+      <h2 class="text-xl font-bold">Request a spot</h2>
+      <p class="mt-1 text-sm text-white/50">This sends a request to the host. No payment is taken — payment becomes available when your country's provider is connected.</p>
+      <div class="mt-4 grid gap-3">
+        <label class="text-sm">Seats <input id="seats" type="number" min="1" max="20" value="1" class="tl-input"></label>
+        <label class="text-sm">Note to host <textarea id="note" maxlength="400" class="tl-input !min-h-24" placeholder="Anything the host should know"></textarea></label>
+        <button id="send" class="tl-btn tl-btn-primary">Send request</button>
+      </div>
+      <p id="bookmsg" class="mt-3 text-sm text-sky-300"></p>
+    </div>
+  </div></main>
+  <script type="module">
+    import {supabase} from "./src/js/supabase.js";
+    import {initNav,escapeHtml,imgSize,backFab} from "./src/js/app.js";
+    await initNav();
+    document.body.insertAdjacentHTML("beforeend",backFab("experiences.html"));
+    const slug=new URLSearchParams(location.search).get("slug");
+    const detail=document.getElementById("detail"),book=document.getElementById("book");
+    const {data:e,error}=await supabase.from("experiences").select("*,profiles(display_name,username),places(name,country)").eq("slug",slug).eq("status","published").maybeSingle();
+    if(error||!e){detail.innerHTML='<p class="text-white/60">Experience not found or not published.</p>';}
+    else{
+      const host=e.profiles?.display_name||e.profiles?.username||"Local host";
+      const price=e.price_cents?`${(e.price_cents/100).toLocaleString()} ${e.currency}`:"Free";
+      detail.innerHTML=`${e.cover_url?`<img src="${escapeHtml(imgSize(e.cover_url,1000))}" alt="" class="rounded-xl w-full max-h-80 object-cover">`:""}
+        <span class="tl-eyebrow mt-5 inline-block">${escapeHtml(e.category)}${e.is_virtual?" · virtual":""}</span>
+        <h1 class="mt-2 text-3xl font-extrabold">${escapeHtml(e.title)}</h1>
+        <p class="mt-2 text-white/60">${escapeHtml(e.summary)}</p>
+        <div class="mt-5 flex flex-wrap gap-3 text-sm text-white/55"><span>Host: <b class="text-white">${escapeHtml(host)}</b></span><span>Duration: ${e.duration_minutes} min</span><span>Capacity: ${e.capacity}</span><span class="text-sky-300">${escapeHtml(price)}</span>${e.places?`<span>📍 ${escapeHtml(e.places.name+", "+(e.places.country||""))}</span>`:""}</div>
+        <p class="mt-5 whitespace-pre-wrap leading-7 text-white/80">${escapeHtml(e.description)}</p>`;
+      const {data:{session}}=await supabase.auth.getSession();
+      if(session){
+        book.classList.remove("hidden");
+        document.getElementById("send").onclick=async()=>{
+          const msg=document.getElementById("bookmsg");msg.textContent="Sending…";
+          const seats=Math.max(1,Math.min(20,Number(document.getElementById("seats").value)||1));
+          const {error}=await supabase.from("booking_requests").insert({experience_id:e.id,traveler_id:session.user.id,seats,note:document.getElementById("note").value});
+          msg.textContent=error?(error.code==="23505"?"You already requested this experience.":error.message):"Request sent. The host will respond here.";
+        };
+      }else{
+        book.innerHTML='<p class="text-white/60">Sign in to request a spot.</p>';
+        book.classList.remove("hidden");
+      }
+    }
+  </script>
+</body>
+</html>

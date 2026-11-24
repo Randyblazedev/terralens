@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Experiences — TerraLens</title>
+<meta name="description" content="Discover and book real guided experiences hosted by locals around the world.">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="src/styles/tailwind.css">
+<link rel="stylesheet" href="src/styles/app.css">
+<script src="src/js/runtime-config.js"></script>
+<script src="curriculum.js"></script>
+<script type="module" src="src/js/supabase.js"></script>
+<style>
+.ex-hero{padding:44px 0 10px}
+.ex-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.ex-card{background:var(--surface,#fff);border:1px solid var(--line,#e5e3db);border-radius:14px;overflow:hidden}
+.ex-card img{width:100%;height:160px;object-fit:cover;background:#111}
+.ex-body{padding:16px}
+.ex-tag{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#0ea5e9;background:#e0f2fe;padding:3px 8px;border-radius:20px}
+.ex-price{font-weight:700}
+</style>
+</head>
+<body class="bg-[#06080b] text-white">
+  <header class="tl-nav sticky top-0 z-50">
+    <div class="tl-shell flex h-16 items-center justify-between gap-5">
+      <a href="index.html" class="flex items-center gap-3 shrink-0"><img src="assets/terralens-mark.png" class="tl-logo" alt="TerraLens"><span class="font-display text-lg font-extrabold tracking-tight">Terra<span class="text-sky-300">Lens</span></span></a>
+      <nav class="hidden items-center gap-6 text-sm text-white/65 lg:flex">
+        <a class="hover:text-white" href="explore.html">Explore</a>
+        <a class="hover:text-white" href="experiences.html">Experiences</a>
+        <a class="hover:text-white" href="community.html">Community</a>
+        <a class="hover:text-white" href="chat.html">Chat</a>
+        <a class="hover:text-white" href="/blog">Blog</a>
+      </nav>
+      <a data-auth-href href="login.html" class="tl-btn tl-btn-primary !min-h-10 !px-4"><span data-auth-label>Sign in</span></a>
+    </div>
+  </header>
+  <main class="tl-section">
+    <div class="tl-shell">
+      <div class="ex-hero">
+        <p class="tl-eyebrow">TerraLens Experiences</p>
+        <h1 class="mt-2 text-4xl font-extrabold">Go with someone who knows.</h1>
+        <p class="mt-3 max-w-2xl text-white/55">Real guided experiences hosted by local people and verified hosts. Request a spot, talk with your host, and pay only when payment is available for your country.</p>
+      </div>
+      <div id="host-bar" class="mt-4 hidden"><a href="host-experiences.html" class="tl-btn tl-btn-ghost">Manage your experiences →</a></div>
+      <div id="list" class="ex-grid mt-8"></div>
+      <p id="msg" class="mt-5 text-sm text-white/50"></p>
+    </div>
+  </main>
+  <script type="module">
+    import {supabase} from "./src/js/supabase.js";
+    import {initNav,escapeHtml,imgSize,backFab} from "./src/js/app.js";
+    await initNav();
+    document.body.insertAdjacentHTML("beforeend",backFab("index.html"));
+    const list=document.getElementById("list"),msg=document.getElementById("msg");
+    list.innerHTML='<div class="tl-card p-6 animate-pulse">Loading experiences…</div>';
+    const {data,error}=await supabase.from("experiences").select("id,slug,title,summary,cover_url,category,price_cents,currency,duration_minutes,is_virtual,host_id,profiles(display_name,username)").eq("status","published").order("created_at",{ascending:false}).limit(60);
+    if(error){list.innerHTML="";msg.textContent=error.message;}
+    else if(!data||!data.length){
+      list.innerHTML="";
+      msg.innerHTML='No experiences published yet. <a class="text-sky-300" href="host-experiences.html">Host the first one</a> if you are an approved host.';
+    }else{
+      list.innerHTML=data.map(e=>{
+        const host=e.profiles?.display_name||e.profiles?.username||"Local host";
+        const price=e.price_cents?`${(e.price_cents/100).toLocaleString()} ${e.currency}`:"Free";
+        return `<a href="experience.html?slug=${encodeURIComponent(e.slug)}" class="ex-card card-hover">
+          ${e.cover_url?`<img src="${escapeHtml(imgSize(e.cover_url,600))}" alt="" loading="lazy">`:'<div style="height:160px;background:#111827"></div>'}
+          <div class="ex-body"><span class="ex-tag">${escapeHtml(e.category)}${e.is_virtual?" · virtual":""}</span>
+          <h2 class="mt-2 text-lg font-bold">${escapeHtml(e.title)}</h2>
+          <p class="mt-1 line-clamp-2 text-sm text-white/55">${escapeHtml(e.summary)}</p>
+          <p class="mt-3 text-xs text-white/45">${escapeHtml(host)} · ${e.duration_minutes} min</p>
+          <p class="ex-price mt-1">${escapeHtml(price)}</p></div></a>`;
+      }).join("");
+    }
+    try{
+      const {data:{session}}=await supabase.auth.getSession();
+      if(session){const {data:can}=await supabase.rpc("can_host");if(can===true)document.getElementById("host-bar").classList.remove("hidden");}
+    }catch{}
+  </script>
+</body>
+</html>

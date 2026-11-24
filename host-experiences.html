@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Host Experiences — TerraLens</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="src/styles/tailwind.css">
+<link rel="stylesheet" href="src/styles/app.css">
+<script src="src/js/runtime-config.js"></script>
+<script type="module" src="src/js/supabase.js"></script>
+</head>
+<body class="bg-[#06080b] text-white">
+  <header class="tl-nav sticky top-0 z-50"><div class="tl-shell flex h-16 items-center justify-between">
+    <a href="index.html" class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-lg font-extrabold">Terra<span class="text-sky-300">Lens</span></span></a>
+    <a href="experiences.html" class="tl-btn tl-btn-ghost !min-h-10">← Experiences</a>
+  </div></header>
+  <main class="tl-section"><div class="tl-shell max-w-4xl">
+    <p class="tl-eyebrow">Creator tools</p>
+    <h1 class="mt-2 text-3xl font-extrabold">Host an experience</h1>
+    <div id="gate" class="tl-card p-6 mt-6 hidden"><p class="font-bold text-lg">Host access required</p><p class="mt-2 text-sm text-white/55">Only verified hosts, businesses and admins can publish experiences. Your account is currently a regular user.</p></div>
+    <div id="panel" class="hidden">
+      <div class="tl-card p-6 mt-6">
+        <h2 class="text-xl font-bold">Create a listing</h2>
+        <div id="form" class="mt-4 grid gap-3">
+          <label class="text-sm">Title <input id="f-title" maxlength="120" class="tl-input" placeholder="Sunrise walk to the falls"></label>
+          <label class="text-sm">Short summary <input id="f-summary" maxlength="200" class="tl-input" placeholder="One or two sentences"></label>
+          <label class="text-sm">Description <textarea id="f-desc" class="tl-input !min-h-28" placeholder="What will people do?"></textarea></label>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label class="text-sm">Category <select id="f-cat" class="tl-input"><option value="culture">Culture</option><option value="nature">Nature</option><option value="food">Food</option><option value="walking">Walking tour</option><option value="virtual">Virtual</option></select></label>
+            <label class="text-sm">Related place ID (optional) <input id="f-place" class="tl-input" placeholder="uuid from a place page"></label>
+            <label class="text-sm">Duration (minutes) <input id="f-dur" type="number" min="15" max="10080" value="60" class="tl-input"></label>
+            <label class="text-sm">Capacity <input id="f-cap" type="number" min="1" max="500" value="8" class="tl-input"></label>
+            <label class="text-sm">Price (whole units) <input id="f-price" type="number" min="0" value="0" class="tl-input"></label>
+            <label class="text-sm">Currency <input id="f-cur" maxlength="8" value="XAF" class="tl-input"></label>
+          </div>
+          <label class="flex items-center gap-2 text-sm"><input id="f-virtual" type="checkbox"> Virtual experience</label>
+          <label class="flex items-center gap-2 text-sm"><input id="f-publish" type="checkbox" checked> Publish immediately</label>
+          <button id="f-save" class="tl-btn tl-btn-primary">Create experience</button>
+        </div>
+        <p id="f-msg" class="mt-3 text-sm text-sky-300"></p>
+      </div>
+      <h2 class="mt-8 text-xl font-bold">Your listings</h2>
+      <div id="mine" class="mt-4 grid gap-3"></div>
+    </div>
+  </div></main>
+  <script type="module">
+    import {supabase} from "./src/js/supabase.js";
+    import {initNav,escapeHtml,backFab} from "./src/js/app.js";
+    await initNav();
+    document.body.insertAdjacentHTML("beforeend",backFab("experiences.html"));
+    const gate=document.getElementById("gate"),panel=document.getElementById("panel"),msg=document.getElementById("f-msg");
+    const {data:{session}}=await supabase.auth.getSession();
+    if(!session){location.href="login.html?next=host-experiences.html";}
+    else{
+      const {data:can}=await supabase.rpc("can_host");
+      if(can!==true){gate.classList.remove("hidden");}
+      else{
+        panel.classList.remove("hidden");
+        async function loadMine(){
+          const {data,error}=await supabase.from("experiences").select("id,slug,title,status,price_cents,currency").eq("host_id",session.user.id).order("created_at",{ascending:false});
+          document.getElementById("mine").innerHTML=error?`<p class="text-white/60">${escapeHtml(error.message)}</p>`:(data||[]).map(x=>`<div class="tl-card p-4 flex items-center justify-between gap-4"><div><p class="font-bold">${escapeHtml(x.title)}</p><p class="text-xs text-white/50">${escapeHtml(x.status)}</p></div><div class="flex gap-2"><a class="tl-btn tl-btn-ghost !min-h-9" href="experience.html?slug=${encodeURIComponent(x.slug)}">View</a><button class="tl-btn tl-btn-ghost !min-h-9" data-pub="${x.id}" data-v="${x.status==='published'?'paused':'published'}">${x.status==='published'?'Pause':'Publish'}</button></div></div>`).join("")||'<p class="text-white/55">No listings yet.</p>';
+        }
+        loadMine();
+        document.getElementById("mine").addEventListener("click",async e=>{
+          const b=e.target.closest("[data-pub]");if(!b)return;
+          const {error}=await supabase.from("experiences").update({status:b.dataset.v}).eq("id",b.dataset.pub);
+          if(error)msg.textContent=error.message;else loadMine();
+        });
+        document.getElementById("f-save").onclick=async()=>{
+          msg.textContent="Creating…";
+          const title=document.getElementById("f-title").value.trim(),summary=document.getElementById("f-summary").value.trim();
+          if(title.length<4||summary.length<10){msg.textContent="Add a title and a short summary first.";return}
+          const slug=title.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")+"-"+Math.random().toString(36).slice(2,7);
+          const place=document.getElementById("f-place").value.trim();
+          const row={host_id:session.user.id,slug,title,summary,description:document.getElementById("f-desc").value,
+            category:document.getElementById("f-cat").value,place_id:/^[0-9a-f-]{36}$/i.test(place)?place:null,
+            duration_minutes:Math.max(15,Number(document.getElementById("f-dur").value)||60),
+            capacity:Math.max(1,Number(document.getElementById("f-cap").value)||8),
+            price_cents:Math.max(0,Math.round(Number(document.getElementById("f-price").value)||0)*100),
+            currency:document.getElementById("f-cur").value.trim().toUpperCase()||"XAF",
+            is_virtual:document.getElementById("f-virtual").checked,
+            status:document.getElementById("f-publish").checked?"published":"draft"};
+          const {error}=await supabase.from("experiences").insert(row);
+          msg.textContent=error?error.message:"Experience created.";
+          if(!error){document.getElementById("form").reset();loadMine();}
+        };
+      }
+    }
+  </script>
+</body>
+</html>
