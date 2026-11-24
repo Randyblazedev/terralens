@@ -55,7 +55,7 @@ import {initNav,escapeHtml,backFab} from "./src/js/app.js";
       const {error}=await supabase.from("local_questions").insert({user_id:session.user.id,place_id:place,question:q});
       msg.textContent=error?error.message:"Question posted.";if(!error)location.reload();
     };
-    const {data:qs,error}=await supabase.from("local_questions").select("id,question,created_at,user_id,profiles(display_name,username),places(id,name,country)").order("created_at",{ascending:false}).limit(40);
+    const {data:qs,error}=await supabase.from("local_questions").select("id,question,created_at,user_id,profiles!local_questions_user_id_fkey(display_name,username),places!local_questions_place_id_fkey(id,name,country)").order("created_at",{ascending:false}).limit(40);
     if(error){list.innerHTML="";msg.textContent=error.message;return}
     if(!qs||!qs.length){list.innerHTML="";msg.textContent="No questions yet. Ask the first one.";return}
     list.innerHTML=qs.map(q=>`<article class="tl-card p-5">
@@ -65,7 +65,7 @@ import {initNav,escapeHtml,backFab} from "./src/js/app.js";
       <div class="mt-3 flex gap-2"><input class="tl-input" maxlength="1000" placeholder="Your answer…" data-input="${q.id}"><button class="tl-btn tl-btn-ghost !min-h-10 answer" data-id="${q.id}">Answer</button></div>
     </article>`).join("");
     for(const q of qs){
-      const {data:ans}=await supabase.from("local_answers").select("id,answer,created_at,profiles(display_name,username)").eq("question_id",q.id).order("created_at").limit(20);
+      const {data:ans}=await supabase.from("local_answers").select("id,answer,created_at,profiles!local_answers_user_id_fkey(display_name,username)").eq("question_id",q.id).order("created_at").limit(20);
       const box=list.querySelector(`[data-answers="${q.id}"]`);
       if(box)box.innerHTML=(ans||[]).map(a=>`<div class="rounded-lg bg-white/5 p-3 text-sm"><b class="text-sky-300">${escapeHtml(a.profiles?.display_name||a.profiles?.username||"Local")}</b> ${escapeHtml(a.answer)}</div>`).join("")||'<p class="text-sm text-white/40">No answers yet.</p>';
     }

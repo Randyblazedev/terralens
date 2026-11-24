@@ -74,7 +74,7 @@ import {initNav,escapeHtml,backFab} from "./src/js/app.js";
       cm.textContent=error?error.message:"Moment posted.";if(!error)location.reload();
     };
     const {data:rows,error}=await supabase.from("moments")
-      .select("id,kind,media_url,caption,created_at,user_id,profiles(display_name,username),places(id,name,country)")
+      .select("id,kind,media_url,caption,created_at,user_id,profiles!moments_user_id_fkey(display_name,username),places!moments_place_id_fkey(id,name,country)")
       .order("created_at",{ascending:false}).limit(40);
     if(error){feed.innerHTML="";msg.textContent=error.message;return}
     if(!rows||!rows.length){feed.innerHTML="";msg.textContent="No moments yet. Be the first to share one.";return}
