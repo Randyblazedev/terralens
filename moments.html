@@ -64,6 +64,7 @@
 </header>
   <main class="tl-section"><div class="tl-shell max-w-3xl">
     <div class="page-lead"><p class="tl-eyebrow">Community</p><h1>World Moments</h1>
+    <button id="new" class="tl-btn tl-btn-primary mt-4">Share a moment</button>
     <p class="mt-2 text-white/55">Real photos and short videos, each tied to the place it was taken.</p>
     </div>
     <section id="real-place-examples" class="mt-6">
@@ -98,8 +99,9 @@ import {initNav,escapeHtml,backFab,imgSize} from "./src/js/app.js";
     document.body.insertAdjacentHTML("beforeend",backFab("community.html"));
     const feed=document.getElementById("feed"),msg=document.getElementById("msg");
     const {data:{session}}=await supabase.auth.getSession();
-    if(!session)document.getElementById("new").onclick=()=>location.href="login.html?next=moments.html";
-    else document.getElementById("new").onclick=()=>{
+    const newBtn=document.getElementById("new");
+    if(!session){if(newBtn)newBtn.onclick=()=>location.href="login.html?next=moments.html";}
+    else if(newBtn)newBtn.onclick=()=>{
       const c=document.getElementById("composer");c.classList.toggle("hidden");
       if(!c.classList.contains("hidden")){
         supabase.from("places").select("id,name,country").eq("status","published").order("name").limit(200).then(({data})=>{

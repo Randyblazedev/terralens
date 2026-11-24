@@ -65,6 +65,7 @@
   <main class="tl-section"><div class="tl-shell">
     <div class="page-lead"><p class="tl-eyebrow">TerraLens Live</p>
     <h1 class="mt-2">Experience a place right now.</h1>
+    <a href="host-live.html" id="host-link" class="tl-btn tl-btn-primary mt-4 hidden">Go live</a>
     <p class="mt-3 max-w-2xl text-white/55">Real broadcasts from hosts around the world. No recordings pretending to be live — viewer counts come straight from the streaming provider.</p></div>
     <div id="list" class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
     <p id="msg" class="mt-5 text-sm text-white/50"></p>
@@ -89,7 +90,7 @@
     }
     try{
       const c=await (await fetch("/api/live?action=config")).json();
-      if(c.canHost)document.getElementById("host-link").classList.remove("hidden");
+      if(c.canHost){const hl=document.getElementById("host-link");if(hl)hl.classList.remove("hidden");}
       if(!c.configured)msg.textContent="Live needs Cloudflare Stream credentials. See the setup note for CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_STREAM_TOKEN.";
     }catch{}
   </script>
