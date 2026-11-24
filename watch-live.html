@@ -7,7 +7,7 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
-<link rel="stylesheet" href="assets/css/new-features.css?v=20261124">
+<link rel="stylesheet" href="assets/css/new-features.css?v=20261124b">
 <script src="src/js/runtime-config.js"></script>
 <script type="module" src="src/js/supabase.js"></script>
 <link rel="canonical" href="https://www.terralensapp.com/watch-live.html">
@@ -18,10 +18,43 @@
 <meta name="twitter:title" content="Watch live — TerraLens">
 </head>
 <body class="bg-[#06080b] text-white">
-  <header class="tl-nav sticky top-0 z-50"><div class="tl-shell flex h-16 items-center justify-between">
-    <a href="index.html" class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-lg font-extrabold">Terra<span class="text-sky-300">Lens</span></span></a>
-    <a href="live.html" class="tl-btn tl-btn-ghost !min-h-10">← Live</a>
-  </div></header>
+  <header class="tl-nav sticky top-0 z-50">
+  <div class="tl-shell flex h-16 items-center justify-between gap-5">
+    <a href="index.html" class="flex items-center gap-3 shrink-0"><img src="assets/terralens-mark.png" class="tl-logo" alt="TerraLens"><span class="font-display text-lg font-extrabold tracking-tight">Terra<span class="text-sky-300">Lens</span></span></a>
+    <nav class="hidden items-center gap-6 text-sm text-white/65 lg:flex">
+      <a class="hover:text-white" href="explore.html" data-i18n="nav.explore">Explore</a>
+      <a class="hover:text-white" href="collections.html" data-i18n="nav.collections">Collections</a>
+      <a class="hover:text-white" href="experiences.html">Experiences</a>
+      <a class="hover:text-white" href="live.html">Live</a>
+      <a class="hover:text-white" href="moments.html">Moments</a>
+      <a class="hover:text-white" href="ask-local.html">Ask a Local</a>
+      <a class="hover:text-white" href="community.html">Community</a>
+      <a class="hover:text-white" href="chat.html">Chat</a>
+      <a class="hover:text-white" href="/blog" data-i18n="nav.blog">Blog</a>
+      <a class="hover:text-white" href="trips.html" data-i18n="nav.trips">Trips</a>
+      <a class="hover:text-white" href="about.html" data-i18n="nav.about">About</a>
+    </nav>
+    <div class="flex items-center gap-2">
+      <a href="upload.html" data-upload-link data-i18n="nav.upload" class="hidden rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white/80 hover:bg-white/5 sm:inline-flex">Upload</a>
+      <a data-auth-href href="login.html" class="tl-btn tl-btn-primary !min-h-10 !px-4"><span data-auth-label data-i18n="auth.signIn">Sign in</span></a>
+      <button data-menu class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 lg:hidden" data-i18n-aria="nav.menu" aria-label="Menu">☰</button>
+    </div>
+  </div>
+  <div data-mobile-nav class="tl-shell hidden pb-4 lg:hidden">
+    <div class="grid gap-1 rounded-2xl border border-white/10 bg-black/30 p-2">
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="experiences.html">Experiences</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="live.html">Live</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="moments.html">Moments</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="ask-local.html">Ask a Local</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="community.html">Community</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="chat.html">Chat</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="/blog" data-i18n="nav.blog">Blog</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="trips.html" data-i18n="nav.trips">Trips</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="about.html" data-i18n="nav.about">About</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="upload.html" data-i18n="nav.uploadPlace">Upload a place</a>
+    </div>
+  </div>
+</header>
   <main class="tl-section"><div class="tl-shell max-w-5xl">
     <div id="room" class="tl-card p-6"><p class="text-white/50">Connecting to room…</p></div>
     <div class="grid gap-5 mt-5 lg:grid-cols-3">

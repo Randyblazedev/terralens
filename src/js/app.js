@@ -1041,6 +1041,16 @@ export async function initNav() {
       });
     }
   }
+  // Mark the current section in desktop and mobile navigation.
+  try {
+    const path = location.pathname;
+    document.querySelectorAll('header.tl-nav a[href]').forEach(a => {
+      let href = '';
+      try { href = new URL(a.getAttribute('href'), location.href).pathname; } catch {}
+      if (!href || a.hasAttribute('data-auth-href') || a.hasAttribute('data-upload-link')) return;
+      if (href === path || (href === '/blog' && path === '/blog')) a.setAttribute('aria-current', 'page');
+    });
+  } catch {}
   injectBottomNav(); // Add app-like bottom nav for mobile
   document.querySelectorAll("[data-menu]").forEach(btn => {
     btn.addEventListener("click", () => document.querySelector("[data-mobile-nav]")?.classList.toggle("hidden"));

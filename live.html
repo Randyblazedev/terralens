@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
-<link rel="stylesheet" href="assets/css/new-features.css?v=20261124">
+<link rel="stylesheet" href="assets/css/new-features.css?v=20261124b">
 <script src="src/js/runtime-config.js"></script>
 <script type="module" src="src/js/supabase.js"></script>
 <style>
@@ -25,14 +25,47 @@
 <meta name="twitter:description" content="Watch real people explore places around the world, live.">
 </head>
 <body class="bg-[#06080b] text-white">
-  <header class="tl-nav sticky top-0 z-50"><div class="tl-shell flex h-16 items-center justify-between">
-    <a href="index.html" class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-lg font-extrabold">Terra<span class="text-sky-300">Lens</span></span></a>
-    <div class="flex items-center gap-2"><a href="host-live.html" id="host-link" class="tl-btn tl-btn-ghost !min-h-10 hidden">Go live</a></div>
-  </div></header>
+  <header class="tl-nav sticky top-0 z-50">
+  <div class="tl-shell flex h-16 items-center justify-between gap-5">
+    <a href="index.html" class="flex items-center gap-3 shrink-0"><img src="assets/terralens-mark.png" class="tl-logo" alt="TerraLens"><span class="font-display text-lg font-extrabold tracking-tight">Terra<span class="text-sky-300">Lens</span></span></a>
+    <nav class="hidden items-center gap-6 text-sm text-white/65 lg:flex">
+      <a class="hover:text-white" href="explore.html" data-i18n="nav.explore">Explore</a>
+      <a class="hover:text-white" href="collections.html" data-i18n="nav.collections">Collections</a>
+      <a class="hover:text-white" href="experiences.html">Experiences</a>
+      <a class="hover:text-white" href="live.html">Live</a>
+      <a class="hover:text-white" href="moments.html">Moments</a>
+      <a class="hover:text-white" href="ask-local.html">Ask a Local</a>
+      <a class="hover:text-white" href="community.html">Community</a>
+      <a class="hover:text-white" href="chat.html">Chat</a>
+      <a class="hover:text-white" href="/blog" data-i18n="nav.blog">Blog</a>
+      <a class="hover:text-white" href="trips.html" data-i18n="nav.trips">Trips</a>
+      <a class="hover:text-white" href="about.html" data-i18n="nav.about">About</a>
+    </nav>
+    <div class="flex items-center gap-2">
+      <a href="upload.html" data-upload-link data-i18n="nav.upload" class="hidden rounded-xl border border-white/10 px-3 py-2 text-sm font-bold text-white/80 hover:bg-white/5 sm:inline-flex">Upload</a>
+      <a data-auth-href href="login.html" class="tl-btn tl-btn-primary !min-h-10 !px-4"><span data-auth-label data-i18n="auth.signIn">Sign in</span></a>
+      <button data-menu class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 lg:hidden" data-i18n-aria="nav.menu" aria-label="Menu">☰</button>
+    </div>
+  </div>
+  <div data-mobile-nav class="tl-shell hidden pb-4 lg:hidden">
+    <div class="grid gap-1 rounded-2xl border border-white/10 bg-black/30 p-2">
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="experiences.html">Experiences</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="live.html">Live</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="moments.html">Moments</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="ask-local.html">Ask a Local</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="community.html">Community</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="chat.html">Chat</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="/blog" data-i18n="nav.blog">Blog</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="trips.html" data-i18n="nav.trips">Trips</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="about.html" data-i18n="nav.about">About</a>
+      <a class="rounded-xl px-4 py-3 hover:bg-white/5" href="upload.html" data-i18n="nav.uploadPlace">Upload a place</a>
+    </div>
+  </div>
+</header>
   <main class="tl-section"><div class="tl-shell">
-    <p class="tl-eyebrow">TerraLens Live</p>
-    <h1 class="mt-2 text-4xl font-extrabold">Experience a place <span class="text-sky-300">right now.</span></h1>
-    <p class="mt-3 max-w-2xl text-white/55">Real broadcasts from hosts around the world. No recordings pretending to be live — viewer counts come straight from the streaming provider.</p>
+    <div class="page-lead"><p class="tl-eyebrow">TerraLens Live</p>
+    <h1 class="mt-2">Experience a place right now.</h1>
+    <p class="mt-3 max-w-2xl text-white/55">Real broadcasts from hosts around the world. No recordings pretending to be live — viewer counts come straight from the streaming provider.</p></div>
     <div id="list" class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
     <p id="msg" class="mt-5 text-sm text-white/50"></p>
   </div></main>
@@ -52,7 +85,7 @@
         <h2 class="mt-3 text-lg font-bold">${escapeHtml(b.title)}</h2>
         <p class="mt-1 line-clamp-2 text-sm text-white/55">${escapeHtml(b.summary)}</p>
         <p class="mt-3 text-xs text-white/45">${escapeHtml(b.host_name)}${b.place_name?' · '+escapeHtml(b.place_name+(b.place_country?', '+b.place_country:'')):''}</p></div></a>`).join(""):"";
-      if(!rows.length)msg.innerHTML='No one is live right now. <a href="host-live.html" class="text-sky-300">Start the first broadcast</a> if you are an approved host.';
+      if(!rows.length)list.innerHTML='<div class="empty-state sm:col-span-3"><div class="glyph">📡</div><h2>Nothing live right now</h2><p>When a host starts broadcasting from anywhere in the world, it shows up here.</p><div class="actions"><a class="tl-btn tl-btn-primary" href="host-live.html">Go live</a><a class="tl-btn tl-btn-ghost" href="moments.html">Browse moments</a></div></div>';
     }
     try{
       const c=await (await fetch("/api/live?action=config")).json();

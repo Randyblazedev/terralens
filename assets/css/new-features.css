@@ -8,3 +8,31 @@
   header.tl-nav .tl-btn{padding-left:10px;padding-right:10px;font-size:12px}
 }
 @media(min-width:641px){ main.tl-section{padding-bottom:60px} }
+
+/* Active nav link on every page */
+header.tl-nav nav a[aria-current="page"],
+header.tl-nav [data-mobile-nav] a[aria-current="page"]{color:#fff;font-weight:700}
+header.tl-nav nav a[aria-current="page"]::after{
+  content:"";position:absolute;left:0;right:0;bottom:-10px;height:2px;border-radius:2px;background:#38bdf8;
+}
+header.tl-nav nav a{position:relative}
+
+/* Page shells and deliberate empty states */
+.page-lead{padding-top:44px}
+.page-lead h1{font-size:clamp(2.4rem,5vw,3.4rem);line-height:1.06;letter-spacing:-.03em;font-weight:800}
+.page-lead p{font-size:16px;line-height:1.75;max-width:60ch;color:rgba(255,255,255,.62)}
+.empty-state{
+  border:1px dashed rgba(56,189,248,.28);border-radius:18px;padding:46px 28px;text-align:center;
+  background:radial-gradient(120% 120% at 50% 0%,rgba(56,189,248,.09),rgba(8,12,22,.4) 60%);
+}
+.empty-state .glyph{width:54px;height:54px;margin:0 auto 18px;border-radius:16px;background:rgba(56,189,248,.12);color:#7dd3fc;display:grid;place-items:center;font-size:26px}
+.empty-state h2{font-size:1.35rem;font-weight:800}
+.empty-state p{margin-top:8px;color:rgba(255,255,255,.6);font-size:14px;max-width:46ch;margin-left:auto;margin-right:auto;line-height:1.7}
+.empty-state .actions{margin-top:22px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.example-strip{margin-top:28px;padding:18px 0;border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08)}
+.example-strip h2{font-family:'Fraunces',Georgia,serif;font-size:1.25rem;font-weight:600;letter-spacing:-.01em}
+.section-title{font-family:'Fraunces',Georgia,serif;font-size:1.5rem;font-weight:600;letter-spacing:-.02em}
+@media(max-width:640px){
+  .page-lead{padding-top:28px}
+  .empty-state{padding:32px 18px}
+}
