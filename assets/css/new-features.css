@@ -1,0 +1,10 @@
+/* Consistent responsive polish for Live, Experiences and Community pages */
+.tl-bottom-nav{height:auto}
+@media(max-width:640px){
+  main.tl-section{padding-bottom:96px}
+  .grid.gap-3,.grid.gap-5{padding-bottom:8px}
+  .max-h-96{max-height:18rem}
+  header.tl-nav .tl-shell{gap:8px}
+  header.tl-nav .tl-btn{padding-left:10px;padding-right:10px;font-size:12px}
+}
+@media(min-width:641px){ main.tl-section{padding-bottom:60px} }

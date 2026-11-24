@@ -7,6 +7,7 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
+<link rel="stylesheet" href="assets/css/new-features.css?v=20261124">
 <script src="src/js/runtime-config.js"></script>
 <script type="module" src="src/js/supabase.js"></script>
 <link rel="canonical" href="https://www.terralensapp.com/host-experiences.html">
@@ -24,6 +25,11 @@
   <main class="tl-section"><div class="tl-shell max-w-4xl">
     <p class="tl-eyebrow">Creator tools</p>
     <h1 class="mt-2 text-3xl font-extrabold">Host an experience</h1>
+    <section id="real-place-examples" class="mt-6">
+      <p class="tl-eyebrow">Start with a real place</p>
+      <h2 class="mt-2 text-lg font-bold">Examples from the TerraLens map</h2>
+      <div id="example-places" class="mt-3 grid gap-2 sm:grid-cols-3"></div>
+    </section>
     <div id="gate" class="tl-card p-6 mt-6 hidden"><p class="font-bold text-lg">Host access required</p><p class="mt-2 text-sm text-white/55">Only verified hosts, businesses and admins can publish experiences. Your account is currently a regular user.</p></div>
     <div id="panel" class="hidden">
       <div class="tl-card p-6 mt-6">
@@ -52,7 +58,7 @@
   </div></main>
   <script type="module">
     import {supabase} from "./src/js/supabase.js";
-    import {initNav,escapeHtml,backFab} from "./src/js/app.js";
+    import {initNav,escapeHtml,backFab,imgSize} from "./src/js/app.js";
     await initNav();
     document.body.insertAdjacentHTML("beforeend",backFab("experiences.html"));
     const gate=document.getElementById("gate"),panel=document.getElementById("panel"),msg=document.getElementById("f-msg");
@@ -95,4 +101,11 @@
     }
   </script>
 </body>
-</html>
+</html>    (async()=>{
+      const {data:ex}=await supabase.from("places").select("id,name,country,cover_url").eq("status","published").not("cover_url","is",null).order("view_count",{ascending:false}).limit(3);
+      const box=document.getElementById("example-places");
+      if(box&&ex&&ex.length)box.innerHTML=ex.map(x=>`<a href="host-experiences.html?place=${encodeURIComponent(x.id)}" class="tl-card p-3 flex items-center gap-3 hover:bg-white/5"><span class="w-12 h-12 rounded-lg bg-white/5 shrink-0" style="background-image:url('${escapeHtml(imgSize(x.cover_url,160))}');background-size:cover;background-position:center"></span><span class="text-sm font-semibold">${escapeHtml(x.name)}<span class="block text-xs text-white/45">${escapeHtml(x.country||"")}</span></span></a>`).join("");
+      const preset=new URLSearchParams(location.search).get("place")||"";
+      if(preset)document.getElementById("f-place").value=preset;
+    })();
+

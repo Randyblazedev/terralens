@@ -125,6 +125,19 @@
  <div class="mt-6"><button id="health" class="tl-btn tl-btn-ghost !min-h-10">Check setup</button> <button id="fill" class="tl-btn tl-btn-ghost !min-h-10">Add photos to new places</button> <button id="fill-real" class="tl-btn tl-btn-primary !min-h-10">Add real photos of the place</button> <button id="import-seed" class="tl-btn tl-btn-ghost !min-h-10">Import the 881 places</button> <button id="clear-filler" class="tl-btn tl-btn-ghost !min-h-10">Clear placeholder text</button><p id="fill-out" role="status" aria-live="polite" class="mt-3 text-sm text-white/55"></p><ul id="health-out" class="mt-3 grid gap-2 text-sm" aria-live="polite"></ul></div>
 <!-- Traffic -->
 <section class="mt-6 rounded-2xl border border-white/10 bg-white/[.03] p-6">
+  <p class="tl-eyebrow">Notifications</p>
+  <h2 class="mt-2 text-2xl font-extrabold">Notify all users</h2>
+  <p class="mt-1 text-sm text-white/50">Writes a real notification to every account and sends a Web Push to subscribed devices.</p>
+  <div class="mt-4 grid gap-3">
+    <label class="text-sm">Title <input id="bc-title" maxlength="120" class="tl-input" placeholder="A new collection is live"></label>
+    <label class="text-sm">Message <textarea id="bc-body" maxlength="240" class="tl-input !min-h-20" placeholder="What's new"></textarea></label>
+    <label class="text-sm">Link <input id="bc-link" value="/notifications.html" maxlength="300" class="tl-input"></label>
+    <button id="bc-send" class="tl-btn tl-btn-primary">Send to everyone</button>
+  </div>
+  <p id="bc-msg" class="mt-3 text-sm text-sky-300"></p>
+</section>
+
+<section class="mt-6 rounded-2xl border border-white/10 bg-white/[.03] p-6">
   <div class="flex items-center justify-between gap-3 flex-wrap">
     <div><p class="tl-eyebrow">Traffic</p><h2 class="mt-2 text-2xl font-extrabold">Visits per day</h2><p class="mt-1 text-sm text-white/50">From the view records TerraLens already keeps.</p></div>
     <button id="traffic-refresh" class="tl-btn tl-btn-ghost !min-h-10">Refresh</button>
@@ -588,6 +601,16 @@ async function loadTraffic(){
 }
 loadTraffic();
 document.getElementById("traffic-refresh")?.addEventListener("click",loadTraffic);
+document.getElementById("bc-send")?.addEventListener("click",async()=>{
+ const btn=document.getElementById("bc-send"),out=document.getElementById("bc-msg"),title=document.getElementById("bc-title").value.trim();
+ if(title.length<4){out.textContent="Add a title first.";return}
+ btn.disabled=true;out.textContent="Sending…";
+ const d=await api("/api/push?action=broadcast",{title,body:document.getElementById("bc-body").value.trim(),link:document.getElementById("bc-link").value.trim()||"/notifications.html"});
+ out.textContent=d.error?d.error:`Notified ${d.notified||0} accounts, pushed ${d.pushed||0} devices.`;
+ btn.disabled=false;
+});
+
+
 if(await guard()){const pend=await stats();if(pend>0)$("#status").value="pending";loadPlaces();try{supabase.channel("blogdms").on("postgres_changes",{event:"INSERT",schema:"public",table:"blog_dms"},()=>{if(!$("#dms-panel").classList.contains("hidden"))loadDms()}).subscribe()}catch{};setInterval(()=>{if(!$("#dms-panel").classList.contains("hidden"))loadDms()},10000)}
 </script>
 
