@@ -67,8 +67,8 @@ language sql stable set search_path = public as $$
     where (blocker_id = auth.uid() and blocked_id = p_user)
        or (blocker_id = p_user and blocked_id = auth.uid()));
 $$;
-revoke all on function public.is_blocked(uuid) from public, anon;
-grant execute on function public.is_blocked(uuid) to authenticated;
+revoke all on function public.is_blocked(uuid) from public;
+grant execute on function public.is_blocked(uuid) to anon, authenticated;
 
 drop policy if exists "moments read" on public.moments;
 create policy "moments read" on public.moments for select using (
