@@ -40,8 +40,10 @@ alter table public.experiences enable row level security;
 alter table public.booking_requests enable row level security;
 
 drop policy if exists "experience public read" on public.experiences;
-create policy "experience public read" on public.experiences for select
-  using (status = 'published' or host_id = auth.uid() or public.is_admin());
+create policy "experience public read" on public.experiences for select to anon, authenticated
+  using (status = 'published' or host_id = auth.uid());
+create policy "experience admin read" on public.experiences for select to authenticated
+  using (public.is_admin());
 
 drop policy if exists "hosts create experiences" on public.experiences;
 create policy "hosts create experiences" on public.experiences for insert to authenticated
