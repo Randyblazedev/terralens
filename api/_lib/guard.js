@@ -75,3 +75,49 @@ export async function verifyAdmin(req) {
     return false;
   }
 }
+
+// Server-authoritative role checks. The browser never decides a role; the
+// database function returns it from the signed-in user's token.
+export async function currentRole(req) {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
+  const url = cleanUrl("SUPABASE_URL");
+  const key = clean("SUPABASE_PUBLISHABLE_KEY");
+  if (!token || !url || !key) return "visitor";
+  try {
+    const r = await fetch(`${url}/rest/v1/rpc/current_role`, {
+      method: "POST",
+      headers: { apikey: key, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: "{}"
+    });
+    if (!r.ok) return "visitor";
+    const role = await r.json();
+    return typeof role === "string" ? role : "visitor";
+  } catch {
+    return "visitor";
+  }
+}
+
+export async function hasRole(req, roles) {
+  const allowed = Array.isArray(roles) ? roles : [roles];
+  return allowed.includes(await currentRole(req));
+}
+
+export async function canHost(req) {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
+  const url = cleanUrl("SUPABASE_URL");
+  const key = clean("SUPABASE_PUBLISHABLE_KEY");
+  if (!token || !url || !key) return false;
+  try {
+    const r = await fetch(`${url}/rest/v1/rpc/can_host`, {
+      method: "POST",
+      headers: { apikey: key, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: "{}"
+    });
+    return r.ok && (await r.json()) === true;
+  } catch {
+    return false;
+  }
+}
+
