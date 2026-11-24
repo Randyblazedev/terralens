@@ -89,8 +89,7 @@
     const {data,error}=await supabase.from("experiences").select("id,slug,title,summary,cover_url,category,price_cents,currency,duration_minutes,is_virtual,host_id,profiles(display_name,username)").eq("status","published").order("created_at",{ascending:false}).limit(60);
     if(error){list.innerHTML="";msg.textContent=error.message;}
     else if(!data||!data.length){
-      list.innerHTML="";
-      msg.innerHTML='No experiences published yet. <a class="text-sky-300" href="host-experiences.html">Host the first one</a> if you are an approved host.';
+      list.innerHTML='<div class="empty-state sm:col-span-3"><div class="glyph">🧭</div><h2>No experiences published yet</h2><p>Once hosts publish, their guided walks, food tours and virtual sessions appear here.</p><div class="actions"><a class="tl-btn tl-btn-primary" href="host-experiences.html">Host an experience</a><a class="tl-btn tl-btn-ghost" href="explore.html">Explore places</a></div></div>';
     }else{
       list.innerHTML=data.map(e=>{
         const host=e.profiles?.display_name||e.profiles?.username||"Local host";
