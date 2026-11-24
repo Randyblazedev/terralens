@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>World Moments — TerraLens</title>
+<meta name="description" content="Short real moments from places around the world, shared by the people there.">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="src/styles/tailwind.css">
+<link rel="stylesheet" href="src/styles/app.css">
+<script src="src/js/runtime-config.js"></script>
+<script type="module" src="src/js/supabase.js"></script>
+<style>
+.moment img,.moment video{width:100%;border-radius:12px;background:#111}
+.tabs button{border-bottom:2px solid transparent}
+.tabs button.active{border-color:#38bdf8;color:#fff}
+</style>
+</head>
+<body class="bg-[#06080b] text-white">
+  <header class="tl-nav sticky top-0 z-50"><div class="tl-shell flex h-16 items-center justify-between">
+    <a href="index.html" class="flex items-center gap-3"><img src="assets/terralens-mark.png" class="tl-logo" alt=""><span class="font-display text-lg font-extrabold">Terra<span class="text-sky-300">Lens</span></span></a>
+    <div class="flex gap-2"><a href="ask-local.html" class="tl-btn tl-btn-ghost !min-h-10">Ask a Local</a><button id="new" class="tl-btn tl-btn-primary !min-h-10">Share a moment</button></div>
+  </div></header>
+  <main class="tl-section"><div class="tl-shell max-w-3xl">
+    <p class="tl-eyebrow">Community</p><h1 class="mt-2 text-3xl font-extrabold">World Moments</h1>
+    <p class="mt-2 text-white/55">Real photos and short videos, each tied to the place it was taken.</p>
+    <div id="composer" class="tl-card p-5 mt-6 hidden">
+      <div class="grid gap-3">
+        <label class="text-sm">Place <select id="place" class="tl-input"><option value="">Choose a place</option></select></label>
+        <label class="text-sm">Image link (HTTPS) <input id="media" class="tl-input" placeholder="https://…"></label>
+        <label class="text-sm">Caption <textarea id="caption" maxlength="600" class="tl-input !min-h-20"></textarea></label>
+        <button id="publish" class="tl-btn tl-btn-primary">Post moment</button>
+      </div>
+      <p id="composermsg" class="mt-2 text-sm text-sky-300"></p>
+    </div>
+    <div id="feed" class="mt-6 grid gap-5"></div>
+    <p id="msg" class="mt-4 text-sm text-white/50"></p>
+  </div></main>
+  <script type="module">
+import {supabase} from "./src/js/supabase.js";
+import {initNav,escapeHtml,backFab} from "./src/js/app.js";
+(async()=>{
+
+
+    await initNav();
+    document.body.insertAdjacentHTML("beforeend",backFab("community.html"));
+    const feed=document.getElementById("feed"),msg=document.getElementById("msg");
+    const {data:{session}}=await supabase.auth.getSession();
+    if(!session)document.getElementById("new").onclick=()=>location.href="login.html?next=moments.html";
+    else document.getElementById("new").onclick=()=>{
+      const c=document.getElementById("composer");c.classList.toggle("hidden");
+      if(!c.classList.contains("hidden")){
+        supabase.from("places").select("id,name,country").eq("status","published").order("name").limit(200).then(({data})=>{
+          const sel=document.getElementById("place");
+          sel.innerHTML='<option value="">Choose a place</option>'+(data||[]).map(p=>`<option value="${p.id}">${escapeHtml(p.name)}${p.country?', '+escapeHtml(p.country):''}</option>`).join("");
+        });
+      }
+    };
+    document.getElementById("publish").onclick=async()=>{
+      const cm=document.getElementById("composermsg"),place=document.getElementById("place").value,media=document.getElementById("media").value.trim();
+      if(!place||!media){cm.textContent="Choose a place and add an image link.";return}
+      cm.textContent="Checking image…";
+      const r=await fetch("/api/moment-media",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({url:media})});
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok){cm.textContent=d.error||"Could not use that image.";return}
+      const {error}=await supabase.from("moments").insert({user_id:session.user.id,place_id:place,kind:"photo",media_url:d.url,caption:document.getElementById("caption").value.trim()});
+      cm.textContent=error?error.message:"Moment posted.";if(!error)location.reload();
+    };
+    const {data:rows,error}=await supabase.from("moments")
+      .select("id,kind,media_url,caption,created_at,user_id,profiles(display_name,username),places(id,name,country)")
+      .order("created_at",{ascending:false}).limit(40);
+    if(error){feed.innerHTML="";msg.textContent=error.message;return}
+    if(!rows||!rows.length){feed.innerHTML="";msg.textContent="No moments yet. Be the first to share one.";return}
+    feed.innerHTML=rows.map(m=>`<article class="tl-card p-4 moment">
+      <div class="flex items-center gap-2 text-sm"><b>${escapeHtml(m.profiles?.display_name||m.profiles?.username||"Traveler")}</b><span class="text-white/40">${new Date(m.created_at).toLocaleDateString()}</span></div>
+      ${m.kind==='video'?`<video src="${escapeHtml(m.media_url)}" controls playsinline></video>`:`<img src="${escapeHtml(m.media_url)}" alt="${escapeHtml(m.caption||'World Moment')}" loading="lazy">`}
+      <p class="mt-2 text-sm">${escapeHtml(m.caption)}</p>
+      <a href="place/${encodeURIComponent(m.places?.id||'')}" class="mt-1 inline-block text-xs text-sky-300">📍 ${escapeHtml(m.places?.name||"Place")}${m.places?.country?', '+escapeHtml(m.places.country):''}</a>
+      <div class="mt-3 flex gap-3"><button class="tl-btn tl-btn-ghost !min-h-8 like" data-id="${m.id}">♥ <span>${m.id.slice(0,4)}</span></button><span class="self-center text-sm text-white/50" data-count="${m.id}"></span></div>
+    </article>`).join("");
+    for(const m of rows){
+      const {count}=await supabase.from("moment_likes").select("id",{count:"exact",head:true}).eq("moment_id",m.id);
+      const el=feed.querySelector(`[data-count="${m.id}"]`);if(el)el.textContent=(count||0)+" likes";
+    }
+    feed.querySelectorAll(".like").forEach(b=>b.onclick=async()=>{
+      if(!session){location.href="login.html?next=moments.html";return}
+      await supabase.from("moment_likes").insert({moment_id:b.dataset.id,user_id:session.user.id});
+    });
+  
+})();</script>
+</body>
+</html>

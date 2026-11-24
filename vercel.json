@@ -32,6 +32,9 @@
     },
     "api/live.js": {
       "maxDuration": 30
+    },
+    "api/moment-media.js": {
+      "maxDuration": 15
     }
   },
   "redirects": [
