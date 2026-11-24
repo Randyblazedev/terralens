@@ -15,6 +15,13 @@
 .tabs button{border-bottom:2px solid transparent}
 .tabs button.active{border-color:#38bdf8;color:#fff}
 </style>
+<link rel="canonical" href="https://www.terralensapp.com/moments.html">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<meta property="og:url" content="https://www.terralensapp.com/moments.html">
+<meta property="og:site_name" content="TerraLens">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:title" content="World Moments — TerraLens">
+<meta name="twitter:description" content="Short real moments from places around the world, shared by the people there.">
 </head>
 <body class="bg-[#06080b] text-white">
   <header class="tl-nav sticky top-0 z-50"><div class="tl-shell flex h-16 items-center justify-between">
@@ -60,7 +67,7 @@ import {initNav,escapeHtml,backFab} from "./src/js/app.js";
       const cm=document.getElementById("composermsg"),place=document.getElementById("place").value,media=document.getElementById("media").value.trim();
       if(!place||!media){cm.textContent="Choose a place and add an image link.";return}
       cm.textContent="Checking image…";
-      const r=await fetch("/api/moment-media",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({url:media})});
+      const r=await fetch("/api/photos?action=moment-media",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify({url:media})});
       const d=await r.json().catch(()=>({}));
       if(!r.ok){cm.textContent=d.error||"Could not use that image.";return}
       const {error}=await supabase.from("moments").insert({user_id:session.user.id,place_id:place,kind:"photo",media_url:d.url,caption:document.getElementById("caption").value.trim()});
