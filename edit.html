@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap">
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
-<link rel="stylesheet" href="assets/css/system.css?v=20261125pwa">
+<link rel="stylesheet" href="assets/css/system.css?v=20261125fix">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta name="theme-color" content="#0B0F19">
@@ -116,7 +116,7 @@
 <script type="module">
 import {confirmDialog} from "./src/js/ui.js";
 import {supabase,getUser} from "./src/js/supabase.js";
-import {escapeHtml,canEdit,editMinutesLeft} from "./src/js/app.js?v=20261125g";
+import {escapeHtml,canEdit,editMinutesLeft} from "./src/js/app.js?v=20261125fix";
 const $=s=>document.querySelector(s),slug=new URLSearchParams(location.search).get("slug")||"";
 const TYPES={"image/jpeg":1,"image/png":1,"image/webp":1},MAX_BYTES=25*1024*1024,FIELDS={name:"name",description:"description",country:"country",region:"region",city:"city",category:"category",season:"best_season",time:"best_time",fee:"entry_fee",access:"access_info"};
 async function shrink(file,max=2000){let bmp;try{bmp=await createImageBitmap(file,{imageOrientation:"from-image"})}catch{bmp=await createImageBitmap(file)}
@@ -185,7 +185,7 @@ init();
   </div>
   <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© <span data-year>2026</span> TerraLens. Explore Earth Through a New Lens.</span><span data-i18n="footer.rights">Built by Randy Blaze.</span></div>
 </footer>
-<script type="module">import {initNav} from "./src/js/app.js?v=20261125g"; initNav();</script>
+<script type="module">import {initNav} from "./src/js/app.js?v=20261125fix"; initNav();</script>
 
 <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});}</script>
 </body></html>

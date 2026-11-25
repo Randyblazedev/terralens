@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
 <link rel="stylesheet" href="assets/css/new-features.css?v=20261124b">
-<link rel="stylesheet" href="assets/css/system.css?v=20261125pwa">
+<link rel="stylesheet" href="assets/css/system.css?v=20261125fix">
 <script src="src/js/runtime-config.js"></script>
 <script src="curriculum.js"></script>
 <script type="module" src="src/js/supabase.js"></script>
@@ -89,7 +89,7 @@
   </main>
   <script type="module">
     import {supabase} from "./src/js/supabase.js";
-    import {initNav,escapeHtml,imgSize,backFab} from "./src/js/app.js?v=20261125g";
+    import {initNav,escapeHtml,imgSize,backFab} from "./src/js/app.js?v=20261125fix";
     await initNav();
     document.body.insertAdjacentHTML("beforeend",backFab("index.html"));
     const list=document.getElementById("list"),msg=document.getElementById("msg");

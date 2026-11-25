@@ -139,7 +139,6 @@ main.tl-section>.tl-shell{max-width:1240px}
 
 /* App-like shell on installed/standalone phones. */
 @media(max-width:767px){
-  html,body{min-height:100%;overscroll-behavior-y:contain}
   header.tl-nav{padding-top:env(safe-area-inset-top,0px)}
   main.tl-section{padding-left:max(16px,env(safe-area-inset-left,16px));padding-right:max(16px,env(safe-area-inset-right,16px))}
 }

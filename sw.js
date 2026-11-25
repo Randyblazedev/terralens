@@ -1,5 +1,5 @@
 // TerraLens service worker. Bump CACHE_VERSION to force clients to update.
-const CACHE_VERSION = "terralens-v7";
+const CACHE_VERSION = "terralens-v8";
 const CORE = [
   "/index.html",
   "/manifest.webmanifest",
@@ -82,35 +82,22 @@ self.addEventListener("fetch", (event) => {
   // admin.html is never served stale: always try the network first and never
   // store it, so a fixed guard ships the moment it is deployed.
   if (req.mode === "navigate") {
-    event.respondWith((async () => {
-      try {
-        const fresh = await fetch(req);
-        if (!url.pathname.endsWith("/admin.html") && url.pathname !== "/admin.html") {
-          const copy = fresh.clone();
-          caches.open(CACHE_VERSION).then((c) => c.put(req, copy)).catch(() => {});
-        }
-        return fresh;
-      } catch {
-        if (url.pathname.endsWith("admin.html")) throw new Error("offline admin");
-        return (await caches.match(req)) || (await caches.match("/index.html"));
-      }
-    })());
+    event.respondWith(fetch(req).catch(async () => (await caches.match(req)) || (await caches.match("/index.html"))));
     return;
   }
   // Scripts and styles: network first, cache only as an offline fallback.
   // These change with every deploy, and a stale copy silently breaks auth and UI.
   if (url.pathname.startsWith("/src/") || url.pathname.endsWith(".js") || url.pathname.endsWith(".css")) {
     event.respondWith((async () => {
-      try {
-        const fresh = await fetch(req);
+      const cached = await caches.match(req);
+      const network = fetch(req).then((fresh) => {
         if (fresh && fresh.status === 200) {
           const copy = fresh.clone();
           caches.open(CACHE_VERSION).then((c) => c.put(req, copy)).catch(() => {});
         }
         return fresh;
-      } catch {
-        return (await caches.match(req)) || Response.error();
-      }
+      }).catch(() => cached);
+      return cached || network;
     })());
     return;
   }
