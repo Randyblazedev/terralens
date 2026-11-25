@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
 <link rel="stylesheet" href="assets/css/new-features.css?v=20261124cb">
-<link rel="stylesheet" href="assets/css/system.css?v=20261125h">
+<link rel="stylesheet" href="assets/css/system.css?v=20261125pwa">
 <script src="src/js/runtime-config.js"></script>
 <script type="module" src="src/js/supabase.js"></script>
 <style>
@@ -24,6 +24,13 @@
 <meta property="og:locale" content="en_US">
 <meta name="twitter:title" content="World Moments — TerraLens">
 <meta name="twitter:description" content="Short real moments from places around the world, shared by the people there.">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta name="theme-color" content="#0B0F19">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TerraLens">
 </head>
 <body class="bg-[#06080b] text-white">
   <header class="tl-nav sticky top-0 z-50">
@@ -153,5 +160,6 @@ import {initNav,escapeHtml,backFab,imgSize} from "./src/js/app.js?v=20261125g";
       if(box&&ex&&ex.length)box.innerHTML=ex.map(x=>`<a href="HREF_PLACEHOLDER${encodeURIComponent(x.id)}" class="tl-card p-3 flex items-center gap-3 hover:bg-white/5"><span class="w-12 h-12 rounded-lg bg-white/5 shrink-0" style="background-image:url('${escapeHtml(imgSize(x.cover_url,160))}');background-size:cover;background-position:center"></span><span class="text-sm font-semibold">${escapeHtml(x.name)}<span class="block text-xs text-white/45">${escapeHtml(x.country||"")}</span></span></a>`).join("").replaceAll("HREF_PLACEHOLDER","moments.html?place=");
     })();
 })();</script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});}</script>
 </body>
 </html>

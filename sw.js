@@ -1,5 +1,5 @@
 // TerraLens service worker. Bump CACHE_VERSION to force clients to update.
-const CACHE_VERSION = "terralens-v6";
+const CACHE_VERSION = "terralens-v7";
 const CORE = [
   "/index.html",
   "/manifest.webmanifest",
@@ -7,7 +7,9 @@ const CORE = [
   "/assets/icon-512.png",
   "/assets/apple-touch-icon.png",
   "/src/styles/tailwind.css",
-  "/src/styles/app.css"
+  "/src/styles/app.css",
+  "/assets/css/system.css",
+  "/manifest.webmanifest"
 ];
 
 self.addEventListener("install", (event) => {

@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
 <link rel="stylesheet" href="assets/css/new-features.css?v=20261125a">
-<link rel="stylesheet" href="assets/css/system.css?v=20261125h">
+<link rel="stylesheet" href="assets/css/system.css?v=20261125pwa">
 <script src="src/js/runtime-config.js"></script>
 <script type="module" src="src/js/supabase.js"></script>
 <style>
@@ -24,6 +24,13 @@
 <meta property="og:locale" content="en_US">
 <meta name="twitter:title" content="Live — TerraLens">
 <meta name="twitter:description" content="Watch real people explore places around the world, live.">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta name="theme-color" content="#0B0F19">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TerraLens">
 </head>
 <body class="bg-[#06080b] text-white">
   <header class="tl-nav sticky top-0 z-50">
@@ -96,5 +103,6 @@
       if(!c.configured)msg.textContent="Live needs Cloudflare Stream credentials. See the setup note for CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_STREAM_TOKEN.";
     }catch{}
   </script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});}</script>
 </body>
 </html>
