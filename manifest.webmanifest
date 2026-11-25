@@ -1,1 +1,64 @@
-[object Object]
+{
+  "name": "TerraLens — Explore the world, experience it",
+  "short_name": "TerraLens",
+  "description": "Discover real places through photos, watch live experiences, share moments and join guided trips.",
+  "id": "/",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
+  ],
+  "orientation": "any",
+  "background_color": "#0B0F19",
+  "theme_color": "#0B0F19",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": [
+    "travel",
+    "social",
+    "photo",
+    "lifestyle"
+  ],
+  "shortcuts": [
+    {
+      "name": "Explore places",
+      "short_name": "Explore",
+      "url": "/explore.html",
+      "description": "Search places by country and category"
+    },
+    {
+      "name": "Watch live",
+      "short_name": "Live",
+      "url": "/live.html",
+      "description": "See broadcasts happening now"
+    },
+    {
+      "name": "World Moments",
+      "short_name": "Moments",
+      "url": "/moments.html",
+      "description": "Photos and short videos from real places"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
