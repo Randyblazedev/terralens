@@ -150,6 +150,7 @@
   <button id="tab-places" role="tab" class="tl-btn tl-btn-primary !min-h-10">Places</button>
   <button id="tab-reports" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Reports</button>
   <button id="tab-contributors" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Contributors</button>
+  <button id="tab-hosts" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Live hosts</button>
   <button id="tab-comments" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Comments</button>
   <button id="tab-posts" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Blog</button>
   <button id="tab-dms" role="tab" class="tl-btn tl-btn-ghost !min-h-10">Blog DMs</button>
@@ -170,7 +171,11 @@
   <div class="mt-6 text-center"><button id="more-places-admin" class="tl-btn tl-btn-ghost hidden">Load more</button></div>
  </section>
  <section id="reports-panel" class="mt-4 hidden"><div id="reports" class="grid gap-3"></div></section>
- <section id="contributors-panel" class="mt-4 hidden"><p class="mb-4 text-sm text-white/50">Eligible = 100+ approved photos, 10+ approved places, no upheld reports in 90 days. You decide who to verify.</p><div id="contributors" class="grid gap-3"></div></section>
+ <section id="hosts-panel" class="mt-4 hidden">
+  <p class="mb-4 text-sm text-white/50">Only verified hosts, businesses and admins can start a live broadcast. Change a role here to grant or remove access.</p>
+  <div id="hosts" class="grid gap-3"></div>
+</section>
+<section id="contributors-panel" class="mt-4 hidden"><p class="mb-4 text-sm text-white/50">Eligible = 100+ approved photos, 10+ approved places, no upheld reports in 90 days. You decide who to verify.</p><div id="contributors" class="grid gap-3"></div></section>
  <section id="posts-panel" class="mt-4 hidden">
   <div class="flex flex-wrap items-center justify-between gap-3"><p class="max-w-xl text-sm text-white/50">Only admins can publish blog posts. Guests email you and pay US$5; paste their article here, tick "Guest post" and publish.</p><button id="new-post" type="button" class="tl-btn tl-btn-primary !min-h-10">New post</button></div>
   <form id="post-form" class="tl-card mt-6 hidden gap-4 p-5">
@@ -567,7 +572,22 @@ $("#dms").addEventListener("click",async e=>{
  btn.disabled=false;ta.value="";flash("Reply sent to their notifications.");loadDms();
 });
 $("#dms-refresh").onclick=()=>loadDms();
-const TABS=["places","reports","contributors","comments","posts","dms"],loaders={reports:loadReports,contributors:loadContributors,comments:loadComments,posts:loadPosts,dms:loadDms};
+async function loadHosts(){
+ const {data,error}=await supabase.from("profiles").select("id,display_name,username,role,verified").order("role").order("display_name").limit(300);
+ if(error){flash(error.message);return}
+ const allowed=["verified_host","business"];
+ const box=document.getElementById("hosts");
+ box.innerHTML=(data||[]).map(u=>{
+  const can=allowed.includes(u.role);
+  return `<div class="tl-card flex flex-wrap items-center justify-between gap-3 p-4"><div><p class="font-bold">${escapeHtml(u.display_name||u.username||"Unnamed")} ${can?'<span class="rounded bg-sky-500/20 px-2 py-0.5 text-[10px] text-sky-300">can go live</span>':''}</p><p class="text-xs text-white/45">${escapeHtml(u.role||"user")}${u.verified?' · verified':''}</p></div><select data-host="${u.id}" aria-label="Role" class="tl-input !min-h-10 !w-auto"><option value="user" ${u.role==="user"?"selected":""}>User</option><option value="creator" ${u.role==="creator"?"selected":""}>Creator</option><option value="verified_host" ${u.role==="verified_host"?"selected":""}>Verified host</option><option value="business" ${u.role==="business"?"selected":""}>Business</option></select></div>`;
+ }).join("")||'<p class="text-white/50">No users yet.</p>';
+}
+document.getElementById("hosts").addEventListener("change",async e=>{
+ const sel=e.target.closest("[data-host]");if(!sel)return;
+ const {data,error}=await supabase.rpc("admin_set_role",{p_user:sel.dataset.host,p_role:sel.value});
+ flash(error?error.message:data?"Role updated.":"Could not update role.");loadHosts();
+});
+const TABS=["places","reports","contributors","hosts","comments","posts","dms"],loaders={reports:loadReports,contributors:loadContributors,hosts:loadHosts,comments:loadComments,posts:loadPosts,dms:loadDms};
 const show=t=>{TABS.forEach(n=>{$(`#${n}-panel`).classList.toggle("hidden",n!==t);$(`#tab-${n}`).className="tl-btn !min-h-10 "+(n===t?"tl-btn-primary":"tl-btn-ghost")});loaders[t]?.()};
 TABS.forEach(n=>{$(`#tab-${n}`).onclick=()=>show(n)});
 $("#publish-drafts").onclick=async()=>{

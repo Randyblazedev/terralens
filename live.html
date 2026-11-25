@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
-<link rel="stylesheet" href="assets/css/new-features.css?v=20261124b">
+<link rel="stylesheet" href="assets/css/new-features.css?v=20261125a">
 <script src="src/js/runtime-config.js"></script>
 <script type="module" src="src/js/supabase.js"></script>
 <style>
@@ -89,7 +89,8 @@
       if(!rows.length)list.innerHTML='<div class="empty-state sm:col-span-3"><div class="glyph">📡</div><h2>Nothing live right now</h2><p>When a host starts broadcasting from anywhere in the world, it shows up here.</p><div class="actions"><a class="tl-btn tl-btn-primary" href="host-live.html">Go live</a><a class="tl-btn tl-btn-ghost" href="moments.html">Browse moments</a></div></div>';
     }
     try{
-      const c=await (await fetch("/api/live?action=config")).json();
+      let c={};
+      try{const sess=(await supabase.auth.getSession()).data.session;c=await (await fetch("/api/live?action=config",sess?{headers:{Authorization:"Bearer "+sess.access_token}}:{})).json();}catch{}
       if(c.canHost){const hl=document.getElementById("host-link");if(hl)hl.classList.remove("hidden");}
       if(!c.configured)msg.textContent="Live needs Cloudflare Stream credentials. See the setup note for CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_STREAM_TOKEN.";
     }catch{}
