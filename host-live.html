@@ -163,6 +163,9 @@
           document.getElementById("preview").srcObject=stream;
           pc=new RTCPeerConnection({bundlePolicy:"max-bundle"});
           stream.getTracks().forEach(t=>pc.addTrack(t,stream));
+          if(!window.__whip||!/^https:\/\//.test(window.__whip)){
+            msg.textContent="Publishing URL is missing. Recreate the broadcast and check the Cloudflare Stream setup.";return
+          }
           const offer=await pc.createOffer();await pc.setLocalDescription(offer);
           const resp=await fetch(window.__whip,{method:"POST",headers:{"Content-Type":"application/sdp"},body:pc.localDescription.sdp});
           if(!resp.ok){let detail="";try{detail=await resp.text()}catch{};msg.textContent="Streaming provider error "+resp.status+": "+(detail||"no response body").slice(0,400);return}

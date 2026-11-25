@@ -120,13 +120,27 @@ export default async function handler(req, res) {
         starts_at: body.starts_at && !isNaN(Date.parse(body.starts_at)) ? new Date(body.starts_at).toISOString() : null,
         place_id: /^[0-9a-f-]{36}$/i.test(String(body.place_id || "")) ? body.place_id : null
       };
+      let whipUrl = (liveInput.webRTC && liveInput.webRTC.url) || "";
+      if (!whipUrl && liveInput.uid) {
+        try {
+          const detail = await cf("/accounts/" + account() + "/stream/live_inputs/" + encodeURIComponent(liveInput.uid));
+          whipUrl = (detail.webRTC && detail.webRTC.url) || "";
+        } catch {}
+      }
+      // Documented pattern: customer-<CODE>.cloudflarestream.com/<UID>/webRTC/publish
+      if (!whipUrl && liveInput.playback && liveInput.playback.hls) {
+        whipUrl = liveInput.playback.hls.replace(/\/manifest\/video\.m3u8.*$/, "/webRTC/publish");
+      }
+      if (!whipUrl || !whipUrl.startsWith("https://")) {
+        return res.status(502).json({ error: "Cloudflare did not return a publish URL for this live input. Check Stream Live is enabled on the account." });
+      }
       const created = await db("broadcasts?select=id,live_input_uid,playback_url,status&on_conflict=id", authToken, { method: "POST", body: row });
       const saved = Array.isArray(created) ? created[0] : created;
       return res.status(200).json({
         id: saved.id,
         playbackUrl: saved.playback_url,
-        whipUrl: liveInput.webRTC && liveInput.webRTC.url,
-        whepUrl: liveInput.webRTCPlayback && liveInput.webRTCPlayback.url
+        whipUrl,
+        whepUrl: (liveInput.webRTCPlayback && liveInput.webRTCPlayback.url) || ""
       });
     }
 
