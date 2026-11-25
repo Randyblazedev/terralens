@@ -125,3 +125,14 @@ main.tl-section>.tl-shell{max-width:1240px}
   .hv2-feel-grid{grid-template-columns:repeat(2,1fr)}
   .hv2-feel-grid>a[data-cat]{grid-column:span 1!important;aspect-ratio:4/5!important}
 }
+
+/* Explore mosaic: subject-led spans so the grid reads as a curated set. */
+@media(min-width:1280px){
+  #grid{grid-auto-flow:dense;align-items:start}
+  #grid article.ed-card[data-card-variant="beach"]{grid-column:span 2}
+  #grid article.ed-card[data-card-variant="beach"] .ed-card-media{aspect-ratio:16/9}
+  #grid article.ed-card[data-card-variant="mountain"] .ed-card-media{aspect-ratio:3/4}
+  #grid article.ed-card[data-card-variant="waterfall"] .ed-card-media{aspect-ratio:4/3}
+  #grid article.ed-card[data-card-variant="culture"] .ed-card-media{aspect-ratio:1/1}
+  #grid article.ed-card[data-card-variant="forest"] .ed-card-media{aspect-ratio:4/5}
+}
