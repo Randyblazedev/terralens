@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
 <link rel="stylesheet" href="assets/css/new-features.css?v=20261125a">
-<link rel="stylesheet" href="assets/css/system.css?v=20261125h">
+<link rel="stylesheet" href="assets/css/system.css?v=20261125i">
 <script src="src/js/runtime-config.js"></script>
 <script type="module" src="src/js/supabase.js"></script>
 <link rel="canonical" href="https://www.terralensapp.com/host-live.html">
@@ -117,20 +117,31 @@
           loadRequests();setInterval(loadRequests,5000);
         };
         document.getElementById("start").onclick=async()=>{
-          msg.textContent="Browser prompt: tap Allow for camera and microphone.";
-          try{
-            const constraints={video:{facingMode:"user"},audio:{echoCancellation:true,noiseSuppression:true}};
-            stream=await navigator.mediaDevices.getUserMedia(constraints);
-          }catch(err){
-            const name=(err&&err.name)||"";
-            msg.textContent = name==="NotAllowedError"
-              ? "Permission blocked. Open your browser's site settings for this page, set Camera and Microphone to Allow, then try again."
-              : name==="NotFoundError"
-                ? "No camera or microphone was found on this device."
-                : name==="NotReadableError"
-                  ? "Your camera or microphone is in use by another app. Close it and try again."
-                  : "Could not access your camera or microphone. Check the browser prompt and try again.";
-            document.getElementById("perm-notice").classList.remove("hidden");
+          const out=document.getElementById("msg"),btn=document.getElementById("start");
+          if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+            out.textContent="This browser does not support camera streaming. Open TerraLens in Chrome, Edge or Safari and try again.";return
+          }
+          if(!window.isSecureContext){
+            out.textContent="Camera access needs a secure connection. Open https://www.terralensapp.com in your browser and try again.";return
+          }
+          btn.disabled=true;
+          const tries=[{video:{facingMode:"user"},audio:{echoCancellation:true,noiseSuppression:true}},{video:true},{audio:true}];
+          let lastErr=null;
+          for(const constraints of tries){
+            try{ stream=await navigator.mediaDevices.getUserMedia(constraints); break; }
+            catch(err){ lastErr=err; }
+          }
+          btn.disabled=false;
+          if(!stream){
+            const name=(lastErr&&lastErr.name)||"";
+            const inApp=/WhatsApp|Instagram|Facebook|Twitter|Line|Telegram/i.test(navigator.userAgent);
+            out.textContent = name==="NotFoundError"
+              ? "No camera or microphone was found on this device."
+              : name==="NotReadableError"
+                ? "Your camera or microphone is in use by another app. Close it and try again."
+                : inApp
+                  ? "Your in-app browser is blocking the camera. Tap the menu and choose Open in Chrome or Safari, then try again."
+                  : "Your browser is denying access even though the phone allows it. Tap the lock icon next to the address bar, set Camera and Microphone to Allow, then try again. If it still fails, open the site in Chrome or Safari.";
             return
           }
           document.getElementById("perm-notice").classList.add("hidden");
