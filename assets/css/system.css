@@ -83,7 +83,7 @@ main.tl-section>.tl-shell{max-width:1240px}
 /* Home: editorial hero with photography beside the message, not below the fold. */
 @media(min-width:900px){
   .hv2-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);gap:0;align-items:stretch;padding:0 40px 0 max(40px,calc((100vw - 1240px)/2))}
-  .hv2-hero-inner{margin:0;padding:64px 48px 64px 0;display:flex;align-items:center;background:none}
+  .hv2-hero-inner{position:relative;left:auto;right:auto;bottom:auto;inset:auto;margin:0;padding:64px 48px 64px 0;display:flex;align-items:center;background:none;pointer-events:auto}
   .hv2-hero-copy{max-width:560px;margin:0}
   .hv2-hero .hv2-mosaic{display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,minmax(180px,1fr));grid-auto-rows:auto;gap:8px;padding:32px 0;height:auto}
   .hv2-hero .hv2-tile:first-child{grid-column:span 2;grid-row:span 1}
