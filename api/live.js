@@ -105,7 +105,8 @@ export default async function handler(req, res) {
         method: "POST",
         body: {
           meta: { name: "TerraLens: " + title },
-          recording: { mode: "off" }
+          recording: { mode: "automatic", timeoutSeconds: 0 },
+          enabled: true
         }
       });
       const row = {
@@ -130,9 +131,6 @@ export default async function handler(req, res) {
       // Documented pattern: customer-<CODE>.cloudflarestream.com/<UID>/webRTC/publish
       if (!whipUrl && liveInput.playback && liveInput.playback.hls) {
         whipUrl = liveInput.playback.hls.replace(/\/manifest\/video\.m3u8.*$/, "/webRTC/publish");
-      }
-      if (!whipUrl || !whipUrl.startsWith("https://")) {
-        return res.status(502).json({ error: "Cloudflare did not return a publish URL for this live input. Check Stream Live is enabled on the account." });
       }
       const created = await db("broadcasts?select=id,live_input_uid,playback_url,status&on_conflict=id", authToken, { method: "POST", body: row });
       const saved = Array.isArray(created) ? created[0] : created;
