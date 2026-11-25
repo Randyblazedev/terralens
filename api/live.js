@@ -23,9 +23,12 @@ async function cf(path, options = {}) {
 }
 
 async function db(path, userToken, options = {}) {
+  const key = clean("SUPABASE_PUBLISHABLE_KEY");
   const headers = {
-    apikey: clean("SUPABASE_PUBLISHABLE_KEY"),
-    Authorization: "Bearer " + userToken,
+    apikey: key,
+    // Anonymous visitors have no JWT; Supabase rejects "Bearer " with an empty
+    // token. The publishable key authenticates them with the anon role.
+    Authorization: "Bearer " + (userToken || key),
     "Content-Type": "application/json"
   };
   const r = await fetch(cleanUrl("SUPABASE_URL") + "/rest/v1/" + path, {
