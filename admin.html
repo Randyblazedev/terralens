@@ -498,11 +498,11 @@ $("#fill-real").onclick=async()=>{
 };
 
 const POST_CATS={"travel-tips":"Travel Tips",destinations:"Destinations",photography:"Photography",guides:"Guides",news:"News"};
-let editingPost=null;
+let editingPost=null,postWasPublished=false;
 const pslug=s=>s.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,90);
 const pcount=()=>{const t=$("#p-title").value.length,e=$("#p-excerpt").value.length;
  $("#p-title-count").textContent=`${t} characters${t>60?" (long: search may cut it off)":""}`;$("#p-excerpt-count").textContent=`${e} characters${e&&(e<120||e>160)?" (120 to 160 is ideal)":""}`};
-function showPostForm(p){editingPost=p?p.id:null;const f=$("#post-form");f.classList.remove("hidden");f.classList.add("grid");
+function showPostForm(p){editingPost=p?p.id:null;postWasPublished=!!(p&&p.status==="published");const f=$("#post-form");f.classList.remove("hidden");f.classList.add("grid");
  $("#p-title").value=p?.title||"";$("#p-slug").value=p?.slug||"";$("#p-slug").dataset.touched=p?"1":"";$("#p-category").value=p?.category||"travel-tips";
  $("#p-excerpt").value=p?.excerpt||"";$("#p-cover").value=p?.cover_url||"";$("#p-content").value=p?.content||"";$("#p-status").value=p?.status||"draft";
  $("#p-guest").checked=!!p?.is_guest;$("#p-guest-name").value=p?.guest_name||"";$("#p-guest-link").value=p?.guest_link||"";
@@ -532,7 +532,7 @@ $("#post-form").onsubmit=async e=>{e.preventDefault();
  const row={title,slug,excerpt,content,category:$("#p-category").value,cover_url:cover||null,status:$("#p-status").value,is_guest:guest,guest_name:guest?$("#p-guest-name").value.trim():null,guest_link:guest&&link?link:null};
  const r=editingPost?await supabase.from("posts").update(row).eq("id",editingPost).select("id,slug,status").single():await supabase.from("posts").insert(row).select("id,slug,status").single();
  if(r.error){flash(r.error.code==="23505"?"That slug is already used by another post.":r.error.message);return}
- const wasNew=!editingPost;flash(row.status==="published"?"Saved and published.":"Saved as a draft.");editingPost=r.data.id;$("#p-delete").classList.remove("hidden");if(row.status==="published"&&wasNew)notifyNewPost({title:row.title,slug:r.data.slug||row.slug,actorId:session?.user?.id||null})
+ flash(row.status==="published"?"Saved and published.":"Saved as a draft.");editingPost=r.data.id;$("#p-delete").classList.remove("hidden");if(row.status==="published"&&!postWasPublished)notifyNewPost({title:row.title,slug:r.data.slug||row.slug,actorId:session?.user?.id||null});postWasPublished=row.status==="published";
  const v=$("#p-view");v.href="/blog/"+r.data.slug;v.classList.toggle("hidden",r.data.status!=="published");loadPosts()};
 $("#p-delete").onclick=async()=>{if(!editingPost)return;if(!await confirmDialog("Delete this post? This cannot be undone.",{danger:true,confirmText:"Delete"}))return;
  const {error}=await supabase.from("posts").delete().eq("id",editingPost);flash(error?error.message:"Post deleted.");if(!error){$("#p-cancel").click();loadPosts()}};
