@@ -133,7 +133,16 @@
           const r=await post("create",{title,summary:document.getElementById("summary").value.trim(),category:document.getElementById("cat").value,place_id:/^[0-9a-f-]{36}$/i.test(place)?place:null});
           if(r.error){msg.textContent=r.error;return}
           broadcastId=r.id;
-          window.__whip=r.whipUrl;
+          // Derive WHIP publishing URL from the playback manifest when the API
+          // did not return webRTC.url (documented Cloudflare URL pattern).
+          window.__whip=r.whipUrl||"";
+          if(!window.__whip&&r.playbackUrl){
+            window.__whip=String(r.playbackUrl).replace(/\/manifest\/video\.m3u8.*$/,"/webRTC/publish");
+          }
+          if(!window.__whip){
+            msg.textContent="Cloudflare returned no playback URL. Response: "+JSON.stringify(r).slice(0,300);
+            return
+          }
           document.getElementById("studio").classList.remove("hidden");
           document.getElementById("watch").href="watch-live.html?id="+encodeURIComponent(r.id);
           msg.textContent="Broadcast created. Grant camera access, then press Start streaming.";
