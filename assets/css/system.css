@@ -97,3 +97,31 @@ main.tl-section>.tl-shell{max-width:1240px}
   .hv2-hero .hv2-tile:first-child{grid-column:span 1;grid-row:span 1}
   .hv2-hero-inner{align-items:center;padding:24px 48px 24px 0}
 }
+
+/* Editorial card variants: same language, different composition per subject. */
+.ed-card{border-radius:var(--radius);border-color:var(--line-soft);background:var(--surface)}
+.ed-card .ed-card-media img{transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.ed-card:hover .ed-card-media img{transform:scale(1.04)}
+.ed-card[data-card-variant="beach"] .ed-card-media{aspect-ratio:16/9}
+.ed-card[data-card-variant="beach"] .ed-card-media img{object-position:center 40%}
+.ed-card[data-card-variant="mountain"] .ed-card-media{aspect-ratio:4/5}
+.ed-card[data-card-variant="mountain"] .ed-card-media img{object-position:center 30%}
+.ed-card[data-card-variant="waterfall"] .ed-card-media{aspect-ratio:3/2}
+.ed-card[data-card-variant="culture"] .ed-card-media{aspect-ratio:1/1}
+.ed-card[data-card-variant="lake"] .ed-card-media img{object-position:center 55%}
+.ed-card[data-card-variant="forest"] .ed-card-media img{object-position:center 45%}
+.ed-card[data-card-variant="viewpoint"] .ed-card-media{aspect-ratio:3/2}
+
+/* Balanced mosaic: varied rows instead of a wall of identical tiles. */
+.hv2-feel-grid{grid-template-columns:repeat(6,1fr);gap:12px}
+.hv2-feel-grid>a{border-radius:var(--radius);border-color:var(--line-soft)}
+.hv2-feel-grid>a[data-cat="Beach"]{grid-column:span 4;aspect-ratio:16/8}
+.hv2-feel-grid>a[data-cat="Waterfall"]{grid-column:span 2;aspect-ratio:3/4}
+.hv2-feel-grid>a[data-cat="Mountain"]{grid-column:span 2;aspect-ratio:4/5}
+.hv2-feel-grid>a[data-cat="Lake"]{grid-column:span 2;aspect-ratio:4/5}
+.hv2-feel-grid>a[data-cat="Forest"]{grid-column:span 3;aspect-ratio:16/9}
+.hv2-feel-grid>a[data-cat="Culture"]{grid-column:span 3;aspect-ratio:16/9}
+@media(max-width:720px){
+  .hv2-feel-grid{grid-template-columns:repeat(2,1fr)}
+  .hv2-feel-grid>a[data-cat]{grid-column:span 1!important;aspect-ratio:4/5!important}
+}

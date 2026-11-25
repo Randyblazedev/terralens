@@ -289,8 +289,11 @@ export function card(place) {
   const name = place.author ? (place.author.display_name || place.author.username || "") : "";
   const authorId = place.author?.id || place.created_by || "";
   const by = name ? `<span class="flex min-w-0 items-center gap-1.5 text-xs text-white/55">${authorId ? `<a href="profile.html?id=${escapeHtml(authorId)}" class="truncate hover:text-white hover:underline">${escapeHtml(name)}</a>` : `<span class="truncate">${escapeHtml(name)}</span>`}${place.author.verified ? verifiedBadge(15) : ""}</span>` : "<span></span>";
-  return `<article class="group overflow-hidden rounded-3xl border border-white/10 bg-white/[.025]">
-    <a href="${url}" class="block aspect-[4/3] overflow-hidden bg-white/5" tabindex="-1" aria-hidden="true">
+  // Each category gets a composition suited to its subject, not a clone tile.
+  const kind = String(place.category || "Other").toLowerCase().replace(/[^a-z]/g, "");
+  const variant = ["waterfall","mountain","beach","lake","forest","culture","nationalpark","viewpoint"].includes(kind) ? kind : "other";
+  return `<article data-card-variant="${variant}" class="group ed-card overflow-hidden rounded-3xl border border-white/10 bg-white/[.025]">
+    <a href="${url}" class="block ed-card-media aspect-[4/3] overflow-hidden bg-white/5" tabindex="-1" aria-hidden="true">
       <img src="${escapeHtml(imgSize(place.cover_url || place.image_url || "", 640))}" srcset="${escapeHtml(imgSize(place.cover_url || place.image_url || "", 480))} 480w, ${escapeHtml(imgSize(place.cover_url || place.image_url || "", 800))} 800w" sizes="(min-width:1024px) 30vw, (min-width:640px) 45vw, 90vw" alt="${escapeHtml(place.name)}${place.country ? ", " + escapeHtml(place.country) : ""}" loading="lazy" decoding="async" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
     </a>
     <div class="p-5">
