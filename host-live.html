@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
 <link rel="stylesheet" href="assets/css/new-features.css?v=20261125a">
-<link rel="stylesheet" href="assets/css/system.css?v=20261125fix2">
+<link rel="stylesheet" href="assets/css/system.css?v=20261125err">
 <script src="src/js/runtime-config.js"></script>
 <script type="module" src="src/js/supabase.js"></script>
 <link rel="canonical" href="https://www.terralensapp.com/host-live.html">
@@ -108,12 +108,18 @@
         panel.classList.remove("hidden");
         const check=document.getElementById("perm-check");
         if(check){
-          const inApp=/WhatsApp|Instagram|Facebook|Twitter|Telegram|Line/i.test(navigator.userAgent);
-          check.textContent = !window.isSecureContext
-            ? "This page is not secure, so the camera cannot be used."
-            : !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia
-              ? "This browser does not support camera streaming."
-              : inApp ? "You are in an in-app browser. Open in Chrome or Safari to broadcast." : "Your browser is ready to ask for camera access.";
+          (async()=>{
+            const items=[];
+            try{
+              if(!window.isSecureContext)items.push("isSecureContext=false");
+              if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)items.push("getUserMedia unavailable");
+              for(const name of ["camera","microphone"]){
+                try{const s=await navigator.permissions.query({name});items.push(name+": "+s.state)}
+                catch(e){items.push(name+": query failed — "+((e&&e.message)||""))}
+              }
+            }catch(e){items.push("check failed: "+((e&&e.message)||""))}
+            check.textContent="Browser state: "+(items.join(" · ")||"unknown");
+          })();
         }
         let pc=null,stream=null,broadcastId=null;
         const post=async(action,body={})=>{const r=await fetch("/api/live?action="+action,{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify(body)});return r.json().catch(()=>({}))};
@@ -150,15 +156,7 @@
           }
           btn.disabled=false;
           if(!stream){
-            const name=(lastErr&&lastErr.name)||"";
-            const inApp=/WhatsApp|Instagram|Facebook|Twitter|Line|Telegram/i.test(navigator.userAgent);
-            out.textContent = name==="NotFoundError"
-              ? "No camera or microphone was found on this device."
-              : name==="NotReadableError"
-                ? "Your camera or microphone is in use by another app. Close it and try again."
-                : inApp
-                  ? "Your in-app browser is blocking the camera. Tap the menu and choose Open in Chrome or Safari, then try again."
-                  : "Your browser is denying access even though the phone allows it. Tap the lock icon next to the address bar, set Camera and Microphone to Allow, then try again. If it still fails, open the site in Chrome or Safari.";
+            out.textContent="Camera error: "+((lastErr&&lastErr.name)||"Unknown")+" — "+((lastErr&&lastErr.message)||"no message from browser");
             return
           }
           document.getElementById("perm-notice").classList.add("hidden");
@@ -167,7 +165,7 @@
           stream.getTracks().forEach(t=>pc.addTrack(t,stream));
           const offer=await pc.createOffer();await pc.setLocalDescription(offer);
           const resp=await fetch(window.__whip,{method:"POST",headers:{"Content-Type":"application/sdp"},body:pc.localDescription.sdp});
-          if(!resp.ok){msg.textContent="Streaming provider rejected the connection ("+resp.status+").";return}
+          if(!resp.ok){let detail="";try{detail=await resp.text()}catch{};msg.textContent="Streaming provider error "+resp.status+": "+(detail||"no response body").slice(0,400);return}
           await pc.setRemoteDescription({type:"answer",sdp:await resp.text()});
           await post("start",{id:broadcastId});
           document.getElementById("start").disabled=true;document.getElementById("stop").disabled=false;
