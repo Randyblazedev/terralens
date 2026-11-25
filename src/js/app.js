@@ -1041,6 +1041,43 @@ export async function initNav() {
       });
     }
   }
+  // Keep the header focused: move secondary links into a More menu (desktop only).
+  try {
+    const nav = document.querySelector("header.tl-nav nav");
+    if (nav && !document.querySelector("[data-nav-more]")) {
+      const secondary = ["Chat", "Blog", "Trips", "About", "Ask a Local", "Saved places", "Communities"];
+      const wrap = document.createElement("span");
+      wrap.className = "nav-more-wrap";
+      wrap.setAttribute("data-nav-more", "");
+      const btn = document.createElement("button");
+      btn.className = "nav-more-btn";
+      btn.type = "button";
+      btn.setAttribute("aria-expanded", "false");
+      btn.textContent = "More ▾";
+      const menu = document.createElement("span");
+      menu.className = "nav-more-menu";
+      btn.addEventListener("click", () => {
+        const open = menu.classList.toggle("open");
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      document.addEventListener("click", e => {
+        if (!wrap.contains(e.target)) { menu.classList.remove("open"); btn.setAttribute("aria-expanded", "false"); }
+      });
+      nav.querySelectorAll("a").forEach(a => {
+        const label = (a.textContent || "").trim();
+        if (secondary.some(s => s.toLowerCase() === label.toLowerCase())) {
+          a.style.display = "none";
+          const item = document.createElement("a");
+          item.href = a.getAttribute("href");
+          item.textContent = label;
+          if (a.getAttribute("data-i18n")) item.setAttribute("data-i18n", a.getAttribute("data-i18n"));
+          menu.appendChild(item);
+        }
+      });
+      if (menu.children.length) { wrap.appendChild(btn); wrap.appendChild(menu); nav.appendChild(wrap); }
+    }
+  } catch {}
+
   // Mark the current section in desktop and mobile navigation.
   try {
     const path = location.pathname;

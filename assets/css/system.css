@@ -1,0 +1,80 @@
+/* TerraLens design system — editorial travel, engineered product.
+   Loaded after legacy styles so it establishes one consistent visual language. */
+:root{
+  --bg:#0B0F19; --surface:#111827; --raised:#131B2E;
+  --accent:#34D399; --accent-ink:#04150f; --blue:#60A5FA; --amber:#F59E0B;
+  --ink:#F5F7FA; --muted:#9CA3AF; --line:#253048; --line-soft:#1b2436;
+  --radius:12px; --radius-sm:9px; --shadow:none;
+  --s1:8px; --s2:16px; --s3:24px; --s4:32px; --s5:48px; --s6:64px; --s7:96px;
+}
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.font-display,h1,h2,.section-title{font-family:'Fraunces',Georgia,serif;letter-spacing:-.02em}
+::selection{background:var(--accent);color:var(--accent-ink)}
+a,button{transition:color .16s ease,background-color .16s ease,border-color .16s ease}
+
+/* Navigation: primary links only; secondary moved into a menu by JS. */
+.tl-nav{background:rgba(11,15,25,.94);backdrop-filter:none;border-bottom:1px solid var(--line-soft)}
+header.tl-nav .tl-shell{gap:24px}
+header.tl-nav nav{gap:22px}
+header.tl-nav nav a{color:var(--muted);font-size:13px;font-weight:500}
+header.tl-nav nav a:hover{color:var(--ink)}
+header.tl-nav nav a[aria-current="page"]{color:var(--ink);font-weight:700}
+header.tl-nav nav a[aria-current="page"]::after{bottom:-9px;background:var(--accent);height:2px}
+.tl-logo{width:34px;height:34px;border-radius:0}
+.tl-btn{border-radius:var(--radius-sm);font-weight:600;letter-spacing:0}
+.tl-btn-primary{background:var(--accent);color:var(--accent-ink)}
+.tl-btn-primary:hover{background:#6ee7b7}
+.tl-btn-ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.tl-btn-ghost:hover{border-color:var(--muted);background:rgba(255,255,255,.03)}
+.tl-input{border-radius:var(--radius-sm);background:var(--surface);border-color:var(--line);min-height:46px}
+.tl-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(52,211,153,.12)}
+.tl-card{border-radius:var(--radius);border-color:var(--line-soft);background:var(--surface)}
+.tl-glass{background:var(--surface);border-color:var(--line);backdrop-filter:none}
+.tl-section{padding-block:var(--s6)}
+.tl-eyebrow{font-size:11px;letter-spacing:.14em;color:var(--accent);font-weight:700;text-transform:uppercase}
+.tl-gradient{background:none;-webkit-text-fill-color:var(--ink);color:var(--ink)}
+.tl-bottom-nav{background:var(--bg);border-color:var(--line);backdrop-filter:none}
+.tl-bottom-nav a.active{color:var(--accent);background:rgba(52,211,153,.08)}
+
+/* Editorial rhythm: generous top, deliberate sections. */
+main.tl-section>.tl-shell{max-width:1240px}
+.page-lead{padding-top:var(--s5)}
+.page-lead h1,.ex-hero h1{font-size:clamp(2.35rem,4.6vw,3.4rem);line-height:1.08;font-weight:600}
+.page-lead p,.ex-hero p{font-size:16px;color:var(--muted);line-height:1.7}
+.section-title,h2.section-title{font-size:clamp(1.45rem,2.2vw,1.9rem);font-weight:600}
+.empty-state{border-style:solid;border-color:var(--line-soft);background:var(--surface);border-radius:var(--radius)}
+.empty-state .glyph{background:rgba(52,211,153,.1);color:var(--accent);border-radius:var(--radius-sm)}
+.empty-state h2{font-family:'Fraunces',Georgia,serif}
+
+/* Card grids: consistent crops, quiet surfaces, real information. */
+.grid img,.ex-card img,article img{border-radius:var(--radius-sm);aspect-ratio:4/3;object-fit:cover;background:var(--raised)}
+.ex-card{border-radius:var(--radius);border-color:var(--line-soft);background:var(--surface)}
+.ex-card:hover{border-color:var(--line)}
+.ex-tag{background:rgba(96,165,250,.12);color:var(--blue);letter-spacing:.06em;border-radius:4px}
+.example-strip{border-color:var(--line-soft)}
+
+/* More menu (secondary navigation) */
+.nav-more-wrap{position:relative}
+.nav-more-btn{background:none;border:0;color:var(--muted);font-size:13px;font-weight:600;padding:6px 0;cursor:pointer}
+.nav-more-btn:hover{color:var(--ink)}
+.nav-more-menu{position:absolute;top:34px;right:0;min-width:190px;background:var(--raised);border:1px solid var(--line);border-radius:var(--radius);padding:8px;display:none;flex-direction:column;z-index:80;box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.nav-more-menu.open{display:flex}
+.nav-more-menu a{color:var(--muted);font-size:13px;padding:9px 10px;border-radius:7px;text-decoration:none;white-space:nowrap}
+.nav-more-menu a:hover{color:var(--ink);background:rgba(255,255,255,.04)}
+
+/* Install pill: quiet, never covers content. */
+[data-install-pill]{left:auto!important;right:18px!important;bottom:18px!important;opacity:.78;transition:opacity .2s}
+[data-install-pill]:hover{opacity:1}
+[data-install-pill] span:last-child{font-size:11px}
+
+@media(max-width:767px){
+  .tl-section{padding-block:var(--s5)}
+  main.tl-section{padding-bottom:96px!important}
+  .page-lead,.ex-hero{padding-top:var(--s3)}
+  .page-lead h1,.ex-hero h1{font-size:clamp(2rem,9vw,2.6rem)}
+  .page-lead p,.ex-hero p{font-size:15px}
+  .tl-shell{width:min(100% - 32px,1440px)}
+  [data-install-pill]{right:12px!important;bottom:76px!important;padding:5px 10px 5px 6px!important}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
