@@ -64,7 +64,8 @@ main.tl-section>.tl-shell{max-width:1240px}
 .nav-more-menu a:hover{color:var(--ink);background:rgba(255,255,255,.04)}
 
 /* Install pill: quiet, never covers content. */
-[data-install-pill]{left:auto!important;right:18px!important;bottom:18px!important;opacity:.78;transition:opacity .2s}
+@media(min-width:768px){[data-install-pill]{display:none!important}}
+[data-install-pill]{left:auto!important;right:14px!important;bottom:74px!important;opacity:.72;transition:opacity .2s}
 [data-install-pill]:hover{opacity:1}
 [data-install-pill] span:last-child{font-size:11px}
 
@@ -75,6 +76,6 @@ main.tl-section>.tl-shell{max-width:1240px}
   .page-lead h1,.ex-hero h1{font-size:clamp(2rem,9vw,2.6rem)}
   .page-lead p,.ex-hero p{font-size:15px}
   .tl-shell{width:min(100% - 32px,1440px)}
-  [data-install-pill]{right:12px!important;bottom:76px!important;padding:5px 10px 5px 6px!important}
+  [data-install-pill]{right:10px!important;bottom:72px!important;padding:4px 9px 4px 5px!important}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}

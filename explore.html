@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap">
 <link rel="stylesheet" href="src/styles/tailwind.css?v=20261118b">
 <link rel="stylesheet" href="src/styles/app.css?v=20261118b">
-<link rel="stylesheet" href="assets/css/system.css?v=20261125a">
+<link rel="stylesheet" href="assets/css/system.css?v=20261125b">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta name="theme-color" content="#020918">
@@ -100,7 +100,7 @@
  </div>
 </main>
 <script type="module">
-import {queryPlaces,card,initCardSaves,fallbackPlaces,attachAuthors,escapeHtml,canEdit,editMinutesLeft,getProStatus} from "./src/js/app.js?v=20261125a";
+import {queryPlaces,card,initCardSaves,fallbackPlaces,attachAuthors,escapeHtml,canEdit,editMinutesLeft,getProStatus} from "./src/js/app.js?v=20261125b";
 import {supabase} from "./src/js/supabase.js";
 const params=new URLSearchParams(location.search);
 const q=document.querySelector("#q"),cat=document.querySelector("#category"),country=document.querySelector("#country");
@@ -116,7 +116,7 @@ async function run(append=false){if(busy)return;busy=true;
  const page=data.slice(0,PAGE),more=data.length>PAGE;offset+=page.length;
  grid.insertAdjacentHTML("beforeend",page.map(card).join(""));
  await initCardSaves(grid);
- const n=grid.children.length;statusEl.textContent=n?`Showing ${n} place${n===1?"":"s"}${more?" so far":""}`:"No places found yet.";
+ const n=grid.children.length;statusEl.textContent=n?`${n} place${n===1?"":"s"} found`:"No places found yet.";
  moreBtn.disabled=false;moreBtn.classList.toggle("hidden",!more);
  busy=false}
 async function loadCountries(){let list=[];
@@ -151,7 +151,7 @@ if(performance.getEntriesByType("navigation")[0]?.type==="back_forward"){const y
   </div>
   <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© <span data-year>2026</span> TerraLens. Explore Earth Through a New Lens.</span><span data-i18n="footer.rights">Built by Randy Blaze.</span></div>
 </footer>
-<script type="module">import {initNav} from "./src/js/app.js?v=20261125a"; initNav();</script>
+<script type="module">import {initNav} from "./src/js/app.js?v=20261125b"; initNav();</script>
 
 <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});}</script>
 </body></html>

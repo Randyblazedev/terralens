@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
 <link rel="stylesheet" href="assets/css/new-features.css?v=20261124b">
-<link rel="stylesheet" href="assets/css/system.css?v=20261125a">
+<link rel="stylesheet" href="assets/css/system.css?v=20261125b">
 <script src="src/js/runtime-config.js"></script>
 <script type="module" src="src/js/supabase.js"></script>
 <link rel="canonical" href="https://www.terralensapp.com/watch-live.html">
@@ -73,7 +73,7 @@
   </div></main>
   <script type="module">
     import {supabase} from "./src/js/supabase.js";
-    import {initNav,escapeHtml,backFab} from "./src/js/app.js?v=20261125a";
+    import {initNav,escapeHtml,backFab} from "./src/js/app.js?v=20261125b";
     await initNav();
     document.body.insertAdjacentHTML("beforeend",backFab("live.html"));
     const id=new URLSearchParams(location.search).get("id")||"";

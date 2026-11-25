@@ -903,7 +903,7 @@ function showInstallPill() {
     if (window.navigator.standalone === true) return;
     const pill = document.createElement("div");
     pill.setAttribute("data-install-pill", "");
-    pill.style.cssText = "position:fixed;right:16px;bottom:16px;z-index:44;display:flex;align-items:center;gap:8px;background:rgba(9,14,24,.9);border:1px solid rgba(52,211,153,.28);border-radius:9px;padding:6px 12px 6px 7px;color:#e8eef8;font:600 11px/1.2 system-ui,sans-serif;box-shadow:none";
+    pill.style.cssText = "position:fixed;right:14px;bottom:74px;z-index:44;display:flex;align-items:center;gap:7px;background:rgba(9,14,24,.92);border:1px solid rgba(52,211,153,.28);border-radius:8px;padding:5px 10px 5px 6px;color:#e8eef8;font:600 10px/1.2 system-ui,sans-serif;box-shadow:none";
     pill.innerHTML = '<span style="width:26px;height:26px;border-radius:50%;background:#0ea5e9;display:grid;place-items:center;font-size:14px;color:#04121f">↓</span>' +
       '<span class="install-action" style="cursor:pointer">Install TerraLens</span>';
     pill.querySelector(".install-action").addEventListener("click", async () => {

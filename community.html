@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap">
 <link rel="stylesheet" href="src/styles/tailwind.css?v=20261118b">
 <link rel="stylesheet" href="src/styles/app.css?v=20261118b">
-<link rel="stylesheet" href="assets/css/system.css?v=20261125a">
+<link rel="stylesheet" href="assets/css/system.css?v=20261125b">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta name="theme-color" content="#020918">
@@ -79,7 +79,7 @@
 <div id="users" class="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-3"></div></div></main>
 <script type="module">
 import {supabase} from "./src/js/supabase.js";
-import {card,escapeHtml,verifiedBadge,attachAuthors} from "./src/js/app.js?v=20261125a";
+import {card,escapeHtml,verifiedBadge,attachAuthors} from "./src/js/app.js?v=20261125b";
 const gridC=document.querySelector("#collections"),gridP=document.querySelector("#places"),gridT=document.querySelector("#people"),gridU=document.querySelector("#users");
 const colCard=c=>`<a href="collection.html?id=${c.id}" class="tl-card block p-6 hover:bg-white/5"><p class="tl-eyebrow">Collection</p><h2 class="mt-3 text-2xl font-bold">${escapeHtml(c.name)}</h2><p class="mt-2 text-sm text-white/50">${escapeHtml(c.description||"A collection of places.")}</p><p class="mt-6 text-xs text-white/35">${c.place_count?`${c.place_count} place${c.place_count===1?"":"s"} · `:""}by ${escapeHtml(c.profiles?.display_name||"Traveler")}</p></a>`;
 const userCard=(u,sub)=>{const label=escapeHtml((u.display_name||u.username||"Traveler").charAt(0).toUpperCase());const avatar=u.avatar_url?`<img src="${escapeHtml(u.avatar_url)}" alt="" class="h-12 w-12 shrink-0 rounded-full bg-white/5 object-cover" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'h-12 w-12 shrink-0 rounded-full bg-sky-500/20 text-sky-300 grid place-items-center font-bold',textContent:'${label}'}))">`:`<span class="h-12 w-12 shrink-0 rounded-full bg-sky-500/20 text-sky-300 grid place-items-center font-bold">${label}</span>`;return `<a href="profile.html?id=${u.id}" class="tl-card flex items-center gap-4 p-5 hover:bg-white/5">${avatar}<div class="min-w-0"><p class="truncate font-bold">${escapeHtml(u.display_name||u.username||"Traveler")}${u.verified?" "+verifiedBadge(12):""}</p><p class="truncate text-xs text-white/45">@${escapeHtml(u.username||"traveler")}</p>${sub?`<p class="mt-1 text-xs text-white/35">${sub}</p>`:""}</div></a>`};
@@ -195,7 +195,7 @@ live();
   </div>
   <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© <span data-year>2026</span> TerraLens. Explore Earth Through a New Lens.</span><span>Built by Randy Blaze.</span></div>
 </footer>
-<script type="module">import {initNav} from "./src/js/app.js?v=20261125a"; initNav();</script>
+<script type="module">import {initNav} from "./src/js/app.js?v=20261125b"; initNav();</script>
 
 <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});}</script>
 </body></html>
