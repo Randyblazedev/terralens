@@ -79,3 +79,15 @@ main.tl-section>.tl-shell{max-width:1240px}
   [data-install-pill]{right:10px!important;bottom:72px!important;padding:4px 9px 4px 5px!important}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* Home: editorial hero with photography beside the message, not below the fold. */
+@media(min-width:900px){
+  .hv2-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);gap:0;align-items:stretch;padding:0 40px 0 max(40px,calc((100vw - 1240px)/2))}
+  .hv2-hero-inner{margin:0;padding:64px 48px 64px 0;display:flex;align-items:center;background:none}
+  .hv2-hero-copy{max-width:560px;margin:0}
+  .hv2-hero .hv2-mosaic{display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,minmax(180px,1fr));grid-auto-rows:auto;gap:8px;padding:32px 0;height:auto}
+  .hv2-hero .hv2-tile:first-child{grid-column:span 2;grid-row:span 1}
+  .hv2-hero .hv2-tile img{height:100%;border-radius:10px}
+  .hv2-hero .hv2-cap b{font-size:15px}
+  .hv2-lede{font-size:16px}
+}
