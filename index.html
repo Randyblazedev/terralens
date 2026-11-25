@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="src/styles/tailwind.css?v=20261118b">
 <link rel="stylesheet" href="src/styles/app.css?v=20261118b">
 <link rel="stylesheet" href="assets/css/home-v2.css?v=20261118d">
-<link rel="stylesheet" href="assets/css/system.css?v=20261125f">
+<link rel="stylesheet" href="assets/css/system.css?v=20261125g">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta name="theme-color" content="#020918">
@@ -171,7 +171,7 @@
 
 </main>
 <script type="module">
-import {queryFeatured,card,initCardSaves,escapeHtml,imgSize} from "./src/js/app.js?v=20261125b";
+import {queryFeatured,card,initCardSaves,escapeHtml,imgSize} from "./src/js/app.js?v=20261125g";
 import {supabase} from "./src/js/supabase.js";
 document.querySelector("#hero-search").addEventListener("submit",e=>{e.preventDefault();location.href="explore.html?q="+encodeURIComponent(document.querySelector("#hero-query").value)});
 (async()=>{
@@ -331,7 +331,7 @@ await paintNewWeek();
   </div>
   <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© <span data-year>2026</span> TerraLens. Explore Earth Through a New Lens.</span><span data-i18n="footer.rights">Built by Randy Blaze.</span></div>
 </footer>
-<script type="module">import {initNav} from "./src/js/app.js?v=20261125b"; initNav();</script>
+<script type="module">import {initNav} from "./src/js/app.js?v=20261125g"; initNav();</script>
 
 <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});}</script>
 </body></html>

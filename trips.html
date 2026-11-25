@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap">
 <link rel="stylesheet" href="src/styles/tailwind.css?v=20261118b">
 <link rel="stylesheet" href="src/styles/app.css?v=20261118b">
-<link rel="stylesheet" href="assets/css/system.css?v=20261125b">
+<link rel="stylesheet" href="assets/css/system.css?v=20261125g">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta name="theme-color" content="#020918">
@@ -93,7 +93,7 @@
 
 <script type="module">
 import { supabase, getUser } from "./src/js/supabase.js";
-import { escapeHtml as esc, placeUrl } from "./src/js/app.js?v=20261125b";
+import { escapeHtml as esc, placeUrl } from "./src/js/app.js?v=20261125g";
 import { listTrips, tripPlaces } from "./src/js/collections.js";
 import { confirmDialog, toast } from "./src/js/ui.js";
 
@@ -153,7 +153,7 @@ list.addEventListener("click", async e => {
 
 run();
 </script>
-<script type="module">import {initNav} from "./src/js/app.js?v=20261125b"; initNav();</script>
+<script type="module">import {initNav} from "./src/js/app.js?v=20261125g"; initNav();</script>
 
 <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});}</script>
 </body></html>

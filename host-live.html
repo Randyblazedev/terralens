@@ -86,7 +86,7 @@
   </div></main>
   <script type="module">
     import {supabase} from "./src/js/supabase.js";
-    import {initNav,escapeHtml,backFab} from "./src/js/app.js?v=20261125b";
+    import {initNav,escapeHtml,backFab} from "./src/js/app.js?v=20261125g";
     await initNav();
     document.body.insertAdjacentHTML("beforeend",backFab("live.html"));
     const gate=document.getElementById("gate"),panel=document.getElementById("panel"),msg=document.getElementById("msg");
@@ -119,7 +119,8 @@
         document.getElementById("start").onclick=async()=>{
           msg.textContent="Browser prompt: tap Allow for camera and microphone.";
           try{
-            stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+            const constraints={video:{facingMode:"user"},audio:{echoCancellation:true,noiseSuppression:true}};
+            stream=await navigator.mediaDevices.getUserMedia(constraints);
           }catch(err){
             const name=(err&&err.name)||"";
             msg.textContent = name==="NotAllowedError"
