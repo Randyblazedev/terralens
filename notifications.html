@@ -79,7 +79,7 @@
 </div></main>
 <script type="module">
 import {supabase} from "./src/js/supabase.js";
-import {initNav,escapeHtml,waitForAuthSession,getUnreadCount,markAllRead,notifyUser,playNotifPing,maybeBrowserNotify,notifSoundEnabled,setNotifSoundEnabled,pushStatus,enablePush,disablePush,healPush} from "./src/js/app.js";
+import {initNav,escapeHtml,waitForAuthSession,getUnreadCount,markAllRead,notifyUser,playNotifPing,maybeBrowserNotify,notifSoundEnabled,setNotifSoundEnabled,pushStatus,enablePush,disablePush,healPush} from "./src/js/app.js?v=20261125a";
 void notifyUser; void getUnreadCount;
 await initNav();
 const list=document.querySelector("#list"),note=document.querySelector("#note"),btn=document.querySelector("#mark-read"),soundBtn=document.querySelector("#sound-toggle"),pushBtn=document.querySelector("#push-toggle");

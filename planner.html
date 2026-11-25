@@ -96,7 +96,7 @@
 </div></div></main>
 <script type="module">
 import {supabase,getUser} from "./src/js/supabase.js";
-import {queryPlaces,escapeHtml as esc} from "./src/js/app.js";
+import {queryPlaces,escapeHtml as esc} from "./src/js/app.js?v=20261125a";
 import {buildPlan,planToText} from "./src/js/planner.js";
 import {createTrip,saveTripPlaces,tripPlaces} from "./src/js/collections.js";
 const $=s=>document.querySelector(s),out=$("#output"),aiOut=$("#ai-out"),msg=$("#msg");
@@ -168,7 +168,7 @@ if(me){document.querySelector("#saved-box").classList.remove("hidden");document.
   </div>
   <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© <span data-year>2026</span> TerraLens. Explore Earth Through a New Lens.</span><span data-i18n="footer.rights">Built by Randy Blaze.</span></div>
 </footer>
-<script type="module">import {initNav} from "./src/js/app.js"; initNav();</script>
+<script type="module">import {initNav} from "./src/js/app.js?v=20261125a"; initNav();</script>
 
 <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});}</script>
 </body></html>

@@ -112,7 +112,7 @@
 </main>
 <script type="module">
 import {supabase,getUser,ensureProfile} from "./src/js/supabase.js";
-import {slugify,notifyFollowers} from "./src/js/app.js";
+import {slugify,notifyFollowers} from "./src/js/app.js?v=20261125a";
 const files=document.querySelector("#files"),drop=document.querySelector("#drop"),previews=document.querySelector("#previews");
 (async()=>{const u=supabase?await getUser():null;if(u)return;const f=document.querySelector("#upload-form");
  f.insertAdjacentHTML("beforebegin",'<div class="mt-8 rounded-2xl border border-white/10 bg-white/[.03] p-5"><p class="font-bold">Sign in to upload a place</p><p class="mt-1 text-sm text-white/55">You can browse everything without an account. Uploading needs a Google sign-in.</p><a class="tl-btn tl-btn-primary mt-4" href="login.html?next=upload.html">Sign in with Google</a></div>');
@@ -157,7 +157,7 @@ document.querySelector("#upload-form").onsubmit=async e=>{
   </div>
   <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© <span data-year>2026</span> TerraLens. Explore Earth Through a New Lens.</span><span data-i18n="footer.rights">Built by Randy Blaze.</span></div>
 </footer>
-<script type="module">import {initNav} from "./src/js/app.js"; initNav();</script>
+<script type="module">import {initNav} from "./src/js/app.js?v=20261125a"; initNav();</script>
 
 <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});}</script>
 </body></html>

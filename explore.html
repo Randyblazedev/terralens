@@ -100,7 +100,7 @@
  </div>
 </main>
 <script type="module">
-import {queryPlaces,card,initCardSaves,fallbackPlaces,attachAuthors,escapeHtml,canEdit,editMinutesLeft,getProStatus} from "./src/js/app.js";
+import {queryPlaces,card,initCardSaves,fallbackPlaces,attachAuthors,escapeHtml,canEdit,editMinutesLeft,getProStatus} from "./src/js/app.js?v=20261125a";
 import {supabase} from "./src/js/supabase.js";
 const params=new URLSearchParams(location.search);
 const q=document.querySelector("#q"),cat=document.querySelector("#category"),country=document.querySelector("#country");
@@ -151,7 +151,7 @@ if(performance.getEntriesByType("navigation")[0]?.type==="back_forward"){const y
   </div>
   <div class="tl-shell flex flex-col justify-between gap-3 border-t border-white/5 py-5 text-xs text-white/35 sm:flex-row"><span>© <span data-year>2026</span> TerraLens. Explore Earth Through a New Lens.</span><span data-i18n="footer.rights">Built by Randy Blaze.</span></div>
 </footer>
-<script type="module">import {initNav} from "./src/js/app.js"; initNav();</script>
+<script type="module">import {initNav} from "./src/js/app.js?v=20261125a"; initNav();</script>
 
 <script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})});}</script>
 </body></html>

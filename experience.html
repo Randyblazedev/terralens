@@ -71,7 +71,7 @@
   </div></main>
   <script type="module">
     import {supabase} from "./src/js/supabase.js";
-    import {initNav,escapeHtml,imgSize,backFab} from "./src/js/app.js";
+    import {initNav,escapeHtml,imgSize,backFab} from "./src/js/app.js?v=20261125a";
     await initNav();
     document.body.insertAdjacentHTML("beforeend",backFab("experiences.html"));
     const slug=new URLSearchParams(location.search).get("slug");
