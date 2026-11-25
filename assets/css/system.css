@@ -91,3 +91,9 @@ main.tl-section>.tl-shell{max-width:1240px}
   .hv2-hero .hv2-cap b{font-size:15px}
   .hv2-lede{font-size:16px}
 }
+@media(min-width:900px){
+  .hv2-hero .hv2-mosaic{height:560px!important;grid-template-rows:repeat(2,1fr);grid-auto-rows:0;overflow:hidden}
+  .hv2-hero .hv2-tile:nth-child(n+5){display:none}
+  .hv2-hero .hv2-tile:first-child{grid-column:span 1;grid-row:span 1}
+  .hv2-hero-inner{align-items:center;padding:24px 48px 24px 0}
+}
