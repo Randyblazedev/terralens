@@ -60,6 +60,18 @@ export default async function handler(req, res) {
   const authToken = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
 
   try {
+    if (action === "probe") {
+      try {
+        await cf("/accounts/" + account() + "/stream/live_inputs", {
+          method: "POST",
+          body: { meta: { name: "TerraLens probe" }, recording: { mode: "off" } }
+        });
+        return res.status(200).json({ ok: true });
+      } catch (err) {
+        return res.status(200).json({ ok: false, error: String((err && err.message) || err) });
+      }
+    }
+
     // Temporary diagnostic: shows exactly which upstream step fails on create.
     if (action === "diagnose") {
       if (!user) return res.status(401).json({ error: "Sign in first" });
