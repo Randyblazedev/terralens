@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
 <link rel="stylesheet" href="assets/css/new-features.css?v=20261124cb">
-<link rel="stylesheet" href="assets/css/system.css?v=20261126a">
+<link rel="stylesheet" href="assets/css/system.css?v=20261126b">
 <script src="src/js/runtime-config.js"></script>
 <script type="module" src="src/js/supabase.js"></script>
 <style>
@@ -138,20 +138,35 @@ import {initNav,escapeHtml,backFab,imgSize} from "./src/js/app.js?v=20261125fix"
       .order("created_at",{ascending:false}).limit(40);
     if(error){feed.innerHTML="";msg.textContent=error.message;return}
     if(!rows||!rows.length){feed.innerHTML="";msg.textContent="No moments yet. Be the first to share one.";return}
-    feed.innerHTML=rows.map(m=>`<article class="tl-card p-4 moment">
-      <div class="flex items-center gap-2 text-sm"><b>${escapeHtml(m.profiles?.display_name||m.profiles?.username||"Traveler")}</b><span class="text-white/40">${new Date(m.created_at).toLocaleDateString()}</span></div>
-      ${m.kind==='video'?`<video src="${escapeHtml(m.media_url)}" controls playsinline></video>`:`<img src="${escapeHtml(m.media_url)}" alt="${escapeHtml(m.caption||'World Moment')}" loading="lazy">`}
-      <p class="mt-2 text-sm">${escapeHtml(m.caption)}</p>
-      <a href="place/${encodeURIComponent(m.places?.id||'')}" class="mt-1 inline-block text-xs text-sky-300">📍 ${escapeHtml(m.places?.name||"Place")}${m.places?.country?', '+escapeHtml(m.places.country):''}</a>
-      <div class="mt-3 flex gap-3"><button class="tl-btn tl-btn-ghost !min-h-8 like" data-id="${m.id}">♥ <span>${m.id.slice(0,4)}</span></button><span class="self-center text-sm text-white/50" data-count="${m.id}"></span></div>
+    feed.innerHTML=rows.map(m=>`<article class="tl-card overflow-hidden moment">
+      <div class="flex items-center gap-3 p-4">
+        <span class="h-9 w-9 shrink-0 rounded-full bg-sky-500/15 text-sky-300 grid place-items-center font-bold">${escapeHtml((m.profiles?.display_name||m.profiles?.username||"T").charAt(0).toUpperCase())}</span>
+        <div class="min-w-0 flex-1"><p class="font-semibold leading-tight">${escapeHtml(m.profiles?.display_name||m.profiles?.username||"Traveler")}</p><p class="text-xs text-white/45 leading-tight mt-1">${new Date(m.created_at).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})}</p></div>
+        ${session&&m.user_id===session.user.id?`<button class="text-xs text-white/45 hover:text-red-400 px-2" data-del="${m.id}" aria-label="Delete moment">Delete</button>`:""}
+      </div>
+      ${m.kind==='video'?`<video src="${escapeHtml(m.media_url)}" controls playsinline class="!rounded-none !aspect-auto"></video>`:`<img src="${escapeHtml(m.media_url)}" alt="${escapeHtml(m.caption||'World Moment')}" loading="lazy" class="!rounded-none !aspect-auto">`}
+      <div class="p-4">
+        ${m.caption?`<p class="text-sm leading-6">${escapeHtml(m.caption)}</p>`:""}
+        ${m.places?.id?`<a href="place/${encodeURIComponent(m.places.id)}" class="mt-2 inline-block text-xs text-sky-300">${escapeHtml(m.places.name||"Place")}${m.places.country?', '+escapeHtml(m.places.country):''}</a>`:""}
+        <div class="mt-4 flex items-center gap-4"><button class="tl-btn tl-btn-ghost !min-h-8 like" data-id="${m.id}">♥ <span data-count="${m.id}">0</span></button></div>
+      </div>
     </article>`).join("");
     for(const m of rows){
       const {count}=await supabase.from("moment_likes").select("id",{count:"exact",head:true}).eq("moment_id",m.id);
-      const el=feed.querySelector(`[data-count="${m.id}"]`);if(el)el.textContent=(count||0)+" likes";
+      const el=feed.querySelector(`[data-count="${m.id}"]`);if(el)el.textContent=String(count||0);
     }
     feed.querySelectorAll(".like").forEach(b=>b.onclick=async()=>{
       if(!session){location.href="login.html?next=moments.html";return}
-      await supabase.from("moment_likes").insert({moment_id:b.dataset.id,user_id:session.user.id});
+      const {error}=await supabase.from("moment_likes").insert({moment_id:b.dataset.id,user_id:session.user.id});
+      if(!error){const el=b.querySelector("[data-count]");if(el)el.textContent=String((Number(el.textContent)||0)+1)}
+    });
+    feed.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
+      const ok=typeof confirm==='function'?confirm("Delete this moment?"):true;if(!ok)return;
+      const m=rows.find(x=>x.id===b.dataset.del);
+      const {error}=await supabase.from("moments").delete().eq("id",b.dataset.del).eq("user_id",session.user.id);
+      if(error){msg.textContent=error.message;return}
+      if(m&&m.media_url){try{const url=new URL(m.media_url);const i=url.pathname.indexOf("/object/public/place-images/");if(i!==-1)await supabase.storage.from("place-images").remove([decodeURIComponent(url.pathname.slice(i+"/object/public/place-images/".length))])}catch{}}
+      b.closest("article").remove();msg.textContent="Moment deleted.";
     });
   
     (async()=>{
