@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
 <link rel="stylesheet" href="assets/css/new-features.css?v=20261124cb">
-<link rel="stylesheet" href="assets/css/system.css?v=20261126i">
+<link rel="stylesheet" href="assets/css/system.css?v=20261126j">
 <script src="src/js/runtime-config.js"></script>
 <script type="module" src="src/js/supabase.js"></script>
 <style>
@@ -149,7 +149,7 @@ import {initNav,escapeHtml,backFab,imgSize} from "./src/js/app.js?v=20261125fix"
     feed.innerHTML=rows.map(m=>{const a=authorOf(m),badge=(a.verified||["verified_host","business","admin"].includes(a.role));
       return `<article class="tl-card overflow-hidden moment">
       <div class="flex items-center gap-3 p-4">
-        ${a.avatar?`<img src="${escapeHtml(a.avatar)}" alt="" class="h-10 w-10 shrink-0 rounded-full object-cover" referrerpolicy="no-referrer">`:`<span class="h-10 w-10 shrink-0 rounded-full bg-sky-500/15 text-sky-300 grid place-items-center font-bold">${escapeHtml(a.name.charAt(0).toUpperCase())}</span>`}
+        ${a.avatar?`<img src="${escapeHtml(a.avatar)}" alt="" class="moment-avatar" referrerpolicy="no-referrer">`:`<span class="moment-avatar moment-avatar-fallback">${escapeHtml(a.name.charAt(0).toUpperCase())}</span>`}
         <div class="min-w-0 flex-1"><p class="font-semibold leading-tight flex items-center gap-2">${escapeHtml(a.name)}${badge?'<span class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300">Verified host</span>':''}</p><p class="text-xs text-white/45 leading-tight mt-1">${new Date(m.created_at).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})}</p></div>
         ${session&&m.user_id===session.user.id?`<button class="text-xs text-white/45 hover:text-red-400 px-2" data-del="${m.id}" aria-label="Delete moment">Delete</button>`:""}
       </div>

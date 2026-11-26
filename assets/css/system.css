@@ -182,3 +182,13 @@ main.tl-section>.tl-shell{max-width:1240px}
 .dc-link:hover{color:var(--blue)}
 .link-live:hover{color:#fb7185}
 .link-experience:hover{color:var(--accent)}
+
+/* Moment author avatar must stay a small circular identity chip. */
+article .moment-avatar{
+  width:40px!important;height:40px!important;min-width:40px!important;max-width:40px!important;
+  flex:0 0 40px!important;aspect-ratio:1/1!important;border-radius:50%!important;object-fit:cover!important;
+  display:block;background:var(--surface);
+}
+article .moment-avatar-fallback{
+  display:grid!important;place-items:center;background:rgba(56,189,248,.14);color:#7dd3fc;font-weight:700;
+}
