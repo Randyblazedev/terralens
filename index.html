@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="src/styles/tailwind.css?v=20261118b">
 <link rel="stylesheet" href="src/styles/app.css?v=20261118b">
 <link rel="stylesheet" href="assets/css/home-v2.css?v=20261118d">
-<link rel="stylesheet" href="assets/css/system.css?v=20261126c">
+<link rel="stylesheet" href="assets/css/system.css?v=20261126d">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta name="theme-color" content="#0B0F19">
@@ -272,7 +272,7 @@ document.querySelector("#hero-search").addEventListener("submit",e=>{e.preventDe
 // Discovery trio: real place, real broadcast or honest empty state, real experience.
 async function paintDiscoverTrio(){
   try{
-    const rows=await queryFeatured(1);
+    const rows=await queryFeatured(3);
     const place=rows[0];
     if(place){
       const title=document.getElementById("dc-place-title"),copy=document.getElementById("dc-place-copy"),img=document.getElementById("dc-place-img");
@@ -289,6 +289,8 @@ async function paintDiscoverTrio(){
         save.setAttribute("aria-pressed","true");save.textContent="♥";
       })}
     }
+    const fallbackLive=rows.find(p=>p.cover_url||p.image_url);
+    if(fallbackLive){document.getElementById("dc-live-img").src=imgSize(fallbackLive.cover_url||fallbackLive.image_url||"",900)}
   }catch{}
   try{
     const d=await (await fetch("/api/live?action=list")).json().catch(()=>({}));
@@ -299,6 +301,10 @@ async function paintDiscoverTrio(){
       document.getElementById("dc-live-link").href="watch-live.html?id="+encodeURIComponent(b.id);
       document.getElementById("dc-live-watch").textContent=b.status==="live"?"Live now":"Scheduled";
       document.getElementById("dc-live-tag").textContent=b.status==="live"?"Live now":"Live";
+    }else{
+      document.getElementById("dc-live-tag").textContent="Not live";
+      document.getElementById("dc-live-watch").textContent="No broadcasts now";
+      document.getElementById("dc-live-copy").textContent="No broadcasts are running right now. Open Live to check again.";
     }
   }catch{}
   try{
@@ -308,7 +314,11 @@ async function paintDiscoverTrio(){
       document.getElementById("dc-exp-copy").textContent=(data.summary||"").slice(0,120);
       document.getElementById("dc-exp-img").src=imgSize(data.cover_url||"",900);
       const l=document.querySelector(".card-experience .dc-link");l.href="experience.html?slug="+encodeURIComponent(data.slug);
+    }else{
+      document.getElementById("dc-exp-copy").textContent="No hosted experiences are published yet. Explore places or become a host.";
     }
+    const fallbackExp=rows.filter(p=>p.cover_url||p.image_url)[1]||rows.find(p=>p.cover_url||p.image_url);
+    if(!data&&fallbackExp)document.getElementById("dc-exp-img").src=imgSize(fallbackExp.cover_url||fallbackExp.image_url||"",900);
   }catch{}
 }
 paintDiscoverTrio();
