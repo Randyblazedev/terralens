@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
 <link rel="stylesheet" href="assets/css/new-features.css?v=20261124cb">
-<link rel="stylesheet" href="assets/css/system.css?v=20261126k">
+<link rel="stylesheet" href="assets/css/system.css?v=20261126n">
 <script src="src/js/runtime-config.js"></script>
 <script type="module" src="src/js/supabase.js"></script>
 <style>
@@ -100,6 +100,7 @@
   <script type="module">
 import {supabase} from "./src/js/supabase.js";
 import {initNav,escapeHtml,backFab,imgSize} from "./src/js/app.js?v=20261125fix";
+import {momentCard,hydrateMomentFeed} from "./src/js/moment-card.js?v=20261126a";
 (async()=>{
 
 
@@ -134,58 +135,13 @@ import {initNav,escapeHtml,backFab,imgSize} from "./src/js/app.js?v=20261125fix"
       if(!error)location.reload();
     };
     const {data:rows,error}=await supabase.from("moments")
-      .select("id,kind,media_url,caption,created_at,user_id,profiles!moments_user_id_fkey(display_name,username,avatar_url,role,verified),places!moments_place_id_fkey(id,name,country)")
+      .select("id,kind,media_url,caption,created_at,user_id,profiles!moments_user_id_fkey(display_name,username,avatar_url,role,verified),places!moments_place_id_fkey(id,name,country,category)")
       .order("created_at",{ascending:false}).limit(40);
     if(error){feed.innerHTML="";msg.textContent=error.message;return}
     if(!rows||!rows.length){feed.innerHTML="";msg.textContent="No moments yet. Be the first to share one.";return}
-    const authorOf=(m)=>{
-      const own=!!(session&&m.user_id===session.user.id),p=m.profiles||{};
-      const name=own?(session.user.user_metadata?.full_name||session.user.user_metadata?.name||p.display_name||p.username||"Traveler"):(p.display_name||p.username||"Traveler");
-      const avatar=own?(session.user.user_metadata?.picture||session.user.user_metadata?.avatar_url||p.avatar_url||""):(p.avatar_url||"");
-      const role=p.role||"";
-      const verified=!!p.verified;
-      return {name,avatar,role,verified};
-    };
-    feed.innerHTML=rows.map(m=>{const a=authorOf(m),badge=(a.verified||["verified_host","business","admin"].includes(a.role));
-      return `<article class="tl-card overflow-hidden moment">
-      <div class="flex items-center gap-3 p-4">
-        ${a.avatar?`<img src="${escapeHtml(a.avatar)}" alt="" class="moment-avatar" referrerpolicy="no-referrer">`:`<span class="moment-avatar moment-avatar-fallback">${escapeHtml(a.name.charAt(0).toUpperCase())}</span>`}
-        <div class="min-w-0 flex-1"><p class="font-semibold leading-tight flex items-center gap-2">${escapeHtml(a.name)}${badge?'<span class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300">Verified host</span>':''}</p><p class="text-xs text-white/45 leading-tight mt-1">${new Date(m.created_at).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})}</p></div>
-        ${session&&m.user_id===session.user.id?`<button class="text-xs text-white/45 hover:text-red-400 px-2" data-del="${m.id}" aria-label="Delete moment">Delete</button>`:""}
-      </div>
-      ${m.kind==='video'?`<video src="${escapeHtml(m.media_url)}" controls playsinline class="!rounded-none block w-full" style="aspect-ratio:16/9;object-fit:cover"></video>`:`<img src="${escapeHtml(m.media_url)}" alt="${escapeHtml(m.caption||'World Moment')}" loading="lazy" class="!rounded-none block w-full" style="aspect-ratio:4/3;object-fit:cover">`}
-      <div class="p-4">
-        ${m.caption?`<p class="text-sm leading-6">${escapeHtml(m.caption)}</p>`:""}
-        ${m.places?.id?`<a href="place/${encodeURIComponent(m.places.id)}" class="mt-2 inline-block text-xs text-sky-300">${escapeHtml(m.places.name||"Place")}${m.places.country?', '+escapeHtml(m.places.country):''}</a>`:""}
-        <div class="mt-4 flex items-center gap-4"><button class="tl-btn tl-btn-ghost !min-h-8 like" data-id="${m.id}">♥ <span data-count="${m.id}">0</span></button></div>
-      </div>
-    </article>`;});
-    for(const m of rows){
-      const {count}=await supabase.from("moment_likes").select("id",{count:"exact",head:true}).eq("moment_id",m.id);
-      const el=feed.querySelector(`[data-count="${m.id}"]`);if(el)el.textContent=String(count||0);
-    }
-    feed.querySelectorAll(".like").forEach(b=>b.onclick=async()=>{
-      if(!session){location.href="login.html?next=moments.html";return}
-      const {error}=await supabase.from("moment_likes").insert({moment_id:b.dataset.id,user_id:session.user.id});
-      if(!error){const el=b.querySelector("[data-count]");if(el)el.textContent=String((Number(el.textContent)||0)+1)}
-    });
-    feed.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
-      const m=rows.find(x=>x.id===b.dataset.del);
-      const ok=await new Promise(resolve=>{
-        const overlay=document.createElement("div");
-        overlay.className="fixed inset-0 z-[90] grid place-items-center bg-black/70 p-4";
-        overlay.innerHTML='<div class="tl-card w-full max-w-sm p-6"><h2 class="text-lg font-bold">Delete this moment?</h2><p class="mt-2 text-sm text-white/55">This removes the post and its image. It cannot be undone.</p><div class="mt-5 flex justify-end gap-2"><button class="tl-btn tl-btn-ghost" data-cancel>Cancel</button><button class="tl-btn tl-btn-primary" data-confirm>Delete</button></div></div>';
-        document.body.appendChild(overlay);
-        overlay.querySelector("[data-cancel]").onclick=()=>{overlay.remove();resolve(false)};
-        overlay.querySelector("[data-confirm]").onclick=()=>{overlay.remove();resolve(true)};
-      });
-      if(!ok)return;
-      const {error}=await supabase.from("moments").delete().eq("id",b.dataset.del).eq("user_id",session.user.id);
-      if(error){msg.textContent=error.message;return}
-      if(m&&m.media_url){try{const url=new URL(m.media_url);const i=url.pathname.indexOf("/object/public/place-images/");if(i!==-1)await supabase.storage.from("place-images").remove([decodeURIComponent(url.pathname.slice(i+"/object/public/place-images/".length))])}catch{}}
-      b.closest("article").remove();msg.textContent="Moment deleted.";
-    });
-  
+    const say=(text)=>{msg.textContent=text};
+    feed.innerHTML=rows.map(m=>momentCard(m,session)).join("");
+    await hydrateMomentFeed(feed,rows,session,say);
     (async()=>{
       const {data:ex}=await supabase.from("places").select("id,name,country,cover_url").eq("status","published").neq("cover_url","").order("view_count",{ascending:false}).limit(3);
       const box=document.getElementById("example-places");
