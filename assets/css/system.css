@@ -48,7 +48,7 @@ main.tl-section>.tl-shell{max-width:1240px}
 .empty-state h2{font-family:'Fraunces',Georgia,serif}
 
 /* Card grids: consistent crops, quiet surfaces, real information. */
-.grid img,.ex-card img,article img{border-radius:var(--radius-sm);aspect-ratio:4/3;object-fit:cover;background:var(--raised)}
+.grid img:not(.moment-avatar),.ex-card img:not(.moment-avatar),article img:not(.moment-avatar){border-radius:var(--radius-sm);aspect-ratio:4/3;object-fit:cover;background:var(--raised)}
 .ex-card{border-radius:var(--radius);border-color:var(--line-soft);background:var(--surface)}
 .ex-card:hover{border-color:var(--line)}
 .ex-tag{background:rgba(96,165,250,.12);color:var(--blue);letter-spacing:.06em;border-radius:4px}
@@ -185,9 +185,8 @@ main.tl-section>.tl-shell{max-width:1240px}
 
 /* Moment author avatar must stay a small circular identity chip. */
 article .moment-avatar{
-  width:40px!important;height:40px!important;min-width:40px!important;max-width:40px!important;
-  flex:0 0 40px!important;aspect-ratio:1/1!important;border-radius:50%!important;object-fit:cover!important;
-  display:block;background:var(--surface);
+  width:40px;height:40px;min-width:40px;max-width:40px;
+  flex:0 0 40px;aspect-ratio:1/1;border-radius:50%;object-fit:cover;display:block;background:var(--surface);
 }
 article .moment-avatar-fallback{
   display:grid!important;place-items:center;background:rgba(56,189,248,.14);color:#7dd3fc;font-weight:700;
