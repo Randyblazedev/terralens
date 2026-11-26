@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="src/styles/tailwind.css?v=20261118b">
 <link rel="stylesheet" href="src/styles/app.css?v=20261118b">
 <link rel="stylesheet" href="assets/css/home-v2.css?v=20261118d">
-<link rel="stylesheet" href="assets/css/system.css?v=20261125fix">
+<link rel="stylesheet" href="assets/css/system.css?v=20261126c">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta name="theme-color" content="#0B0F19">
@@ -134,10 +134,27 @@
   <div class="hv2-feel-head" style="padding-top:12px"><p id="photo-credits" style="font-size:11px"></p></div>
 </section>
 
-<section class="tl-section">
+<section class="tl-section discover-section">
   <div class="tl-shell">
-    <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p class="tl-eyebrow">Start exploring</p><h2 class="mt-3 text-3xl font-extrabold sm:text-4xl">Find your next place.</h2></div><a href="explore.html" class="text-sm font-bold text-sky-300">View all →</a></div>
-    <div id="featured-grid" class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4"></div>
+    <div class="discover-head">
+      <div><p class="tl-eyebrow">Discover the world</p><h2 class="mt-2">Places worth exploring.</h2></div>
+      <a href="explore.html" class="discover-all">Explore all →</a>
+    </div>
+    <div class="discover-grid">
+      <article class="discover-card card-destination">
+        <div class="dc-media"><img id="dc-place-img" alt=""><span class="dc-tag tag-destination" id="dc-place-tag">Place</span><button class="dc-save" data-save-place aria-label="Save destination">♡</button></div>
+        <div class="dc-body"><p class="dc-kicker" id="dc-place-region">—</p><h3 id="dc-place-title">A place to discover</h3><p class="dc-copy" id="dc-place-copy">Real places with the details that help you go.</p><a href="explore.html" class="dc-link" id="dc-place-link">Discover destination →</a></div>
+      </article>
+      <article class="discover-card card-live">
+        <div class="dc-media"><img id="dc-live-img" alt=""><span class="dc-tag tag-live" id="dc-live-tag">Live</span><span class="dc-watch" id="dc-live-watch">Live now</span></div>
+        <div class="dc-body"><p class="dc-kicker kicker-live">Live experience</p><h3 id="dc-live-title">Watch the world live</h3><p class="dc-copy" id="dc-live-copy">Real broadcasts from people on the ground.</p><a href="live.html" class="dc-link link-live" id="dc-live-link">See what's live →</a></div>
+      </article>
+      <article class="discover-card card-experience">
+        <div class="dc-media"><img id="dc-exp-img" alt=""><span class="dc-tag tag-experience">Experience</span></div>
+        <div class="dc-body"><p class="dc-kicker kicker-experience">Hosted by locals</p><h3 id="dc-exp-title">Go with someone who knows</h3><p class="dc-copy" id="dc-exp-copy">Guided walks, food tours and virtual sessions.</p><a href="experiences.html" class="dc-link link-experience">Find experiences →</a></div>
+      </article>
+    </div>
+    <div id="featured-grid" class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4"></div>
   </div>
 </section>
 
@@ -251,6 +268,50 @@ document.querySelector("#hero-search").addEventListener("submit",e=>{e.preventDe
   }
  }catch{}
 })();
+
+// Discovery trio: real place, real broadcast or honest empty state, real experience.
+async function paintDiscoverTrio(){
+  try{
+    const rows=await queryFeatured(1);
+    const place=rows[0];
+    if(place){
+      const title=document.getElementById("dc-place-title"),copy=document.getElementById("dc-place-copy"),img=document.getElementById("dc-place-img");
+      title.textContent=place.name;
+      copy.textContent=(place.description||"").slice(0,120);
+      img.src=imgSize(place.cover_url||place.image_url||"",900);
+      document.getElementById("dc-place-region").textContent=[place.category,place.country].filter(Boolean).join(" · ")||"Real place";
+      const link=document.getElementById("dc-place-link");link.href=placeUrl(place);
+      const save=document.querySelector("[data-save-place]");
+      if(save){save.dataset.place=place.id;save.addEventListener("click",async()=>{
+        const {data:{session}}=await supabase.auth.getSession();
+        if(!session){location.href="login.html?next=index.html";return}
+        await supabase.from("saves").insert({user_id:session.user.id,place_id:place.id});
+        save.setAttribute("aria-pressed","true");save.textContent="♥";
+      })}
+    }
+  }catch{}
+  try{
+    const d=await (await fetch("/api/live?action=list")).json().catch(()=>({}));
+    const b=(d.broadcasts||[]).find(x=>x.status==="live")||(d.broadcasts||[])[0];
+    if(b){
+      document.getElementById("dc-live-title").textContent=b.title;
+      document.getElementById("dc-live-copy").textContent=(b.summary||"").slice(0,120);
+      document.getElementById("dc-live-link").href="watch-live.html?id="+encodeURIComponent(b.id);
+      document.getElementById("dc-live-watch").textContent=b.status==="live"?"Live now":"Scheduled";
+      document.getElementById("dc-live-tag").textContent=b.status==="live"?"Live now":"Live";
+    }
+  }catch{}
+  try{
+    const {data}=await supabase.from("experiences").select("id,slug,title,summary,cover_url,price_cents,currency").eq("status","published").order("created_at",{ascending:false}).limit(1).maybeSingle();
+    if(data){
+      document.getElementById("dc-exp-title").textContent=data.title;
+      document.getElementById("dc-exp-copy").textContent=(data.summary||"").slice(0,120);
+      document.getElementById("dc-exp-img").src=imgSize(data.cover_url||"",900);
+      const l=document.querySelector(".card-experience .dc-link");l.href="experience.html?slug="+encodeURIComponent(data.slug);
+    }
+  }catch{}
+}
+paintDiscoverTrio();
 
 async function paintFeatured(){
   const grid=document.querySelector("#featured-grid");

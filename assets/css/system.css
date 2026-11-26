@@ -146,3 +146,36 @@ main.tl-section>.tl-shell{max-width:1240px}
   header.tl-nav{padding-top:env(safe-area-inset-top,0px)}
   .tl-bottom-nav{padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
 }
+
+/* Discovery trio: one section, three subject-led cards. */
+.discover-section{background:#080D18}
+.discover-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.discover-head h2{font-family:'Fraunces',Georgia,serif;font-size:clamp(1.8rem,3vw,2.4rem);font-weight:600;letter-spacing:-.02em}
+.discover-all{font-size:14px;color:var(--blue);font-weight:600}
+.discover-all:hover{color:#93c5fd}
+.discover-grid{margin-top:32px;display:grid;gap:20px}
+@media(min-width:700px){.discover-grid{grid-template-columns:repeat(3,1fr)}}
+.discover-card{overflow:hidden;border-radius:16px;border:1px solid rgba(255,255,255,.1);background:var(--surface);transition:transform .25s ease,border-color .25s ease}
+.discover-card:hover{transform:translateY(-4px)}
+.card-destination:hover{border-color:rgba(96,165,250,.45)}
+.card-live:hover{border-color:rgba(251,113,133,.45)}
+.card-experience:hover{border-color:rgba(52,211,153,.45)}
+.dc-media{position:relative;height:224px;overflow:hidden;background:var(--raised)}
+.dc-media img{width:100%;height:100%;object-fit:cover;transition:transform .6s ease}
+.discover-card:hover .dc-media img{transform:scale(1.05)}
+.dc-tag{position:absolute;left:16px;top:16px;display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 11px;font-size:11px;font-weight:700;background:rgba(5,9,18,.82);color:#fff}
+.tag-live{background:#ef4444}
+.tag-experience{background:rgba(16,185,129,.92)}
+.dc-watch{position:absolute;right:14px;bottom:14px;border-radius:999px;background:rgba(5,9,18,.8);padding:5px 10px;font-size:11px;color:#fff}
+.dc-save{position:absolute;right:14px;top:14px;width:34px;height:34px;border:0;border-radius:50%;background:rgba(5,9,18,.7);color:#fff;font-size:17px;cursor:pointer}
+.dc-save[aria-pressed="true"]{background:#ef4444}
+.dc-body{padding:20px}
+.dc-kicker{font-size:11px;font-weight:700;color:var(--blue)}
+.kicker-live{color:#fb7185}
+.kicker-experience{color:var(--accent)}
+.dc-body h3{margin-top:8px;font-family:'Fraunces',Georgia,serif;font-size:1.35rem;font-weight:600;letter-spacing:-.02em}
+.dc-copy{margin-top:8px;font-size:14px;line-height:1.7;color:var(--muted)}
+.dc-link{margin-top:18px;display:inline-flex;font-size:14px;font-weight:600;color:#fff}
+.dc-link:hover{color:var(--blue)}
+.link-live:hover{color:#fb7185}
+.link-experience:hover{color:var(--accent)}
