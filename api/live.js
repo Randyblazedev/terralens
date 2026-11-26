@@ -60,6 +60,26 @@ export default async function handler(req, res) {
   const authToken = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
 
   try {
+    // Temporary diagnostic: shows exactly which upstream step fails on create.
+    if (action === "diagnose") {
+      if (!user) return res.status(401).json({ error: "Sign in first" });
+      const out = { configured: configured(), canHost: await canHost(req), token: !!token(), account: !!account() };
+      try {
+        const probe = await cf("/accounts/" + account() + "/stream/live_inputs", {
+          method: "POST",
+          body: { meta: { name: "TerraLens diagnostic" }, recording: { mode: "off" } }
+        });
+        out.create = "ok";
+        out.uid = probe.uid || "";
+        out.fields = Object.keys(probe || {});
+        out.webRTC = !!(probe.webRTC && probe.webRTC.url);
+        out.playbackHls = !!(probe.playback && probe.playback.hls);
+      } catch (err) {
+        out.create = "failed: " + String((err && err.message) || err);
+      }
+      return res.status(200).json(out);
+    }
+
     if (action === "config") {
       return res.status(200).json({ configured: configured(), canHost: user ? await canHost(req) : false });
     }
