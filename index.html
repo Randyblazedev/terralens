@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="src/styles/tailwind.css?v=20261118b">
 <link rel="stylesheet" href="src/styles/app.css?v=20261118b">
 <link rel="stylesheet" href="assets/css/home-v2.css?v=20261118d">
-<link rel="stylesheet" href="assets/css/system.css?v=20261126e">
+<link rel="stylesheet" href="assets/css/system.css?v=20261126f">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta name="theme-color" content="#0B0F19">
@@ -273,10 +273,12 @@ document.querySelector("#hero-search").addEventListener("submit",e=>{e.preventDe
 async function paintDiscoverTrio(){
   try{
     let rows=await queryFeatured(3);
-    if(!rows.some(p=>p.cover_url||p.image_url)){
-      const {data:extra}=await supabase.from("places").select("id,slug,name,description,category,country,cover_url,image_url,view_count").eq("status","published").order("view_count",{ascending:false}).limit(3);
-      rows=extra||rows;
+    if(rows.filter(p=>p.cover_url||p.image_url).length<3){
+      const {data:extra}=await supabase.from("places").select("id,slug,name,description,category,country,cover_url,image_url,view_count").eq("status","published").not("cover_url","is",null).order("view_count",{ascending:false}).limit(6);
+      const seen=new Set(rows.map(p=>p.id));
+      rows=rows.concat((extra||[]).filter(p=>!seen.has(p.id)));
     }
+    rows=rows.filter(p=>p.cover_url||p.image_url);
     const place=rows[0];
     if(place){
       const title=document.getElementById("dc-place-title"),copy=document.getElementById("dc-place-copy"),img=document.getElementById("dc-place-img");
@@ -293,7 +295,7 @@ async function paintDiscoverTrio(){
         save.setAttribute("aria-pressed","true");save.textContent="♥";
       })}
     }
-    const fallbackLive=rows.find(p=>p.cover_url||p.image_url);
+    const fallbackLive=rows.find(p=>p.id!==place?.id)||rows[0];
     if(fallbackLive){document.getElementById("dc-live-img").src=imgSize(fallbackLive.cover_url||fallbackLive.image_url||"",900)}
   }catch{}
   try{
@@ -321,7 +323,7 @@ async function paintDiscoverTrio(){
     }else{
       document.getElementById("dc-exp-copy").textContent="No hosted experiences are published yet. Explore places or become a host.";
     }
-    const fallbackExp=rows.filter(p=>p.cover_url||p.image_url)[1]||rows.find(p=>p.cover_url||p.image_url);
+    const fallbackExp=rows.find(p=>p.id!==place?.id&&p.id!==fallbackLive?.id)||rows[0];
     if(!data&&fallbackExp)document.getElementById("dc-exp-img").src=imgSize(fallbackExp.cover_url||fallbackExp.image_url||"",900);
   }catch{}
 }
