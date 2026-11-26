@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="src/styles/tailwind.css?v=20261118b">
 <link rel="stylesheet" href="src/styles/app.css?v=20261118b">
 <link rel="stylesheet" href="assets/css/home-v2.css?v=20261118d">
-<link rel="stylesheet" href="assets/css/system.css?v=20261126d">
+<link rel="stylesheet" href="assets/css/system.css?v=20261126e">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta name="theme-color" content="#0B0F19">
@@ -272,7 +272,11 @@ document.querySelector("#hero-search").addEventListener("submit",e=>{e.preventDe
 // Discovery trio: real place, real broadcast or honest empty state, real experience.
 async function paintDiscoverTrio(){
   try{
-    const rows=await queryFeatured(3);
+    let rows=await queryFeatured(3);
+    if(!rows.some(p=>p.cover_url||p.image_url)){
+      const {data:extra}=await supabase.from("places").select("id,slug,name,description,category,country,cover_url,image_url,view_count").eq("status","published").order("view_count",{ascending:false}).limit(3);
+      rows=extra||rows;
+    }
     const place=rows[0];
     if(place){
       const title=document.getElementById("dc-place-title"),copy=document.getElementById("dc-place-copy"),img=document.getElementById("dc-place-img");
