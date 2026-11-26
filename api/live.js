@@ -105,8 +105,7 @@ export default async function handler(req, res) {
         method: "POST",
         body: {
           meta: { name: "TerraLens: " + title },
-          recording: { mode: "automatic", timeoutSeconds: 0 },
-          enabled: true
+          recording: { mode: "off" }
         }
       });
       const row = {
@@ -140,6 +139,24 @@ export default async function handler(req, res) {
         whipUrl,
         whepUrl: (liveInput.webRTCPlayback && liveInput.webRTCPlayback.url) || ""
       });
+    }
+
+    // Re-read the publish URL for an existing broadcast. The create response can
+    // omit webRTC.url; the live input detail call usually has it.
+    if (action === "publish-url") {
+      if (!user) return res.status(401).json({ error: "Sign in first" });
+      const id = String(req.query.id || "");
+      if (!/^[0-9a-f-]{36}$/i.test(id)) return res.status(400).json({ error: "Invalid broadcast" });
+      const rows = await db("broadcasts?select=id,host_id,live_input_uid,playback_url&id=eq." + encodeURIComponent(id), authToken);
+      const b = Array.isArray(rows) ? rows[0] : null;
+      if (!b || b.host_id !== user.id) return res.status(403).json({ error: "Not your broadcast" });
+      let whipUrl = "";
+      try {
+        const detail = await cf("/accounts/" + account() + "/stream/live_inputs/" + encodeURIComponent(b.live_input_uid));
+        whipUrl = (detail.webRTC && detail.webRTC.url) || "";
+      } catch (err) { return res.status(502).json({ error: String(err && err.message || "Cloudflare lookup failed") }); }
+      if (!whipUrl && b.playback_url) whipUrl = String(b.playback_url).replace(/\/manifest\/video\.m3u8.*$/, "/webRTC/publish");
+      return res.status(200).json({ whipUrl });
     }
 
     if (action === "start" || action === "end") {
