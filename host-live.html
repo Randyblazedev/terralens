@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
 <link rel="stylesheet" href="assets/css/new-features.css?v=20261125a">
-<link rel="stylesheet" href="assets/css/system.css?v=20261125err">
+<link rel="stylesheet" href="assets/css/system.css?v=20261126a">
 <script src="src/js/runtime-config.js"></script>
 <script type="module" src="src/js/supabase.js"></script>
 <link rel="canonical" href="https://www.terralensapp.com/host-live.html">
@@ -89,6 +89,7 @@
         <div class="mt-4 flex flex-wrap gap-2"><button id="start" class="tl-btn tl-btn-accent">Allow access & start</button><button id="stop" class="tl-btn tl-btn-ghost" disabled>Stop</button><a id="watch" href="#" class="tl-btn tl-btn-ghost">View room</a></div>
         <div id="requests" class="mt-5"><h3 class="font-bold">Join requests</h3><div id="req-list" class="mt-2 grid gap-2"></div></div>
         <p id="msg" class="mt-3 text-sm text-sky-300"></p>
+        <button id="diag" class="tl-btn tl-btn-ghost mt-3 !min-h-9">Check Cloudflare</button>
       </div>
     </div>
   </div></main>
@@ -121,6 +122,13 @@
             check.textContent="Browser state: "+(items.join(" · ")||"unknown");
           })();
         }
+        document.getElementById("diag").onclick=async()=>{
+          const out=document.getElementById("msg");out.textContent="Checking Cloudflare…";
+          try{
+            const d=await (await fetch("/api/live?action=diagnose",{headers:{Authorization:"Bearer "+session.access_token}})).json();
+            out.textContent=JSON.stringify(d);
+          }catch(e){out.textContent="Diagnostic failed: "+(e&&e.message||"")}
+        };
         let pc=null,stream=null,broadcastId=null;
         const post=async(action,body={})=>{const r=await fetch("/api/live?action="+action,{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session.access_token},body:JSON.stringify(body)});return r.json().catch(()=>({}))};
         async function loadRequests(){if(!broadcastId)return;const r=await fetch("/api/live?action=requests&id="+encodeURIComponent(broadcastId),{headers:{Authorization:"Bearer "+session.access_token}});const d=await r.json().catch(()=>({}));document.getElementById("req-list").innerHTML=(d.requests||[]).map(x=>`<div class="tl-card p-3 flex items-center justify-between gap-3"><span class="text-sm">${escapeHtml(x.profiles?.display_name||x.profiles?.username||'Viewer')} · ${escapeHtml(x.status)}</span><span class="flex gap-2"><button class="tl-btn tl-btn-ghost !min-h-8" data-rid="${x.id}" data-status="approved">Approve</button><button class="tl-btn tl-btn-ghost !min-h-8" data-rid="${x.id}" data-status="declined">Decline</button></span></div>`).join("")||'<p class="text-sm text-white/45">No requests yet.</p>'}

@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="src/styles/tailwind.css">
 <link rel="stylesheet" href="src/styles/app.css">
 <link rel="stylesheet" href="assets/css/new-features.css?v=20261124cb">
-<link rel="stylesheet" href="assets/css/system.css?v=20261125fix">
+<link rel="stylesheet" href="assets/css/system.css?v=20261126a">
 <script src="src/js/runtime-config.js"></script>
 <script type="module" src="src/js/supabase.js"></script>
 <style>
@@ -125,9 +125,9 @@ import {initNav,escapeHtml,backFab,imgSize} from "./src/js/app.js?v=20261125fix"
       cm.textContent="Uploading…";
       const ext=(file.name.split(".").pop()||"bin").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,5);
       const path=session.user.id+"/"+Date.now()+"."+ext;
-      const up=await supabase.storage.from("moment-media").upload(path,file,{contentType:file.type,upsert:false});
+      const up=await supabase.storage.from("place-images").upload(path,file,{contentType:file.type,upsert:false});
       if(up.error){cm.textContent=up.error.message;return}
-      const url=supabase.storage.from("moment-media").getPublicUrl(path).data.publicUrl;
+      const url=supabase.storage.from("place-images").getPublicUrl(path).data.publicUrl;
       const kind=file.type.startsWith("video/")?"video":"photo";
       const {error}=await supabase.from("moments").insert({user_id:session.user.id,place_id:place,kind,media_url:url,caption:document.getElementById("caption").value.trim()});
       cm.textContent=error?error.message:"Moment posted.";
